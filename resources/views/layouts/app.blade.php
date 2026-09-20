@@ -268,6 +268,89 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .p-dialog-mask {
+            position: fixed;
+            inset: 0;
+            z-index: 10002;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(32, 26, 52, .38);
+            backdrop-filter: blur(2px);
+        }
+
+        .p-dialog-mask.is-visible { display: flex; }
+
+        .p-dialog {
+            width: min(30rem, 100%);
+            overflow: hidden;
+            border: 1px solid #d8cabc;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 18px 50px rgba(32, 26, 52, .24);
+            animation: p-dialog-in .18s ease-out;
+        }
+
+        .p-dialog-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #eadfd5;
+            color: #202020;
+            font-weight: 700;
+        }
+
+        .p-dialog-content {
+            padding: 1.25rem;
+            color: #4b423c;
+            line-height: 1.55;
+        }
+
+        .p-dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: .65rem;
+            padding: .8rem 1.25rem 1rem;
+            border-top: 1px solid #f0e9df;
+        }
+
+        .p-dialog-button {
+            min-width: 6rem;
+            margin: 0;
+            padding: .55rem .9rem;
+            border: 1px solid #b58b67;
+            border-radius: 5px;
+            box-shadow: none;
+            font-weight: 600;
+        }
+
+        .p-dialog-button-secondary { background: #fff; color: #674b39; }
+        .p-dialog-button-primary { background: #795c48; color: #fff; }
+        .p-dialog-button:hover { transform: none; filter: brightness(.97); }
+
+        .p-dialog-close {
+            width: 1.75rem;
+            min-height: 1.75rem;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #766b64;
+            box-shadow: none;
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+
+        .p-dialog-close:hover { transform: none; opacity: .7; }
+
+        @keyframes p-dialog-in {
+            from { opacity: 0; transform: translateY(-.4rem) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         input:has(+ .field-error), select:has(+ .field-error), textarea:has(+ .field-error) {
             border-color: #dc2626;
         }
@@ -494,6 +577,20 @@
 
     @include('components.toast')
 
+    <div class="p-dialog-mask" data-confirm-dialog aria-hidden="true">
+        <section class="p-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+            <header class="p-dialog-header">
+                <span id="confirm-dialog-title">Confirmar acción</span>
+                <button class="p-dialog-close" type="button" data-confirm-cancel aria-label="Cerrar">×</button>
+            </header>
+            <div class="p-dialog-content" data-confirm-message></div>
+            <footer class="p-dialog-footer">
+                <button class="p-dialog-button p-dialog-button-secondary" type="button" data-confirm-cancel>Cancelar</button>
+                <button class="p-dialog-button p-dialog-button-primary" type="button" data-confirm-accept>Aceptar</button>
+            </footer>
+        </section>
+    </div>
+
     @if (empty($pdf))
         <script>
             (() => {
@@ -504,6 +601,8 @@
                 });
 
                 const overlay = document.querySelector('[data-app-loading]');
+                const confirmDialog = document.querySelector('[data-confirm-dialog]');
+                let pendingForm = null;
 
                 if (!overlay) return;
 
@@ -519,6 +618,39 @@
                     document.body.classList.remove('is-loading');
                 };
 
+                const closeConfirmDialog = () => {
+                    pendingForm = null;
+                    confirmDialog?.classList.remove('is-visible');
+                    confirmDialog?.setAttribute('aria-hidden', 'true');
+                    hideLoading();
+                };
+
+                document.addEventListener('submit', (event) => {
+                    const form = event.target;
+                    if (!(form instanceof HTMLFormElement) || !form.dataset.confirmMessage || form.dataset.confirmed === 'true') return;
+
+                    event.preventDefault();
+                    pendingForm = form;
+                    const message = confirmDialog?.querySelector('[data-confirm-message]');
+                    if (message) message.textContent = form.dataset.confirmMessage;
+                    confirmDialog?.classList.add('is-visible');
+                    confirmDialog?.setAttribute('aria-hidden', 'false');
+                    confirmDialog?.querySelector('[data-confirm-accept]')?.focus();
+                }, true);
+
+                confirmDialog?.querySelectorAll('[data-confirm-cancel]').forEach((button) => {
+                    button.addEventListener('click', closeConfirmDialog);
+                });
+
+                confirmDialog?.querySelector('[data-confirm-accept]')?.addEventListener('click', () => {
+                    if (!pendingForm) return;
+                    const form = pendingForm;
+                    closeConfirmDialog();
+                    form.dataset.confirmed = 'true';
+                    form.requestSubmit();
+                    window.setTimeout(() => delete form.dataset.confirmed, 0);
+                });
+
                 document.addEventListener('submit', (event) => {
                     if (!event.defaultPrevented) showLoading();
                 }, true);
@@ -530,6 +662,7 @@
                     if (action.matches('button[type="submit"]')) {
                         const form = action.form || document.getElementById(action.getAttribute('form'));
                         if (form && !form.checkValidity()) return;
+                        if (form?.dataset.confirmMessage && form.dataset.confirmed !== 'true') return;
                     }
 
                     if (action.tagName === 'A') {

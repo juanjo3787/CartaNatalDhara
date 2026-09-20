@@ -82,7 +82,7 @@
                         <a class="file-download-action" href="{{ route('charts.registration.edit', $chart) }}" title="Editar datos de registro" aria-label="Editar datos de registro"><span aria-hidden="true">✎</span></a>
                         <a class="file-download-action" href="{{ route('charts.report.history', $chart) }}" title="Histórico de generación de PDF" aria-label="Histórico de generación de PDF"><span aria-hidden="true">↧</span></a>
                         <a class="file-download-action" href="{{ route('charts.person.history', $chart) }}" title="Histórico de cambios de la persona" aria-label="Histórico de cambios de la persona"><span aria-hidden="true">◷</span></a>
-                        <form method="POST" action="{{ route('charts.destroy', $chart) }}" onsubmit="return confirm('¿Seguro que quieres eliminar esta carta natal?');" style="margin: 0; display: flex; justify-content: center; align-items: center;">
+                        <form method="POST" action="{{ route('charts.destroy', $chart) }}" data-confirm-message="¿Seguro que quieres eliminar esta carta natal?" style="margin: 0; display: flex; justify-content: center; align-items: center;">
                             @csrf
                             @method('DELETE')
                             <button class="delete-action" type="submit" title="Eliminar carta natal" aria-label="Eliminar carta natal">

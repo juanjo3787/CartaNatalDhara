@@ -18,7 +18,7 @@
         @media (max-width:700px) { .report-action-bar { padding: .45rem; } .report-action { font-size: .72rem; } }
     </style>
     <nav class="report-action-bar" aria-label="Acciones del informe">
-        <form method="POST" action="{{ route('charts.report.regenerate', $chart) }}" onsubmit="return confirm('¿Regenerar el informe con el contenido editorial actualizado?');">@csrf<button class="report-action report-action-primary" type="submit">Regenerar informe</button></form>
+        <form method="POST" action="{{ route('charts.report.regenerate', $chart) }}" data-confirm-message="¿Regenerar el informe con el contenido editorial actualizado?">@csrf<button class="report-action report-action-primary" type="submit">Regenerar informe</button></form>
         <form method="POST" action="{{ route('charts.report.validate', $chart) }}">@csrf<button class="report-action report-action-validate" type="submit">Validar y guardar PDF</button></form>
         <a class="report-action" href="{{ route('charts.report.download', $chart) }}">Descargar PDF</a>
         <a class="report-action report-action-primary" href="{{ route('charts.report.edit', $chart) }}">Editar informe</a>
