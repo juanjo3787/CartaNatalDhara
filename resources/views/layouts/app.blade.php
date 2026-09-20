@@ -129,6 +129,149 @@
         }
 
         .error { color: #b91c1c; font-size: 0.875rem; }
+
+        .p-message {
+            width: 100%;
+            margin: 0 0 1rem;
+            border: 1px solid;
+            border-radius: 6px;
+            font-size: .95rem;
+        }
+
+        .p-message-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: .7rem;
+            padding: .85rem 1rem;
+        }
+
+        .p-message-icon {
+            display: inline-flex;
+            flex: 0 0 1.25rem;
+            align-items: center;
+            justify-content: center;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .p-message-error {
+            border-color: #f5b5b5;
+            background: #fff2f2;
+            color: #b42318;
+        }
+
+        .p-message-error .p-message-icon {
+            background: #b42318;
+            color: #fff;
+        }
+
+        .p-message-success {
+            border-color: #a7d7b1;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .p-message-success .p-message-icon {
+            background: #16803c;
+            color: #fff;
+        }
+
+        .p-message-list {
+            margin: .45rem 0 0;
+            padding-left: 1.2rem;
+        }
+
+        .p-message-list li + li { margin-top: .25rem; }
+
+        .field-error {
+            display: block;
+            margin-top: .35rem;
+            color: #b42318;
+            font-size: .82rem;
+        }
+
+        .p-toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10001;
+            display: grid;
+            gap: .65rem;
+            width: min(24rem, calc(100vw - 2rem));
+        }
+
+        .p-toast-message {
+            display: flex;
+            align-items: flex-start;
+            gap: .7rem;
+            border: 1px solid;
+            border-radius: 6px;
+            padding: .85rem 1rem;
+            box-shadow: 0 8px 24px rgba(68, 48, 33, .16);
+            animation: p-toast-in .2s ease-out;
+        }
+
+        .p-toast-message-success {
+            border-color: #a7d7b1;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .p-toast-message-error {
+            border-color: #f5b5b5;
+            background: #fff2f2;
+            color: #b42318;
+        }
+
+        .p-toast-icon {
+            display: inline-flex;
+            flex: 0 0 1.25rem;
+            align-items: center;
+            justify-content: center;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .p-toast-message-success .p-toast-icon { background: #16803c; }
+        .p-toast-message-error .p-toast-icon { background: #b42318; }
+
+        .p-toast-detail {
+            display: grid;
+            gap: .2rem;
+            flex: 1;
+            line-height: 1.35;
+        }
+
+        .p-toast-close {
+            width: 1.5rem;
+            min-height: 1.5rem;
+            margin: -.15rem -.35rem 0 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: currentColor;
+            box-shadow: none;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        .p-toast-close:hover { transform: none; opacity: .7; }
+
+        @keyframes p-toast-in {
+            from { opacity: 0; transform: translateY(-.35rem); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        input:has(+ .field-error), select:has(+ .field-error), textarea:has(+ .field-error) {
+            border-color: #dc2626;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -349,9 +492,17 @@
         </div>
     </div>
 
+    @include('components.toast')
+
     @if (empty($pdf))
         <script>
             (() => {
+                document.querySelectorAll('[data-toast]').forEach((toast) => {
+                    const close = () => toast.remove();
+                    toast.querySelector('[data-toast-close]')?.addEventListener('click', close);
+                    window.setTimeout(close, 5000);
+                });
+
                 const overlay = document.querySelector('[data-app-loading]');
 
                 if (!overlay) return;

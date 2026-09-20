@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Validation\Rule;
 
 class ChartController extends Controller
 {
@@ -49,20 +50,7 @@ class ChartController extends Controller
 
     public function store(Request $request, BirthDataNormalizer $normalizer, ChartService $chartService): RedirectResponse
     {
-        $validated = $request->validate([
-            'alias' => ['required', 'string', 'max:255'],
-            'full_name' => ['nullable', 'string', 'max:255'],
-            'notes' => ['nullable', 'string'],
-            'city' => ['required', 'string', 'max:255'],
-            'country' => ['required', 'string', 'max:255'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'timezone_identifier' => ['required', 'timezone'],
-            'local_date' => ['required', 'date_format:d/m/Y'],
-            'local_time' => ['required', 'date_format:H:i'],
-            'time_source' => ['nullable', 'in:document,family,estimated,unknown'],
-            'time_precision' => ['nullable', 'in:exact,approximate,unknown'],
-        ]);
+        $validated = $request->validate($this->registrationRules(), $this->registrationMessages());
 
         $validated['local_date'] = \DateTime::createFromFormat('d/m/Y', $validated['local_date'])->format('Y-m-d');
 
@@ -186,19 +174,19 @@ class ChartController extends Controller
             ->with('success', $successMessage);
     }
 
-    public function editRegistration(Chart $chart): View
+    private function registrationRules(?Person $person = null): array
     {
-        $chart->load('person', 'birthData.place');
+        $aliasRule = Rule::unique('people', 'alias');
+        $fullNameRule = Rule::unique('people', 'full_name')->whereNotNull('full_name');
 
-        return view('charts.registration-edit', ['chart' => $chart]);
-    }
+        if ($person) {
+            $aliasRule->ignore($person->id);
+            $fullNameRule->ignore($person->id);
+        }
 
-    public function updateRegistration(Request $request, Chart $chart, BirthDataNormalizer $normalizer): RedirectResponse
-    {
-        $chart->load('person', 'birthData.place');
-        $validated = $request->validate([
-            'alias' => ['required', 'string', 'max:255'],
-            'full_name' => ['nullable', 'string', 'max:255'],
+        return [
+            'alias' => ['required', 'string', 'max:255', $aliasRule],
+            'full_name' => ['nullable', 'string', 'max:255', $fullNameRule],
             'notes' => ['nullable', 'string'],
             'city' => ['required', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:255'],
@@ -209,7 +197,52 @@ class ChartController extends Controller
             'local_time' => ['required', 'date_format:H:i'],
             'time_source' => ['required', 'in:document,family,estimated,unknown'],
             'time_precision' => ['required', 'in:exact,approximate,unknown'],
-        ]);
+        ];
+    }
+
+    private function registrationMessages(): array
+    {
+        return [
+            'required' => 'El campo :attribute es obligatorio.',
+            'string' => 'El campo :attribute debe ser texto.',
+            'max' => 'El campo :attribute no puede superar los :max caracteres.',
+            'numeric' => 'El campo :attribute debe ser numérico.',
+            'between' => 'El campo :attribute está fuera del rango permitido.',
+            'timezone' => 'La zona horaria indicada no es válida.',
+            'date_format' => 'El campo :attribute debe tener el formato :format.',
+            'in' => 'El valor seleccionado para :attribute no es válido.',
+            'alias.unique' => 'Ya existe una carta natal para esa persona con este alias.',
+            'full_name.unique' => 'Ya existe una carta natal para esa persona con este nombre completo.',
+            'attributes' => [
+                'alias' => 'alias',
+                'full_name' => 'nombre completo',
+                'city' => 'ciudad',
+                'country' => 'país',
+                'latitude' => 'latitud',
+                'longitude' => 'longitud',
+                'timezone_identifier' => 'zona horaria',
+                'local_date' => 'fecha de nacimiento',
+                'local_time' => 'hora de nacimiento',
+                'time_source' => 'fuente de la hora',
+                'time_precision' => 'precisión de la hora',
+            ],
+        ];
+    }
+
+    public function editRegistration(Chart $chart): View
+    {
+        $chart->load('person', 'birthData.place');
+
+        return view('charts.registration-edit', ['chart' => $chart]);
+    }
+
+    public function updateRegistration(Request $request, Chart $chart, BirthDataNormalizer $normalizer): RedirectResponse
+    {
+        $chart->load('person', 'birthData.place');
+        $validated = $request->validate(
+            $this->registrationRules($chart->person),
+            $this->registrationMessages(),
+        );
 
         $validated['local_date'] = \DateTime::createFromFormat('d/m/Y', $validated['local_date'])->format('Y-m-d');
         $normalized = $normalizer->normalize($validated);

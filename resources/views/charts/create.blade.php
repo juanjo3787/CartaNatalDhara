@@ -5,25 +5,18 @@
 @section('content')
     <h1>Nueva carta natal</h1>
 
-    @if ($errors->any())
-        <div class="note">
-            <strong>Revisa estos campos:</strong>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li class="error">{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    @include('components.validation-alert')
 
     <form id="new-chart-form" method="POST" action="{{ route('charts.store') }}">
         @csrf
 
         <label for="alias">Alias de la persona</label>
         <input type="text" id="alias" name="alias" value="{{ old('alias') }}" required>
+        @error('alias')<small class="field-error">{{ $message }}</small>@enderror
 
         <label for="full_name">Nombre completo (opcional)</label>
         <input type="text" id="full_name" name="full_name" value="{{ old('full_name') }}">
+        @error('full_name')<small class="field-error">{{ $message }}</small>@enderror
 
         <div class="row">
             <div>
@@ -37,6 +30,7 @@
                     pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}"
                     required
                 >
+                @error('local_date')<small class="field-error">{{ $message }}</small>@enderror
             </div>
             <div>
                 <label for="local_time">Hora de nacimiento (24 horas)</label>
@@ -50,11 +44,13 @@
                     pattern="^(?:[01]\d|2[0-3]):[0-5]\d$"
                     required
                 >
+                @error('local_time')<small class="field-error">{{ $message }}</small>@enderror
             </div>
         </div>
 
         <label for="timezone_identifier">Zona horaria (identificador IANA, ej. Europe/Madrid)</label>
         <input type="text" id="timezone_identifier" name="timezone_identifier" value="{{ old('timezone_identifier', 'Europe/Madrid') }}" required>
+        @error('timezone_identifier')<small class="field-error">{{ $message }}</small>@enderror
 
         <label for="address">Dirección de nacimiento (para calcular latitud y longitud)</label>
         <div class="row" style="align-items: end;">
@@ -70,10 +66,12 @@
             <div>
                 <label for="city">Ciudad de nacimiento</label>
                 <input type="text" id="city" name="city" value="{{ old('city') }}" required>
+                @error('city')<small class="field-error">{{ $message }}</small>@enderror
             </div>
             <div>
                 <label for="country">País</label>
                 <input type="text" id="country" name="country" value="{{ old('country') }}" required>
+                @error('country')<small class="field-error">{{ $message }}</small>@enderror
             </div>
         </div>
 
@@ -81,10 +79,12 @@
             <div>
                 <label for="latitude">Latitud</label>
                 <input type="number" step="0.000001" id="latitude" name="latitude" value="{{ old('latitude') }}" required>
+                @error('latitude')<small class="field-error">{{ $message }}</small>@enderror
             </div>
             <div>
                 <label for="longitude">Longitud</label>
                 <input type="number" step="0.000001" id="longitude" name="longitude" value="{{ old('longitude') }}" required>
+                @error('longitude')<small class="field-error">{{ $message }}</small>@enderror
             </div>
         </div>
 
