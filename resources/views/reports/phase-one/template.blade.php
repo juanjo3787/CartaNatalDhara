@@ -67,7 +67,7 @@
     .report-arrow-title { display: inline-block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 .82rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
     .report-door-intro-title { margin-bottom: 2rem; }
     .report-arrow-title::before { content: '➜ '; color: #b58b67; }
-    .report-gray { padding: 1rem 1.25rem; background: #f1eeeb; }
+
     @media screen and (max-width: 700px) {
         .report-index-grid { grid-template-columns: 1fr; }
         .report-page { padding-left: 10mm; padding-right: 10mm; }
@@ -76,8 +76,8 @@
     html, body { margin: 0; padding: 0; background: #fff; }
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { margin: 0; padding: 0; }
-    .report-page { min-height: 0; height: auto; padding: 0; border: 0; page-break-after: always; }
-    .report-cover { min-height: 250mm; height: 250mm; padding: 18mm 10mm; box-sizing: border-box; }
+    .report-page { min-height: 0; height: auto; padding: 0; border: 0; }
+    .report-cover { min-height: 250mm; height: 250mm; padding: 18mm 10mm; box-sizing: border-box; page-break-after: always; }
     .report-page h2 { font-size: 21pt; } .report-page p { max-width: 72ch; font-size: 10.5pt; line-height: 1.48; }
     .report-gray p { font-size: 9.5pt; line-height: 1.42; } .report-block { margin: 18pt 0; page-break-inside: avoid; }
     .report-block-title { padding: 6pt 10pt; font-size: 11pt; box-shadow: none; } .report-table { font-size: 8.5pt; }
