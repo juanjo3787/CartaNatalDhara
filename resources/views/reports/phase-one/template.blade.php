@@ -22,7 +22,9 @@
     .report-page h2 { margin: 0 0 2rem; font: 400 2rem/1.2 Aptos, 'Segoe UI', sans-serif; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
     .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.75; }
-    .report-page ul, .report-page ol { max-width: 68ch; margin: 1rem auto 1.5rem; line-height: 1.7; }
+    .report-page ul, .report-page ol { max-width: 68ch; margin: 1rem auto 1.5rem; padding-left: 1.5rem; line-height: 1.7; }
+    .report-page ul { list-style: disc; }
+    .report-page ol { list-style: decimal; }
     .report-index-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .report-index-item { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.1rem; border-bottom: 1px solid #ded7cf; }
     .report-index-number { font: 700 1.5rem Aptos, 'Segoe UI', sans-serif; color: #9d7659; }
