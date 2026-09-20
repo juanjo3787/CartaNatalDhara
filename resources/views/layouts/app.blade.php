@@ -26,7 +26,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: Aptos, 'Segoe UI', sans-serif;
             color: var(--ink);
             background: #fffdf9;
             padding: 2rem 1rem;
