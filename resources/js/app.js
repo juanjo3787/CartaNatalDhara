@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				textColor: '#374151',
 				lineColor: '#9ca3af',
 				lightLineColor: '#d1d5db',
-				fontFamily: 'Arial, sans-serif',
+				fontFamily: 'Aptos, Segoe UI, sans-serif',
 			},
 		},
 	});
