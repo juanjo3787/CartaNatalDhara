@@ -3,8 +3,6 @@
 @section('title', 'Informe Fase 1 - ' . $report['name'])
 
 @section('content')
-    @if (session('success'))<div class="note">{{ session('success') }}</div>@endif
-    @if (session('error'))<div class="note">{{ session('error') }}</div>@endif
     @include('reports.phase-one.template', ['report' => $report, 'chart' => $chart, 'pdf' => $pdf ?? false])
 @endsection
 
