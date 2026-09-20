@@ -87,7 +87,7 @@ final class PhaseOneReportService
                 ['number' => '05', 'title' => 'Integración', 'summary' => 'Cómo conviven tus necesidades'],
                 ['number' => '06', 'title' => 'Ampliación', 'summary' => 'Las funciones complementarias de la carta'],
                 ['number' => '07', 'title' => 'Práctica personal', 'summary' => 'Preguntas y hoja de registro diario'],
-                ['number' => '08', 'title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y criterios de cálculo'],
+                ['number' => '08', 'title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado'],
             ],
             'doors' => $doorReports,
             'combined' => $this->buildCombined($snapshot),
@@ -98,6 +98,11 @@ final class PhaseOneReportService
                     'Segunda semana. Observa la Luna: afecto, alegría, necesidad de reconocimiento y espacio íntimo.',
                     'Tercera semana. Observa el Ascendente: ritmo, recursos, hábitos y pequeños cambios posibles.',
                     'Cuarta semana. Observa el Descendente: confianza, expectativas, límites y capacidad de escuchar otra perspectiva.',
+                ],
+                'guidance' => [
+                    'Elige una escena al día y descríbela con hechos concretos: qué ocurrió, qué dijiste o hiciste, qué sentiste y qué necesitabas en ese momento.',
+                    'Al terminar, busca dos o tres repeticiones en tus registros. Observa qué puerta aparece con más frecuencia, qué respuesta te ayuda y en qué momento una necesidad queda sin expresar.',
+                    'Escoge un único ajuste para continuar durante la semana siguiente. Un cambio pequeño, repetido y revisable puede enseñarte más que intentar corregir toda tu forma de responder a la vez.',
                 ],
                 'sheet' => [
                     '¿Qué ocurrió y qué hechos conozco?',
