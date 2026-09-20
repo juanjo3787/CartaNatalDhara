@@ -48,6 +48,7 @@ final class PhaseOneReportService
                 'title' => $door['title'],
                 'subtitle' => $door['subtitle'],
                 'question' => $door['question'],
+                'position' => $this->doorPosition($snapshot, $door['point']),
                 'blocks' => (new PhaseOneDoorCatalog())->blocks(
                     $key,
                     $this->doorContext($readerName, $snapshot, $door['point'], $key),
@@ -227,6 +228,24 @@ final class PhaseOneReportService
             'A lo largo del informe desglosaremos cada una de estas puertas. Explicaremos qué representa, qué aporta su signo, en qué ámbito de la vida se expresa y cómo su planeta regente —o sus regentes— añade información. Después reuniremos las piezas para comprender qué significa esa combinación en tu carta.',
             'Aprenderemos a distinguir sus características y necesidades mediante explicaciones y ejemplos cotidianos. Así podrás observar cuándo necesitas expresar una opinión, pedir afecto, respetar tu ritmo o aclarar un compromiso, y encontrar una respuesta que tenga en cuenta lo que estás viviendo.',
         ];
+    }
+
+    private function doorPosition(array $snapshot, string $pointKey): string
+    {
+        $point = $snapshot[$pointKey] ?? [];
+        $house = $this->resolveHouse($point, $snapshot['houses'] ?? [])['number'];
+
+        $position = sprintf(
+            '%s %d° %02d\' %02d"',
+            $this->translateSign($point['sign'] ?? 'aries'),
+            $point['degrees'] ?? 0,
+            $point['minutes'] ?? 0,
+            (int) round($point['seconds'] ?? 0),
+        );
+
+        return in_array($pointKey, ['sun', 'moon'], true)
+            ? $position . ' · casa ' . $this->romanHouse($house)
+            : $position;
     }
 
     private function buildCombined(array $snapshot): array
