@@ -29,7 +29,7 @@
     .report-index-item strong { display: block; font-size: 1.05rem; }
     .report-index-item span { color: #766b64; font: .88rem Arial, sans-serif; }
     .report-gray { background: transparent; padding: 0; margin: 1.5rem 0; }
-    .report-gray p { font-family: Arial, sans-serif; font-size: .95rem; }
+    .report-gray p { max-width: min(601px, calc(100% - 2rem)); font-family: Arial, sans-serif; font-size: .95rem; }
     .report-arrow-title { display: inline-block; padding: .65rem 0; background: transparent; font: 700 1rem Arial, sans-serif; }
     .report-door { page-break-before: always; }
     .report-door-heading { border-bottom: 3px solid #e7cbb5; padding-bottom: 1rem; margin-bottom: 2rem; }
