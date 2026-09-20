@@ -14,8 +14,8 @@
         <input type="text" id="alias" name="alias" value="{{ old('alias') }}" required>
         @error('alias')<small class="field-error">{{ $message }}</small>@enderror
 
-        <label for="full_name">Nombre completo (opcional)</label>
-        <input type="text" id="full_name" name="full_name" value="{{ old('full_name') }}">
+        <label for="full_name">Nombre completo</label>
+        <input type="text" id="full_name" name="full_name" value="{{ old('full_name') }}" required>
         @error('full_name')<small class="field-error">{{ $message }}</small>@enderror
 
         <div class="row">

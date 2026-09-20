@@ -186,7 +186,7 @@ class ChartController extends Controller
 
         return [
             'alias' => ['required', 'string', 'max:255', $aliasRule],
-            'full_name' => ['nullable', 'string', 'max:255', $fullNameRule],
+            'full_name' => ['required', 'string', 'max:255', $fullNameRule],
             'notes' => ['nullable', 'string'],
             'city' => ['required', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:255'],

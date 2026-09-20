@@ -25,6 +25,7 @@ class ChartRegistrationValidationTest extends TestCase
 
         $response->assertSessionHasErrors([
             'alias',
+            'full_name',
             'city',
             'country',
             'latitude',
@@ -70,7 +71,7 @@ class ChartRegistrationValidationTest extends TestCase
     {
         return array_merge([
             'alias' => 'Persona nueva',
-            'full_name' => null,
+            'full_name' => 'Persona Nueva',
             'city' => 'Madrid',
             'country' => 'Espana',
             'latitude' => '40.4168',

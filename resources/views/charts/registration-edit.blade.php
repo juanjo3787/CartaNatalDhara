@@ -7,7 +7,7 @@
 @csrf @method('PUT')
 <label>Alias<input name="alias" value="{{ old('alias', $chart->person->alias) }}" required></label>
 @error('alias')<small class="field-error">{{ $message }}</small>@enderror
-<label>Nombre completo (opcional)<input name="full_name" value="{{ old('full_name', $chart->person->full_name) }}"></label>
+<label>Nombre completo<input name="full_name" value="{{ old('full_name', $chart->person->full_name) }}" required></label>
 @error('full_name')<small class="field-error">{{ $message }}</small>@enderror
 <label>Ciudad<input name="city" value="{{ old('city', $chart->birthData->place->city) }}" required></label>
 @error('city')<small class="field-error">{{ $message }}</small>@enderror
