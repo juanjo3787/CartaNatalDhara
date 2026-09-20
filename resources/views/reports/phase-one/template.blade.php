@@ -72,13 +72,13 @@
         .report-index-grid { grid-template-columns: 1fr; }
         .report-page { padding-left: 10mm; padding-right: 10mm; }
     }
-    @page { size: A4 portrait; margin: 16mm 15mm 17mm; }
+    @page { size: A4 portrait; margin: 20mm 18mm; }
     html, body { margin: 0; padding: 0; background: #fff; }
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { margin: 0; padding: 0; }
     .report-page { min-height: 0; height: auto; padding: 0; border: 0; page-break-after: always; }
     .report-cover { min-height: 250mm; height: 250mm; padding: 18mm 10mm; box-sizing: border-box; }
-    .report-page h2 { font-size: 21pt; } .report-page p { max-width: none; font-size: 10.5pt; line-height: 1.48; }
+    .report-page h2 { font-size: 21pt; } .report-page p { max-width: 72ch; font-size: 10.5pt; line-height: 1.48; }
     .report-gray p { font-size: 9.5pt; line-height: 1.42; } .report-block { margin: 18pt 0; page-break-inside: avoid; }
     .report-block-title { padding: 6pt 10pt; font-size: 11pt; box-shadow: none; } .report-table { font-size: 8.5pt; }
     .report-table th, .report-table td { padding: 5pt; } .report-note { display: none; }
