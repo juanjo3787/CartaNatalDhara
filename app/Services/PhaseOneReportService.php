@@ -90,6 +90,7 @@ final class PhaseOneReportService
                 ['number' => '08', 'title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado'],
             ],
             'doors' => $doorReports,
+            'door_introduction' => $this->buildDoorIntroduction($readerName, $snapshot),
             'combined' => $this->buildCombined($snapshot),
             'practice' => [
                 'intro' => 'Puedes utilizar el dossier durante unas cuatro semanas. Si deseas relacionarlo con un ciclo lunar, úsalo como marco temporal de registro, sin suponer que una fase cause un estado emocional concreto. El objetivo es conocer tu experiencia, no hacer que encaje en una descripción.',
@@ -200,6 +201,34 @@ final class PhaseOneReportService
         $context['chart_id'] = $chart->id;
 
         return $context;
+    }
+
+    private function buildDoorIntroduction(string $name, array $snapshot): array
+    {
+        $sun = $snapshot['sun'] ?? [];
+        $moon = $snapshot['moon'] ?? [];
+        $ascendant = $snapshot['ascendant'] ?? [];
+        $descendant = $snapshot['descendant'] ?? [];
+        $sunSign = $this->translateSign($sun['sign'] ?? 'aries');
+        $moonSign = $this->translateSign($moon['sign'] ?? 'aries');
+        $ascendantSign = $this->translateSign($ascendant['sign'] ?? 'aries');
+        $descendantSign = $this->translateSign($descendant['sign'] ?? 'aries');
+        $sunHouse = $this->romanHouse($this->resolveHouse($sun, $snapshot['houses'] ?? [])['number']);
+        $moonHouse = $this->romanHouse($this->resolveHouse($moon, $snapshot['houses'] ?? [])['number']);
+
+        return [
+            sprintf('En tu carta, %s, cada una de estas puertas tiene unas características que iremos explicando a lo largo del informe. Podemos empezar con una primera aproximación.', $name),
+            sprintf('Tu Sol está en %s y en casa %s. %s nos invita a explorar cómo tienes en cuenta a otras personas, cómo buscas acuerdos y qué lugar das a tu propia opinión. La casa %s lleva estas preguntas a lo cotidiano: las tareas, los hábitos, la organización y las responsabilidades que compartes.', $sunSign, $sunHouse, $sunSign, $sunHouse),
+            'Por ejemplo, cuando colaboras con alguien, ¿puedes expresar cómo prefieres hacer las cosas? ¿El reparto también tiene en cuenta tu tiempo? Aquí observaremos cómo puedes contribuir al bienestar de una situación sin dejar tus necesidades siempre para después.',
+            sprintf('Tu Luna está en %s y en casa %s. Esta parte de la lectura nos acerca al afecto y a la importancia de sentir que tienes un lugar donde puedes mostrarte con confianza. %s propone explorar la calidez, la alegría y el deseo de que aquello que te importa sea recibido con atención. La casa %s sitúa estas preguntas en tu hogar, tu vida privada y los espacios donde buscas sentirte a gusto.', $moonSign, $moonHouse, $moonSign, $moonHouse),
+            'Quizá para ti haya una diferencia entre que alguien te ayude con una tarea y que se detenga a escucharte. Ambas cosas pueden ser valiosas, pero responden a necesidades distintas. En este apartado iremos descubriendo qué gestos te hacen sentir querida y cómo puedes pedirlos cuando los necesitas.',
+            sprintf('Tu Ascendente está en %s. Aquí hablaremos de cómo te aproximas a lo nuevo y de qué necesitas para dar un paso con confianza. %s nos lleva a observar tu ritmo, el tiempo que te das para decidir y las referencias que te ayudan a orientarte.', $ascendantSign, $ascendantSign),
+            'Piensa en un cambio de planes o en una propuesta inesperada. ¿Te ayuda saber cómo va a funcionar? ¿Necesitas un rato para comprobar si te apetece y si puedes asumirla? Exploraremos cómo respetar tu manera de empezar y cómo distinguir cuándo necesitas prepararte un poco más y cuándo ya puedes probar.',
+            sprintf('Tu Descendente está en %s. Esta puerta nos acerca a la confianza que construyes en tus relaciones. Hablaremos de lo que necesitas para compartir algo importante, de la sinceridad que esperas y de cómo expresas tus límites cuando un vínculo te importa. También observaremos qué haces cuando algo te preocupa y cómo conservas tu espacio propio cuando deseas estar muy cerca de otra persona.', $descendantSign),
+            'Estas cuatro partes pueden necesitar cosas diferentes en un mismo momento. Puedes querer ayudar a alguien y necesitar que también te escuchen. Puedes desear una relación cercana y necesitar tiempo para abrirte. Puedes querer mantener un acuerdo y descubrir que debes cambiar alguna condición para poder cumplirlo.',
+            'A lo largo del informe desglosaremos cada una de estas puertas. Explicaremos qué representa, qué aporta su signo, en qué ámbito de la vida se expresa y cómo su planeta regente —o sus regentes— añade información. Después reuniremos las piezas para comprender qué significa esa combinación en tu carta.',
+            'Aprenderemos a distinguir sus características y necesidades mediante explicaciones y ejemplos cotidianos. Así podrás observar cuándo necesitas expresar una opinión, pedir afecto, respetar tu ritmo o aclarar un compromiso, y encontrar una respuesta que tenga en cuenta lo que estás viviendo.',
+        ];
     }
 
     private function buildCombined(array $snapshot): array
