@@ -1,5 +1,6 @@
 services:
   app:
+    container_name: cartaNatal-app
     build:
       context: .
       dockerfile: Dockerfile
