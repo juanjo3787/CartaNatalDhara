@@ -1,0 +1,48 @@
+<?php
+
+return [
+    'accepted' => 'El campo :attribute debe ser aceptado.',
+    'array' => 'El campo :attribute debe ser una lista.',
+    'between' => [
+        'numeric' => 'El campo :attribute debe estar entre :min y :max.',
+        'string' => 'El campo :attribute debe tener entre :min y :max caracteres.',
+        'array' => 'El campo :attribute debe tener entre :min y :max elementos.',
+    ],
+    'date' => 'El campo :attribute no contiene una fecha válida.',
+    'date_format' => 'El campo :attribute debe tener el formato :format.',
+    'email' => 'El campo :attribute debe ser una dirección de correo válida.',
+    'in' => 'El valor seleccionado para :attribute no es válido.',
+    'integer' => 'El campo :attribute debe ser un número entero.',
+    'max' => [
+        'numeric' => 'El campo :attribute no puede ser mayor que :max.',
+        'string' => 'El campo :attribute no puede tener más de :max caracteres.',
+        'array' => 'El campo :attribute no puede tener más de :max elementos.',
+    ],
+    'min' => [
+        'numeric' => 'El campo :attribute debe ser como mínimo :min.',
+        'string' => 'El campo :attribute debe tener al menos :min caracteres.',
+        'array' => 'El campo :attribute debe tener al menos :min elementos.',
+    ],
+    'numeric' => 'El campo :attribute debe ser un número.',
+    'required' => 'El campo :attribute es obligatorio.',
+    'required_if' => 'El campo :attribute es obligatorio cuando :other es :value.',
+    'string' => 'El campo :attribute debe ser texto.',
+    'timezone' => 'La zona horaria indicada no es válida.',
+    'unique' => 'El valor de :attribute ya está registrado.',
+    'url' => 'El campo :attribute debe ser una URL válida.',
+    'attributes' => [
+        'alias' => 'alias',
+        'full_name' => 'nombre completo',
+        'city' => 'ciudad',
+        'country' => 'país',
+        'latitude' => 'latitud',
+        'longitude' => 'longitud',
+        'timezone_identifier' => 'zona horaria',
+        'local_date' => 'fecha de nacimiento',
+        'local_time' => 'hora de nacimiento',
+        'time_source' => 'fuente de la hora',
+        'time_precision' => 'precisión de la hora',
+        'shared.*' => 'contenido compartido',
+        'doors.*.*' => 'contenido de la puerta',
+    ],
+];

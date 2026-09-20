@@ -513,6 +513,12 @@
                     document.body.classList.add('is-loading');
                 };
 
+                const hideLoading = () => {
+                    overlay.classList.remove('is-visible');
+                    overlay.setAttribute('aria-busy', 'false');
+                    document.body.classList.remove('is-loading');
+                };
+
                 document.addEventListener('submit', (event) => {
                     if (!event.defaultPrevented) showLoading();
                 }, true);
@@ -521,6 +527,11 @@
                     const action = event.target.closest('a[data-loading], a[href], button[type="submit"]');
 
                     if (!action || event.defaultPrevented) return;
+                    if (action.matches('button[type="submit"]')) {
+                        const form = action.form || document.getElementById(action.getAttribute('form'));
+                        if (form && !form.checkValidity()) return;
+                    }
+
                     if (action.tagName === 'A') {
                         const href = action.getAttribute('href') || '';
                         if (!href || href.startsWith('#') || href.startsWith('javascript:') || action.target === '_blank') return;
@@ -528,18 +539,14 @@
 
                     showLoading();
                     if (action.tagName === 'A' && (action.getAttribute('href') || '').includes('/download')) {
-                        window.setTimeout(() => {
-                            overlay.classList.remove('is-visible');
-                            overlay.setAttribute('aria-busy', 'false');
-                            document.body.classList.remove('is-loading');
-                        }, 1500);
+                        window.setTimeout(hideLoading, 1500);
                     }
                 }, true);
 
+                if (document.querySelector('.p-message-error')) hideLoading();
+
                 window.addEventListener('pageshow', () => {
-                    overlay.classList.remove('is-visible');
-                    overlay.setAttribute('aria-busy', 'false');
-                    document.body.classList.remove('is-loading');
+                    hideLoading();
                 });
             })();
         </script>
