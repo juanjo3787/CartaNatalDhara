@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Domain\Astrology\RegencyResolver;
 use App\Models\Chart;
+use App\Models\ChartTemplate;
 use DateTimeInterface;
+use Illuminate\Support\Facades\DB;
 
 final class PhaseOneReportService
 {
@@ -173,6 +175,68 @@ final class PhaseOneReportService
         }
 
         return ['shared' => $shared, 'doors' => $doors];
+    }
+
+    /**
+     * Persiste en `interpretations` los bloques del informe que todavía no tengan
+     * una fila guardada (manual, IA o generada previamente), para que el snapshot
+     * quede fijado en base de datos y no dependa de recalcularse en cada visita.
+     *
+     * @param array<string, mixed> $report
+     */
+    public function persistGeneratedContent(Chart $chart, array $report): int
+    {
+        return DB::transaction(function () use ($chart, $report): int {
+            $stored = $chart->interpretations()
+                ->where('phase', 'fase-1')
+                ->get()
+                ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared') . '.' . $interpretation->block);
+
+            $saved = 0;
+
+            foreach ($report['shared'] as $block => $paragraphs) {
+                $storedBlock = ['intro' => 'shared_intro', 'states' => 'shared_states', 'conclusions' => 'shared_conclusions'][$block] ?? $block;
+                if (! $stored->has('shared.' . $storedBlock)) {
+                    $this->storeGeneratedBlock($chart, null, $storedBlock, implode("\n\n", $paragraphs), $saved);
+                }
+            }
+
+            foreach ($report['doors'] as $door) {
+                foreach ($door['blocks'] as $block => $paragraphs) {
+                    if (! $stored->has($door['key'] . '.' . $block)) {
+                        $this->storeGeneratedBlock($chart, $door['key'], $block, implode("\n\n", (array) $paragraphs), $saved);
+                    }
+                }
+            }
+
+            return $saved;
+        });
+    }
+
+    private function storeGeneratedBlock(Chart $chart, ?string $door, string $block, string $content, int &$saved): void
+    {
+        $name = 'fase1_' . ($door ?? 'shared') . '_' . $block . '_generated';
+        $template = ChartTemplate::firstOrCreate(
+            ['name' => $name, 'version' => 2],
+            [
+                'door' => $door,
+                'block' => $block,
+                'content_type' => 'phase1_generated',
+                'status' => 'published',
+                'content' => 'Contenido editorial generado automáticamente al regenerar o validar el informe.',
+            ],
+        );
+
+        $chart->interpretations()->create([
+            'template_id' => $template->id,
+            'phase' => 'fase-1',
+            'door' => $door,
+            'block' => $block,
+            'content' => trim($content),
+            'ai_assisted' => false,
+            'rulers_used' => [],
+        ]);
+        $saved++;
     }
 
     /** @return array<string, mixed> */

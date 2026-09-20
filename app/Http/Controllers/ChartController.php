@@ -152,6 +152,7 @@ class ChartController extends Controller
     private function storeReportPdf(Chart $chart, PhaseOneReportService $reportService, string $successMessage): RedirectResponse
     {
         $report = $reportService->build($chart);
+        $reportService->persistGeneratedContent($chart, $report);
         $pdf = app('dompdf.wrapper')
             ->loadView('charts.report', ['chart' => $chart, 'report' => $report, 'pdf' => true])
             ->setPaper('a4', 'portrait')
