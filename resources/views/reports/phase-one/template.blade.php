@@ -10,9 +10,9 @@
 @endphp
 
 <style>
-    .report-document { margin: -2rem; background: #fff; color: #202020; font-family: Aptos, 'Segoe UI', sans-serif; }
-    .report-page { padding: 4rem 4.5rem; min-height: 900px; border-bottom: 1px solid #eee; }
-    .report-cover { min-height: 900px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; background: #fffdf9; }
+    .report-document { width: min(100%, 210mm); margin: -2rem auto; background: #fff; color: #202020; font-family: Aptos, 'Segoe UI', sans-serif; }
+    .report-page { width: 100%; min-height: 297mm; padding: 20mm 18mm; border-bottom: 1px solid #eee; }
+    .report-cover { min-height: 297mm; display: flex; flex-direction: column; justify-content: space-between; text-align: center; background: #fffdf9; }
     .report-brand { letter-spacing: .18em; font: 700 .75rem Aptos, 'Segoe UI', sans-serif; color: #6d5a48; }
     .report-cover h1 { margin: 5rem 0 1rem; font: 400 3.2rem/1.1 Aptos, 'Segoe UI', sans-serif; letter-spacing: 0; color: #1d1d1d; }
     .report-cover h2 { margin: 0; font: 400 1.35rem/1.5 Aptos, 'Segoe UI', sans-serif; color: #695c52; }
@@ -66,7 +66,11 @@
     .report-door-intro-title { margin-bottom: 2rem; }
     .report-arrow-title::before { content: '➜ '; color: #b58b67; }
     .report-gray { padding: 1rem 1.25rem; background: #f1eeeb; }
-    @page { size: A4; margin: 16mm 15mm 17mm; }
+    @media screen and (max-width: 700px) {
+        .report-index-grid { grid-template-columns: 1fr; }
+        .report-page { padding-left: 10mm; padding-right: 10mm; }
+    }
+    @page { size: A4 portrait; margin: 16mm 15mm 17mm; }
     html, body { margin: 0; padding: 0; background: #fff; }
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { margin: 0; padding: 0; }
