@@ -1,19 +1,22 @@
 services:
   app:
     container_name: cartaNatal-app
+    image: carta-natal-dhara:latest
     build:
       context: .
       dockerfile: Dockerfile
     working_dir: /var/www/html
+    ports:
+      - "${APP_PORT:-8080}:8000"
     volumes:
-      - ./:/var/www/html
-      - storage:/var/www/html/storage
-    network_mode: host
+      - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/storage:/var/www/html/storage
+      - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/bootstrap-cache:/var/www/html/bootstrap/cache
     env_file:
       - .env
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-
-volumes:
-  storage:
+      APP_URL: ${APP_URL:-https://cartanataldhara.synology.me}
+      ASTROLOGY_EPHEMERIS_PATH: /opt/ephemeris
+      ASTROLOGY_SWETEST_BIN: /usr/local/bin/swetest
+    restart: unless-stopped

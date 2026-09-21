@@ -59,11 +59,19 @@ php artisan serve
 
 ## Arranque con Docker en el Synology
 
-1. Copiar `.env.example` a `.env` y completar `DB_USERNAME`/`DB_PASSWORD` con las credenciales reales.
-2. Ejecutar `docker compose build`.
-3. Ejecutar `docker compose up -d`.
-4. Ejecutar las migraciones: `docker compose exec app php artisan migrate --force`.
-5. Abrir `http://<ip-del-synology>:8080`.
+El despliegue esta preparado para vivir en `/volume1/docker/configCNDhara`.
+
+1. Copiar el proyecto completo a `/volume1/docker/configCNDhara`.
+2. Completar `/volume1/docker/configCNDhara/app/.env` con `APP_KEY`, `DB_PASSWORD` y `AI_API_KEY` reales.
+3. Ejecutar desde SSH en el Synology:
+  ```sh
+  cd /volume1/docker/configCNDhara
+  chmod +x deploy.sh
+  ./deploy.sh
+  ```
+4. Abrir `http://<ip-del-synology>:8080`.
+
+El script crea las carpetas persistentes `storage` y `bootstrap-cache` en la ruta de la NAS, reconstruye la imagen, arranca el contenedor, ejecuta migraciones y cachea la configuracion de Laravel.
 
 ## Estructura del dominio astrologico
 
