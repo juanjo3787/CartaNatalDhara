@@ -23,6 +23,15 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
+if ! git -C "$PROJECT_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "$PROJECT_PATH no es un repositorio Git valido. No se puede actualizar el proyecto automaticamente."
+    exit 1
+fi
+
+echo "Actualizando codigo en $PROJECT_PATH..."
+git -C "$PROJECT_PATH" fetch --prune
+git -C "$PROJECT_PATH" reset --hard "@{u}"
+
 mkdir -p \
     "$DEPLOY_PATH/storage/app" \
     "$DEPLOY_PATH/storage/framework/cache" \
@@ -31,10 +40,23 @@ mkdir -p \
     "$DEPLOY_PATH/storage/logs" \
     "$DEPLOY_PATH/bootstrap-cache"
 
+export ENV_FILE
+export COMPOSE_ENV_FILE="$ENV_FILE"
+
+echo "Construyendo imagen Docker desde $APP_PATH..."
+cd "$APP_PATH"
+docker build -t carta-natal-dhara:latest .
+
 cd "$DEPLOY_PATH"
 
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down --remove-orphans || true
+
+if docker ps -a --format '{{.Names}}' | grep -Fxq 'cartaNatal-app'; then
+    echo "Eliminando contenedor anterior cartaNatal-app..."
+    docker rm -f cartaNatal-app
+fi
+
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan migrate --force
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan optimize:clear
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan config:cache

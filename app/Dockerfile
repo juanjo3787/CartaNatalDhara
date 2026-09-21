@@ -26,6 +26,8 @@ ENV ASTROLOGY_SWETEST_BIN=/usr/local/bin/swetest
 
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
+WORKDIR /var/www/html
+
 COPY composer.json composer.lock* ./
 RUN if [ -f composer.lock ]; then composer install --no-interaction --prefer-dist --no-progress --no-scripts; fi
 

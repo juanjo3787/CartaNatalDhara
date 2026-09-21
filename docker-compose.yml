@@ -12,7 +12,7 @@ services:
       - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/storage:/var/www/html/storage
       - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/bootstrap-cache:/var/www/html/bootstrap/cache
     env_file:
-      - ${ENV_FILE:-./.env}
+      - ${COMPOSE_ENV_FILE:-./.env}
     environment:
       APP_ENV: production
       APP_DEBUG: "false"

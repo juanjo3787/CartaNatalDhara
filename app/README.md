@@ -75,7 +75,7 @@ El despliegue usa dos rutas en el Synology:
   ```
 5. Abrir `https://cartanataldhara.synology.me`.
 
-El script crea las carpetas persistentes `storage` y `bootstrap-cache` en la ruta de la NAS, reconstruye la imagen, arranca el contenedor, ejecuta migraciones y cachea la configuracion de Laravel.
+El script actualiza el codigo con `git fetch --prune` y `git reset --hard @{u}`, crea las carpetas persistentes `storage` y `bootstrap-cache` en la ruta de configuracion, construye la imagen desde la carpeta `app`, elimina un contenedor anterior `cartaNatal-app` si existe, arranca el contenedor con Compose sin reconstruirlo, ejecuta migraciones y cachea la configuracion de Laravel.
 
 ## Estructura del dominio astrologico
 
