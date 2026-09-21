@@ -75,7 +75,7 @@ El despliegue usa dos rutas en el Synology:
   ```
 5. Abrir `https://cartanataldhara.synology.me`.
 
-El script actualiza el codigo con `git fetch --prune` y `git reset --hard @{u}`, crea las carpetas persistentes `storage` y `bootstrap-cache` en la ruta de configuracion, construye la imagen desde la carpeta `app`, elimina un contenedor anterior `cartaNatal-app` si existe, arranca el contenedor con Compose sin reconstruirlo, ejecuta migraciones y cachea la configuracion de Laravel.
+El script actualiza el codigo con `git fetch --prune` y `git reset --hard @{u}`, crea las carpetas persistentes `storage` y `bootstrap-cache` en la ruta de configuracion, construye la imagen desde la carpeta `app`, genera `APP_KEY` si falta en el `.env`, la regenera si `ROTATE_APP_KEY=true`, elimina un contenedor anterior `cartaNatal-app` si existe, arranca el contenedor con Compose sin reconstruirlo, ejecuta migraciones, cachea la configuracion de Laravel y comprueba la respuesta local para mostrar logs si aparece una 500.
 
 ## Estructura del dominio astrologico
 

@@ -47,6 +47,27 @@ echo "Construyendo imagen Docker desde $APP_PATH..."
 cd "$APP_PATH"
 docker build -t carta-natal-dhara:latest .
 
+APP_KEY_VALUE="$(grep -E '^APP_KEY=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- || true)"
+ROTATE_APP_KEY_VALUE="$(grep -E '^ROTATE_APP_KEY=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- | tr -d '"' || true)"
+if [ -z "$APP_KEY_VALUE" ] || [ "$ROTATE_APP_KEY_VALUE" = "true" ]; then
+    if [ "$ROTATE_APP_KEY_VALUE" = "true" ]; then
+        echo "ROTATE_APP_KEY=true. Regenerando APP_KEY de Laravel..."
+    else
+        echo "APP_KEY no existe en $ENV_FILE. Generando clave de Laravel..."
+    fi
+    GENERATED_APP_KEY="$(docker run --rm carta-natal-dhara:latest php -r 'echo "base64:".base64_encode(random_bytes(32));')"
+    if grep -q -E '^APP_KEY=' "$ENV_FILE"; then
+        sed -i "s#^APP_KEY=.*#APP_KEY=$GENERATED_APP_KEY#" "$ENV_FILE"
+    else
+        printf '\nAPP_KEY=%s\n' "$GENERATED_APP_KEY" >> "$ENV_FILE"
+    fi
+
+    if [ "$ROTATE_APP_KEY_VALUE" = "true" ]; then
+        sed -i "s#^ROTATE_APP_KEY=.*#ROTATE_APP_KEY=false#" "$ENV_FILE"
+        echo "ROTATE_APP_KEY se ha vuelto a dejar en false para evitar regeneraciones accidentales."
+    fi
+fi
+
 cd "$DEPLOY_PATH"
 
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down --remove-orphans || true
@@ -60,5 +81,17 @@ docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan migrate --force
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan optimize:clear
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan config:cache
+
+APP_PORT_VALUE="$(grep -E '^APP_PORT=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- | tr -d '"' || true)"
+APP_PORT_VALUE="${APP_PORT_VALUE:-8080}"
+
+if command -v curl >/dev/null 2>&1; then
+    HTTP_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT_VALUE/charts" || true)"
+    if [ "$HTTP_STATUS" -ge 500 ] 2>/dev/null; then
+        echo "La aplicacion responde con HTTP $HTTP_STATUS. Ultimos logs del contenedor:"
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=80 app
+        exit 1
+    fi
+fi
 
 echo "Despliegue finalizado: ${APP_URL:-https://cartanataldhara.synology.me}"

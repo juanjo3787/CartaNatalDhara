@@ -1,3 +1,14 @@
+# Compila los assets de front-end (Vite) para generar public/build.
+FROM node:22-bookworm-slim AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
 # Compila swetest (Swiss Ephemeris) y descarga las efemerides oficiales.
 # Swiss Ephemeris es AGPL: https://github.com/aloistr/swisseph
 FROM debian:bookworm-slim AS ephemeris
@@ -32,6 +43,7 @@ COPY composer.json composer.lock* ./
 RUN if [ -f composer.lock ]; then composer install --no-interaction --prefer-dist --no-progress --no-scripts; fi
 
 COPY . .
+COPY --from=assets /app/public/build /var/www/html/public/build
 RUN composer dump-autoload --optimize
 
 EXPOSE 8000
