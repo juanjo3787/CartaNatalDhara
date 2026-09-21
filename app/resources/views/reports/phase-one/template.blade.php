@@ -77,7 +77,13 @@
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { margin: 0; padding: 0; }
     .report-page { min-height: 0; height: auto; padding: 0; border: 0; }
-    .report-cover { min-height: 250mm; height: 250mm; padding: 18mm 10mm; box-sizing: border-box; page-break-after: always; }
+    /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
+    .report-cover { display: block; position: relative; min-height: 250mm; height: 250mm; padding: 18mm 10mm; box-sizing: border-box; page-break-after: always; }
+    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; }
+    .report-index-grid { display: block; }
+    .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
+    .report-door { page-break-before: always; }
+    .report-door-heading { page-break-inside: avoid; }
     .report-page h2 { font-size: 21pt; } .report-page p { max-width: 72ch; font-size: 10.5pt; line-height: 1.48; }
     .report-gray p { font-size: 9.5pt; line-height: 1.42; } .report-block { margin: 18pt 0; page-break-inside: avoid; }
     .report-block-title { padding: 6pt 10pt; font-size: 11pt; box-shadow: none; } .report-table { font-size: 8.5pt; }

@@ -562,6 +562,12 @@
 </head>
 <body>
     <div class="page-shell">
+        @auth
+            <form method="POST" action="{{ route('logout') }}" style="text-align: right; margin-bottom: .5rem;">
+                @csrf
+                <button type="submit" style="margin: 0; padding: .4rem .8rem; font-size: .82rem;">Cerrar sesión</button>
+            </form>
+        @endauth
         <div class="card">
             @yield('content')
         </div>

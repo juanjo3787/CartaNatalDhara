@@ -79,6 +79,7 @@ fi
 
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan migrate --force
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan db:seed --force
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan optimize:clear
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan config:cache
 
