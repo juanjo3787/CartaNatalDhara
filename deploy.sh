@@ -2,11 +2,18 @@
 set -eu
 
 DEPLOY_PATH="${DEPLOY_PATH:-/volume1/docker/configCNDhara}"
-APP_PATH="$DEPLOY_PATH/app"
-ENV_FILE="$APP_PATH/.env"
+PROJECT_PATH="${PROJECT_PATH:-/volume1/docker/CartaNatalDhara}"
+APP_PATH="$PROJECT_PATH/app"
+ENV_FILE="$DEPLOY_PATH/.env"
+COMPOSE_FILE="$DEPLOY_PATH/docker-compose.yml"
 
 if [ ! -d "$APP_PATH" ]; then
-    echo "No existe $APP_PATH. Copia el proyecto completo en $DEPLOY_PATH antes de desplegar."
+    echo "No existe $APP_PATH. Copia el proyecto completo en $PROJECT_PATH antes de desplegar."
+    exit 1
+fi
+
+if [ ! -f "$COMPOSE_FILE" ]; then
+    echo "No existe $COMPOSE_FILE. Copia docker-compose.yml en $DEPLOY_PATH antes de desplegar."
     exit 1
 fi
 
@@ -26,10 +33,10 @@ mkdir -p \
 
 cd "$DEPLOY_PATH"
 
-docker compose --env-file "$ENV_FILE" build
-docker compose --env-file "$ENV_FILE" up -d
-docker compose --env-file "$ENV_FILE" exec -T app php artisan migrate --force
-docker compose --env-file "$ENV_FILE" exec -T app php artisan optimize:clear
-docker compose --env-file "$ENV_FILE" exec -T app php artisan config:cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan migrate --force
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan optimize:clear
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan config:cache
 
 echo "Despliegue finalizado: ${APP_URL:-https://cartanataldhara.synology.me}"

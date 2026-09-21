@@ -59,17 +59,21 @@ php artisan serve
 
 ## Arranque con Docker en el Synology
 
-El despliegue esta preparado para vivir en `/volume1/docker/configCNDhara`.
+El despliegue usa dos rutas en el Synology:
 
-1. Copiar el proyecto completo a `/volume1/docker/configCNDhara`.
-2. Completar `/volume1/docker/configCNDhara/app/.env` con `APP_KEY`, `DB_PASSWORD` y `AI_API_KEY` reales.
-3. Ejecutar desde SSH en el Synology:
+- Configuracion y compose: `/volume1/docker/configCNDhara`.
+- Codigo del proyecto: `/volume1/docker/CartaNatalDhara`.
+
+1. Copiar el proyecto completo a `/volume1/docker/CartaNatalDhara`.
+2. Copiar `docker-compose.yml`, `.env` y `deploy.sh` a `/volume1/docker/configCNDhara`.
+3. Completar `/volume1/docker/configCNDhara/.env` con `APP_KEY`, `DB_PASSWORD` y `AI_API_KEY` reales.
+4. Ejecutar desde SSH en el Synology:
   ```sh
   cd /volume1/docker/configCNDhara
   chmod +x deploy.sh
   ./deploy.sh
   ```
-4. Abrir `http://<ip-del-synology>:8080`.
+5. Abrir `https://cartanataldhara.synology.me`.
 
 El script crea las carpetas persistentes `storage` y `bootstrap-cache` en la ruta de la NAS, reconstruye la imagen, arranca el contenedor, ejecuta migraciones y cachea la configuracion de Laravel.
 

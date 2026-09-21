@@ -3,7 +3,7 @@ services:
     container_name: cartaNatal-app
     image: carta-natal-dhara:latest
     build:
-      context: ./app
+      context: ${PROJECT_PATH:-/volume1/docker/CartaNatalDhara}/app
       dockerfile: Dockerfile
     working_dir: /var/www/html
     ports:
@@ -12,7 +12,7 @@ services:
       - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/storage:/var/www/html/storage
       - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/bootstrap-cache:/var/www/html/bootstrap/cache
     env_file:
-      - ./app/.env
+      - ${ENV_FILE:-./.env}
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
