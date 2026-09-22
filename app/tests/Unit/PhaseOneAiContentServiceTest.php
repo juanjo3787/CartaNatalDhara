@@ -27,6 +27,9 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertStringContainsString('descendente', strtolower($prompts['user']));
         $this->assertStringContainsString('Venus ya explicado', $prompts['user']);
         $this->assertStringContainsString('regentes_ya_presentados', $prompts['user']);
+        $this->assertStringContainsString('No des una explicación genérica de astrología', $prompts['system']);
+        $this->assertStringContainsString('Cada característica debe tener su propia pauta y ejemplo', $prompts['system']);
+        $this->assertStringContainsString('lista_de_comprobacion_antes_de_responder', $prompts['user']);
         $this->assertSame(10, count($builder->blocks()));
     }
 

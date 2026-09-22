@@ -31,6 +31,14 @@ final class PhaseOnePromptBuilder
             'Estas instrucciones son obligatorias. La fuente específica de esta puerta es: '.$instructions['source'],
             ...array_map(static fn (string $rule): string => '- '.$rule, $this->instructionCatalog->general()),
             ...array_map(static fn (string $rule): string => '- '.$rule, $instructions['rules']),
+            'El cumplimiento se evalúa por bloque. No des una explicación genérica de astrología ni reutilices una idea con sinónimos para alcanzar la extensión.',
+            'En function explica solo la función específica de esta puerta y cómo se distingue de las otras tres; todavía no interpretes signo, casa, regente ni estados.',
+            'En sign responde cómo se expresa la función de esta puerta a través del signo; no copies una interpretación del mismo signo que serviría para otra puerta.',
+            'En house desarrolla seis perspectivas distintas del territorio o eje indicado. Cada párrafo debe añadir una condición, proceso, responsabilidad, participación o cambio temporal nuevo.',
+            'En ruler explica primero qué aporta el regente a la pregunta de esta puerta y después cómo su signo y casa lo matizan; si ya se presentó, úsalo solo como puente y aporta una consecuencia nueva.',
+            'En integration construye consecuencias que solo aparecen al reunir puerta, signo, casa o eje y regente. Incluye una escena o proceso observable, no una suma de resúmenes.',
+            'En harmony, deficit y excess conserva exactamente las características recibidas en datos_carta. Cada característica debe tener su propia pauta y ejemplo, en el mismo orden, y los ejemplos deben variar de contexto.',
+            'En closing incluye síntesis, aprendizaje principal, recurso, riesgo, cinco preguntas de autoobservación y una frase central de integración con frases de apoyo.',
             'Devuelve exclusivamente un objeto JSON con las claves solicitadas y sin texto fuera del JSON.',
             'Cada bloque debe ser una matriz de strings. Para los bloques con características/pautas/ejemplos, cada string debe ser un fragmento HTML limpio y estructurado, con formato de lista obligatoriamente: <ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol> .',
             'No uses Markdown ni texto plano en bloques que requieren lista. Si no puedes seguir ese formato, reformula el bloque para que sí lo cumpla.',
@@ -60,6 +68,12 @@ final class PhaseOnePromptBuilder
                 'deficit' => '4 strings HTML de estilo lista, con 7 elementos de característica/pauta/ejemplo como mínimo.',
                 'excess' => '4 strings HTML de estilo lista, con 7 elementos de característica/pauta/ejemplo como mínimo.',
                 'closing' => 'Síntesis, aprendizaje principal, recurso, riesgo, preguntas de autoobservación y frase breve de integración.',
+            ],
+            'lista_de_comprobacion_antes_de_responder' => [
+                'Cada bloque responde su propia pregunta y no anticipa el contenido de un bloque posterior.',
+                'No hay párrafos equivalentes ni listas con ejemplos del mismo contexto repetido.',
+                'Luna solo aborda necesidad emocional, cuidado y regulación; Ascendente solo inicio, orientación y ritmo; Descendente solo reciprocidad, acuerdos y dos subjetividades.',
+                'No hay predicciones, diagnósticos, etiquetas fijas ni hechos biográficos atribuidos a la persona.',
             ],
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
