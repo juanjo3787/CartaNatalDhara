@@ -32,8 +32,10 @@ final class PhaseOnePromptBuilder
             ...array_map(static fn (string $rule): string => '- '.$rule, $this->instructionCatalog->general()),
             ...array_map(static fn (string $rule): string => '- '.$rule, $instructions['rules']),
             'Devuelve exclusivamente un objeto JSON con las claves solicitadas y sin texto fuera del JSON.',
-            'Cada bloque debe ser una lista ordenada de párrafos. Para características, pautas y ejemplos usa HTML simple dentro de un elemento de lista: <ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>. No uses Markdown.',
+            'Cada bloque debe ser una matriz de strings. Para los bloques con características/pautas/ejemplos, cada string debe ser un fragmento HTML limpio y estructurado, con formato de lista obligatoriamente: <ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol> .',
+            'No uses Markdown ni texto plano en bloques que requieren lista. Si no puedes seguir ese formato, reformula el bloque para que sí lo cumpla.',
             'No introduzcas etiquetas HTML peligrosas, scripts, estilos, enlaces ni atributos; solo se permiten p, ul, ol, li, strong, em y br.',
+            'Prioriza claridad editorial, continuidad, orden lógico y lectura fluida. Cada string debe ser una unidad completa, no una concatenación de frases sueltas.',
         ]);
 
         $user = json_encode([
@@ -54,9 +56,9 @@ final class PhaseOnePromptBuilder
                 'house' => '6 párrafos sobre el territorio vital y manifestaciones concretas.',
                 'ruler' => '6 párrafos; 8 o más si hay doble regencia.',
                 'integration' => '4 párrafos con una escena cotidiana.',
-                'harmony' => '4 párrafos y características, pautas y ejemplos correspondientes.',
-                'deficit' => '4 párrafos y 7 características, 7 pautas y 7 ejemplos correspondientes.',
-                'excess' => '4 párrafos y 7 características, 7 pautas y 7 ejemplos correspondientes.',
+                'harmony' => '4 strings HTML de estilo lista, con 7 elementos de característica/pauta/ejemplo como mínimo.',
+                'deficit' => '4 strings HTML de estilo lista, con 7 elementos de característica/pauta/ejemplo como mínimo.',
+                'excess' => '4 strings HTML de estilo lista, con 7 elementos de característica/pauta/ejemplo como mínimo.',
                 'closing' => 'Síntesis, aprendizaje principal, recurso, riesgo, preguntas de autoobservación y frase breve de integración.',
             ],
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
