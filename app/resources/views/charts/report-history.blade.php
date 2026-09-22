@@ -3,6 +3,10 @@
 @section('content')
 <h1>Histórico de generaciones y costes</h1>
 <p>{{ $chart->person->full_name ?: $chart->person->alias }}</p>
+<section class="note" aria-label="Totales de uso de IA">
+<strong>Total acumulado de IA</strong>
+<p>{{ number_format($totals['tokens']) }} tokens · Base: {{ number_format($totals['subtotal'], 8, ',', '.') }} {{ $totals['currency'] }} · IVA: {{ number_format($totals['tax'], 8, ',', '.') }} {{ $totals['currency'] }} · Total: {{ number_format($totals['total'], 8, ',', '.') }} {{ $totals['currency'] }}</p>
+</section>
 <table><tr><th>Fecha</th><th>Tipo</th><th>Puerta/modelo</th><th>Tokens</th><th>Coste base</th><th>IVA</th><th>Total</th><th>Acción</th></tr>
 @forelse ($generations as $generation)
 <tr>

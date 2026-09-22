@@ -16,6 +16,7 @@ return [
     'pricing' => [
         'gpt-4o-mini' => ['input' => 0.15, 'output' => 0.60],
         'gpt-4.1-mini' => ['input' => 0.40, 'output' => 1.60],
+        'gpt-5' => ['input' => 1.25, 'output' => 10.00],
         'gpt-5-mini' => ['input' => 0.25, 'output' => 2.00],
     ],
 ];

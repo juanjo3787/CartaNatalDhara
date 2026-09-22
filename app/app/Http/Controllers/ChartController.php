@@ -276,7 +276,20 @@ class ChartController extends Controller
 
     public function reportHistory(Chart $chart): View
     {
-        return view('charts.report-history', ['chart' => $chart, 'generations' => $chart->reportGenerations()->latest()->get()]);
+        $generations = $chart->reportGenerations()->latest()->get();
+        $aiGenerations = $generations->where('ai_assisted', true);
+
+        return view('charts.report-history', [
+            'chart' => $chart,
+            'generations' => $generations,
+            'totals' => [
+                'tokens' => (int) $aiGenerations->sum('total_tokens'),
+                'subtotal' => (float) $aiGenerations->sum('cost_subtotal'),
+                'tax' => (float) $aiGenerations->sum('tax_amount'),
+                'total' => (float) $aiGenerations->sum('cost_total'),
+                'currency' => $aiGenerations->pluck('cost_currency')->filter()->first() ?? config('ai.currency', 'EUR'),
+            ],
+        ]);
     }
 
     public function personHistory(Chart $chart): View

@@ -24,6 +24,8 @@
     .editor-block label { display: block; margin-bottom: .45rem; font-weight: 700; color: #674b39; }
     .editor-toolbar-actions { display: flex; gap: .35rem; margin-bottom: .35rem; }
     .editor-toolbar-actions button { margin: 0; padding: .35rem .55rem; border: 1px solid #b58b67; border-radius: 4px; background: #fffaf5; color: #674b39; font-size: .78rem; box-shadow: none; }
+    .ai-generation-status { margin: .5rem 0 0; color: #674b39; font-size: .84rem; }
+    .ai-generation-status.is-error { color: #9f2d2d; }
     .quill-toolbar { border: 1px solid #d7d1ca !important; border-bottom: 0 !important; border-radius: 4px 4px 0 0; background: #fffaf5; }
     .rich-editor { min-height: 150px; border: 1px solid #d7d1ca !important; border-radius: 0 0 4px 4px; background: #fff; }
     .rich-editor .ql-editor { min-height: 150px; font: 1rem/1.6 Aptos, 'Segoe UI', sans-serif; color: #202020; }
@@ -34,11 +36,12 @@
 <div class="report-editor">
     <div class="editor-toolbar">
         <div><span class="badge">Edición del informe</span><h1>Editar informe Fase 1</h1></div>
-        <form method="POST" action="{{ route('charts.report.ai.all', $chart) }}" data-confirm-message="¿Generar las cuatro puertas con IA en orden de continuidad?">
+        <form id="generate-all-ai-form" method="POST" action="{{ route('charts.report.ai.all', $chart) }}" data-confirm-message="¿Generar las cuatro puertas con IA en orden de continuidad?">
             @csrf
             <button type="submit" style="margin:0; padding:.65rem .9rem; font-size:.78rem;">Generar las cuatro puertas con IA</button>
         </form>
     </div>
+    <p class="ai-generation-status" data-ai-generation-status role="status" aria-live="polite"></p>
 
     @if ($errors->any())
         <div class="note"><strong>Revisa el formulario:</strong><ul>@foreach ($errors->all() as $error)<li class="error">{{ $error }}</li>@endforeach</ul></div>
@@ -85,6 +88,44 @@
                 const editor = editors.get(field.dataset.editorValue);
                 field.value = editor?.root.innerHTML || '';
             });
+        });
+
+        const generateAllForm = document.getElementById('generate-all-ai-form');
+        const generationStatus = document.querySelector('[data-ai-generation-status]');
+        generateAllForm?.addEventListener('submit', async (event) => {
+            if (event.defaultPrevented) return;
+
+            event.preventDefault();
+            const button = generateAllForm.querySelector('button[type="submit"]');
+            const doors = ['sol', 'luna', 'ascendente', 'descendente'];
+            button.disabled = true;
+            generationStatus.classList.remove('is-error');
+
+            try {
+                for (let index = 0; index < doors.length; index += 1) {
+                    const door = doors[index];
+                    const doorForm = document.querySelector(`form[action$="/report/ai/${door}"]`);
+                    if (!doorForm) throw new Error(`No se encontró el formulario de ${door}.`);
+
+                    generationStatus.textContent = `Generando ${door} (${index + 1} de ${doors.length})...`;
+                    const response = await fetch(doorForm.action, {
+                        method: 'POST',
+                        body: new FormData(doorForm),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    const responseBody = await response.text();
+                    if (!response.ok || responseBody.includes('Error de IA:')) {
+                        throw new Error(`No se pudo generar ${door}.`);
+                    }
+                }
+
+                generationStatus.textContent = 'Las cuatro puertas se han generado. Actualizando el informe...';
+                window.location.assign('{{ route('charts.report.edit', $chart) }}');
+            } catch (error) {
+                generationStatus.textContent = error.message || 'No se pudo completar la generación con IA.';
+                generationStatus.classList.add('is-error');
+                button.disabled = false;
+            }
         });
     });
 </script>

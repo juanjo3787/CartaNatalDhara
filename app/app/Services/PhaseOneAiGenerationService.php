@@ -68,7 +68,7 @@ final class PhaseOneAiGenerationService
     private function storeAiCost(Chart $chart, string $door, array $usage): void
     {
         $model = (string) config('ai.model');
-        $pricing = config("ai.pricing.{$model}", ['input' => 0, 'output' => 0]);
+        $pricing = config('ai.pricing', [])[$model] ?? ['input' => 0, 'output' => 0];
         $exchangeRate = (float) config('ai.usd_to_eur', 0.92);
         $inputCost = ($usage['input_tokens'] / 1_000_000) * (float) $pricing['input'] * $exchangeRate;
         $outputCost = ($usage['output_tokens'] / 1_000_000) * (float) $pricing['output'] * $exchangeRate;
