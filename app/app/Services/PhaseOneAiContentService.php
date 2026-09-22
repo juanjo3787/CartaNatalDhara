@@ -64,7 +64,7 @@ final class PhaseOneAiContentService
             if (! in_array($block, ['harmony', 'deficit', 'excess'], true)) {
                 $result[$block] = array_values(array_filter(
                     array_merge(...array_map(
-                        static fn (string $paragraph): array => preg_split('/\R{2,}/', trim($paragraph)) ?: [$paragraph],
+                        static fn (string $paragraph): array => preg_split('/\R+|(?<=<\/p>)\s*(?=<p>)/i', trim($paragraph)) ?: [$paragraph],
                         $result[$block],
                     )),
                     static fn (string $paragraph): bool => trim($paragraph) !== '',

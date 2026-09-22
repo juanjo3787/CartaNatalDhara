@@ -178,4 +178,26 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertCount(3, $result['closing']);
         $this->assertSame('Párrafo generado', $result['closing'][0]);
     }
+
+    public function test_it_splits_grouped_narrative_paragraphs_before_validating_minimums(): void
+    {
+        config(['ai.enabled' => true]);
+        $minimums = [
+            'shared_intro' => "Uno\nDos\nTres", 'function' => "Uno\nDos\nTres", 'sign' => "Uno\nDos\nTres\nCuatro",
+            'house' => "Uno\nDos\nTres\nCuatro\nCinco\nSeis", 'ruler' => "Uno\nDos\nTres\nCuatro\nCinco\nSeis",
+            'integration' => "Uno\nDos\nTres\nCuatro", 'harmony' => ['H1', 'H2', 'H3', 'H4'],
+            'deficit' => ['D1', 'D2', 'D3', 'D4'], 'excess' => ['E1', 'E2', 'E3', 'E4'],
+            'closing' => "Uno\nDos\nTres",
+        ];
+        $generator = new class($minimums) implements AiTextGenerator {
+            public function __construct(private array $blocks) {}
+            public function generate(string $systemPrompt, string $userPrompt): array { return $this->blocks; }
+        };
+
+        $result = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate('descendente', ['subject' => 'El Descendente']);
+
+        $this->assertCount(3, $result['shared_intro']);
+        $this->assertCount(6, $result['house']);
+        $this->assertCount(3, $result['closing']);
+    }
 }
