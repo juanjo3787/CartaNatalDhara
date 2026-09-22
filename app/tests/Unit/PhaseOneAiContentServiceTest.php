@@ -23,7 +23,7 @@ class PhaseOneAiContentServiceTest extends TestCase
         ]);
 
         $this->assertStringContainsString('deseo, petición, acuerdo y norma', $prompts['system']);
-        $this->assertStringContainsString('INSTRUCCIONES_CONTINUIDAD_DESCENDENTE_FASE_1.pdf', $prompts['system']);
+        $this->assertStringContainsString('INSTRUCCIONES_CONTINUIDAD_DESCENDENTE_FASE_1.docx', $prompts['system']);
         $this->assertStringContainsString('descendente', strtolower($prompts['user']));
         $this->assertStringContainsString('Venus ya explicado', $prompts['user']);
         $this->assertStringContainsString('regentes_ya_presentados', $prompts['user']);

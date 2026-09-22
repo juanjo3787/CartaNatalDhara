@@ -31,7 +31,9 @@ final class PhaseOnePromptBuilder
             'Estas instrucciones son obligatorias. La fuente específica de esta puerta es: '.$instructions['source'],
             ...array_map(static fn (string $rule): string => '- '.$rule, $this->instructionCatalog->general()),
             ...array_map(static fn (string $rule): string => '- '.$rule, $instructions['rules']),
-            'Devuelve exclusivamente un objeto JSON con las claves solicitadas. Cada valor debe ser una lista de párrafos en español. No incluyas Markdown, encabezados ni texto fuera del JSON.',
+            'Devuelve exclusivamente un objeto JSON con las claves solicitadas y sin texto fuera del JSON.',
+            'Cada bloque debe ser una lista ordenada de párrafos. Para características, pautas y ejemplos usa HTML simple dentro de un elemento de lista: <ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>. No uses Markdown.',
+            'No introduzcas etiquetas HTML peligrosas, scripts, estilos, enlaces ni atributos; solo se permiten p, ul, ol, li, strong, em y br.',
         ]);
 
         $user = json_encode([
@@ -53,9 +55,9 @@ final class PhaseOnePromptBuilder
                 'ruler' => '6 párrafos; 8 o más si hay doble regencia.',
                 'integration' => '4 párrafos con una escena cotidiana.',
                 'harmony' => '4 párrafos y características, pautas y ejemplos correspondientes.',
-                'deficit' => '4 párrafos y 7 características, pautas y ejemplos correspondientes.',
-                'excess' => '4 párrafos y 7 características, pautas y ejemplos correspondientes.',
-                'closing' => 'Recorrido desde defecto y exceso, equilibrio, preguntas y frases.',
+                'deficit' => '4 párrafos y 7 características, 7 pautas y 7 ejemplos correspondientes.',
+                'excess' => '4 párrafos y 7 características, 7 pautas y 7 ejemplos correspondientes.',
+                'closing' => 'Síntesis, aprendizaje principal, recurso, riesgo, preguntas de autoobservación y frase breve de integración.',
             ],
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
