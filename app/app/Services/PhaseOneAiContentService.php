@@ -9,6 +9,8 @@ final class PhaseOneAiContentService
 {
     /** @var array{input_tokens: int, output_tokens: int, total_tokens: int} */
     private array $lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
+    /** @var array{system: string, user: string} */
+    private array $lastPrompts = ['system' => '', 'user' => ''];
 
     private const MINIMUM_PARAGRAPHS = [
         'shared_intro' => 3,
@@ -40,6 +42,7 @@ final class PhaseOneAiContentService
         }
 
         $prompts = $this->promptBuilder->build($door, $context);
+        $this->lastPrompts = $prompts;
         $result = $this->generator->generate($prompts['system'], $prompts['user']);
         $usage = $result['_usage'] ?? [];
         $this->lastUsage = [
@@ -75,5 +78,11 @@ final class PhaseOneAiContentService
     public function usage(): array
     {
         return $this->lastUsage;
+    }
+
+    /** @return array{system: string, user: string} */
+    public function prompts(): array
+    {
+        return $this->lastPrompts;
     }
 }

@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/charts/{chart}/registration/edit', [ChartController::class, 'editRegistration'])->name('charts.registration.edit');
     Route::put('/charts/{chart}/registration', [ChartController::class, 'updateRegistration'])->name('charts.registration.update');
     Route::get('/charts/{chart}/report/history', [ChartController::class, 'reportHistory'])->name('charts.report.history');
+    Route::get('/charts/{chart}/report/history/{generation}/prompts', [ChartController::class, 'promptHistory'])->name('charts.report.prompts');
     Route::get('/charts/{chart}/person/history', [ChartController::class, 'personHistory'])->name('charts.person.history');
     Route::get('/charts/{chart}/report', [ChartController::class, 'report'])->name('charts.report');
     Route::get('/charts/{chart}', [ChartController::class, 'show'])->name('charts.show');

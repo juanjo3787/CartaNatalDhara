@@ -24,7 +24,7 @@ final class PhaseOneAiGenerationService
         $context['introduced_rulers'] = (new RulerUsageRegistry())->alreadyIntroduced($chart, $door);
         $blocks = $this->contentService->generate($door, $context);
         $usage = $this->contentService->usage();
-        $this->storeAiCost($chart, $door, $usage);
+        $this->storeAiCost($chart, $door, $usage, $this->contentService->prompts());
         $saved = 0;
 
         DB::transaction(function () use ($chart, $door, $blocks, $context, &$saved): void {
@@ -65,7 +65,8 @@ final class PhaseOneAiGenerationService
     }
 
     /** @param array{input_tokens: int, output_tokens: int, total_tokens: int} $usage */
-    private function storeAiCost(Chart $chart, string $door, array $usage): void
+    /** @param array{system: string, user: string} $prompts */
+    private function storeAiCost(Chart $chart, string $door, array $usage, array $prompts): void
     {
         $model = (string) config('ai.model');
         $pricing = config('ai.pricing', [])[$model] ?? ['input' => 0, 'output' => 0];
@@ -95,6 +96,8 @@ final class PhaseOneAiGenerationService
             'tax_amount' => $taxAmount,
             'cost_total' => $subtotal + $taxAmount,
             'cost_currency' => config('ai.currency', 'EUR'),
+            'system_prompt' => $prompts['system'],
+            'user_prompt' => $prompts['user'],
         ]);
     }
 

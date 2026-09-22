@@ -292,6 +292,16 @@ class ChartController extends Controller
         ]);
     }
 
+    public function promptHistory(Chart $chart, ReportGeneration $generation): View
+    {
+        abort_unless($generation->chart_id === $chart->id && $generation->ai_assisted, 404);
+
+        return view('charts.prompt-history', [
+            'chart' => $chart,
+            'generation' => $generation,
+        ]);
+    }
+
     public function personHistory(Chart $chart): View
     {
         $chart->load('person');

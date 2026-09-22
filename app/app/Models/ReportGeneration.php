@@ -10,7 +10,7 @@ class ReportGeneration extends Model
     protected $fillable = [
         'chart_id', 'report_type', 'filename', 'size_bytes', 'checksum', 'door', 'ai_assisted', 'ai_model',
         'input_tokens', 'output_tokens', 'total_tokens', 'cost_input', 'cost_output', 'cost_subtotal',
-        'tax_rate', 'tax_amount', 'cost_total', 'cost_currency',
+        'tax_rate', 'tax_amount', 'cost_total', 'cost_currency', 'system_prompt', 'user_prompt',
     ];
 
     protected $casts = [
