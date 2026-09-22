@@ -49,6 +49,7 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertStringContainsString('exactamente una <strong>Característica:', $prompts['system']);
         $this->assertStringContainsString('Regla de no repetición endurecida', $prompts['system']);
         $this->assertStringContainsString('¿Qué quiero aportar y elegir?', $prompts['user']);
+        $this->assertStringContainsString('exactamente 3 strings independientes', $prompts['user']);
     }
 
     public function test_it_builds_the_lunar_user_prompt_with_ten_blocks_and_venus_continuity(): void
@@ -183,11 +184,11 @@ class PhaseOneAiContentServiceTest extends TestCase
     {
         config(['ai.enabled' => true]);
         $minimums = [
-            'shared_intro' => "Uno\nDos\nTres", 'function' => "Uno\nDos\nTres", 'sign' => "Uno\nDos\nTres\nCuatro",
-            'house' => "Uno\nDos\nTres\nCuatro\nCinco\nSeis", 'ruler' => "Uno\nDos\nTres\nCuatro\nCinco\nSeis",
-            'integration' => "Uno\nDos\nTres\nCuatro", 'harmony' => ['H1', 'H2', 'H3', 'H4'],
+            'shared_intro' => ["Uno\nDos\nTres"], 'function' => ["Uno\nDos\nTres"], 'sign' => ["Uno\nDos\nTres\nCuatro"],
+            'house' => ["Uno\nDos\nTres\nCuatro\nCinco\nSeis"], 'ruler' => ["Uno\nDos\nTres\nCuatro\nCinco\nSeis\nSiete\nOcho"],
+            'integration' => ["Uno\nDos\nTres\nCuatro"], 'harmony' => ['H1', 'H2', 'H3', 'H4'],
             'deficit' => ['D1', 'D2', 'D3', 'D4'], 'excess' => ['E1', 'E2', 'E3', 'E4'],
-            'closing' => "Uno\nDos\nTres",
+            'closing' => ["Uno\nDos\nTres"],
         ];
         $generator = new class($minimums) implements AiTextGenerator {
             public function __construct(private array $blocks) {}

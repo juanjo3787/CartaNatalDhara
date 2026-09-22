@@ -80,6 +80,11 @@ final class PhaseOneAiContentService
                 throw new RuntimeException("El bloque de IA {$block} debe contener al menos {$minimum} párrafos.");
             }
 
+            $expectedCount = $this->expectedCount($door, $block, $context);
+            if ($expectedCount !== null && count($result[$block]) !== $expectedCount) {
+                throw new RuntimeException("El bloque de IA {$block} debe contener exactamente {$expectedCount} strings independientes.");
+            }
+
             if (in_array($block, ['harmony', 'deficit', 'excess'], true)) {
                 $characteristics = $context['states'][$block]['characteristics']
                     ?? $context['caracteristicas_estados'][$block]
@@ -108,5 +113,29 @@ final class PhaseOneAiContentService
     public function prompts(): array
     {
         return $this->lastPrompts;
+    }
+
+    /** @param array<string, mixed> $context */
+    private function expectedCount(string $door, string $block, array $context): ?int
+    {
+        if (in_array($block, ['harmony', 'deficit', 'excess'], true)) {
+            $characteristics = $context['states'][$block]['characteristics']
+                ?? $context['caracteristicas_estados'][$block]
+                ?? [];
+
+            return is_array($characteristics) && $characteristics !== [] ? count($characteristics) : null;
+        }
+
+        return match ($block) {
+            'shared_intro' => 3,
+            'function' => 3,
+            'sign' => 4,
+            'house' => 6,
+            'ruler' => $door === 'descendente' ? 8 : 6,
+            'integration' => 4,
+            'harmonization' => $door === 'sol' ? 4 : null,
+            'closing' => 3,
+            default => null,
+        };
     }
 }

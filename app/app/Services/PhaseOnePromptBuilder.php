@@ -92,6 +92,19 @@ final class PhaseOnePromptBuilder
 
         if ($door === 'sol') {
             $user['requisitos_de_desarrollo']['harmonization'] = 'Recorridos desde defecto y exceso usando solo características ya desarrolladas: reconocer, practicar, observar resultado y ajustar.';
+            $user['requisitos_de_extension'] = [
+                'shared_intro' => ['numero_strings' => 3, 'instruccion' => 'Devuelve exactamente 3 strings independientes, uno por párrafo. No agrupes los tres párrafos en un solo string.'],
+                'function' => ['numero_strings' => 3, 'instruccion' => 'Devuelve exactamente 3 strings independientes sobre la función solar.'],
+                'sign' => ['numero_strings' => 4, 'instruccion' => 'Devuelve exactamente 4 strings independientes sobre el signo aplicado al Sol.'],
+                'house' => ['numero_strings' => 6, 'instruccion' => 'Devuelve exactamente 6 strings independientes sobre el territorio de la casa.'],
+                'ruler' => ['numero_strings' => 6, 'instruccion' => 'Devuelve exactamente 6 strings independientes sobre el regente.'],
+                'integration' => ['numero_strings' => 4, 'instruccion' => 'Devuelve exactamente 4 strings independientes de integración.'],
+                'harmony' => ['numero_strings' => 7, 'instruccion' => 'Devuelve exactamente 7 strings HTML, uno por característica.'],
+                'deficit' => ['numero_strings' => 7, 'instruccion' => 'Devuelve exactamente 7 strings HTML, uno por característica.'],
+                'excess' => ['numero_strings' => 7, 'instruccion' => 'Devuelve exactamente 7 strings HTML, uno por característica.'],
+                'harmonization' => ['numero_strings' => 4, 'instruccion' => 'Devuelve exactamente 4 strings independientes de armonización.'],
+                'closing' => ['numero_strings' => 3, 'instruccion' => 'Devuelve exactamente 3 strings independientes de cierre.'],
+            ];
         }
 
         if ($door === 'luna') {
