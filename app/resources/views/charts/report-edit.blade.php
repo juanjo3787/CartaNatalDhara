@@ -104,13 +104,10 @@
             try {
                 for (let index = 0; index < doors.length; index += 1) {
                     const door = doors[index];
-                    const doorForm = document.querySelector(`form[action$="/report/ai/${door}"]`);
-                    if (!doorForm) throw new Error(`No se encontró el formulario de ${door}.`);
-
                     generationStatus.textContent = `Generando ${door} (${index + 1} de ${doors.length})...`;
-                    const response = await fetch(doorForm.action, {
+                    const response = await fetch(`${generateAllForm.action}/${door}`, {
                         method: 'POST',
-                        body: new FormData(doorForm),
+                        body: new FormData(generateAllForm),
                         headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     });
                     const responseBody = await response.text();
