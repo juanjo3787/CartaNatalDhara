@@ -126,16 +126,6 @@ final class PhaseOneAiContentService
             return is_array($characteristics) && $characteristics !== [] ? count($characteristics) : null;
         }
 
-        return match ($block) {
-            'shared_intro' => 3,
-            'function' => 3,
-            'sign' => 4,
-            'house' => 6,
-            'ruler' => $door === 'descendente' ? 8 : 6,
-            'integration' => 4,
-            'harmonization' => $door === 'sol' ? 4 : null,
-            'closing' => $door === 'luna' ? null : 3,
-            default => null,
-        };
+        return null;
     }
 }
