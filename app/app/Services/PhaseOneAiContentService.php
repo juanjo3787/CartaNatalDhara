@@ -134,7 +134,7 @@ final class PhaseOneAiContentService
             'ruler' => $door === 'descendente' ? 8 : 6,
             'integration' => 4,
             'harmonization' => $door === 'sol' ? 4 : null,
-            'closing' => 3,
+            'closing' => $door === 'luna' ? null : 3,
             default => null,
         };
     }
