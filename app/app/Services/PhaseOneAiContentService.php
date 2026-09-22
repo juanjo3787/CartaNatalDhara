@@ -51,7 +51,7 @@ final class PhaseOneAiContentService
             'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
         ];
 
-        foreach ($this->promptBuilder->blocks() as $block) {
+        foreach ($this->promptBuilder->blocks($door) as $block) {
             if (! isset($result[$block]) || ! is_array($result[$block])) {
                 throw new RuntimeException("La respuesta de IA no contiene el bloque obligatorio: {$block}");
             }
@@ -69,9 +69,23 @@ final class PhaseOneAiContentService
             if (count($result[$block]) < $minimum) {
                 throw new RuntimeException("El bloque de IA {$block} debe contener al menos {$minimum} párrafos.");
             }
+
+            if (in_array($block, ['harmony', 'deficit', 'excess'], true)) {
+                $characteristics = $context['states'][$block]['characteristics']
+                    ?? $context['caracteristicas_estados'][$block]
+                    ?? [];
+
+                if (is_array($characteristics) && $characteristics !== [] && count($result[$block]) !== count($characteristics)) {
+                    throw new RuntimeException(sprintf(
+                        'El bloque de IA %s debe contener exactamente %d strings, uno por característica.',
+                        $block,
+                        count($characteristics),
+                    ));
+                }
+            }
         }
 
-        return array_intersect_key($result, array_flip($this->promptBuilder->blocks()));
+        return array_intersect_key($result, array_flip($this->promptBuilder->blocks($door)));
     }
 
     /** @return array{input_tokens: int, output_tokens: int, total_tokens: int} */

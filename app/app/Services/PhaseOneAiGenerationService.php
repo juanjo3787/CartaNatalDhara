@@ -121,8 +121,16 @@ final class PhaseOneAiGenerationService
             ->orderBy('id')
             ->get(['door', 'block', 'content']);
 
+        $excludedBlocks = in_array($door, [DoorSequence::ASCENDENTE, DoorSequence::DESCENDENTE], true)
+            ? ['harmony', 'deficit', 'excess', 'harmonization']
+            : [];
+
         $content = [];
         foreach ($rows as $row) {
+            if (in_array($row->block, $excludedBlocks, true)) {
+                continue;
+            }
+
             $content[$row->door][$row->block] = $row->content;
         }
 

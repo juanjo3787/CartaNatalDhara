@@ -483,6 +483,22 @@ final class PhaseOneReportService
         $rulers = (new RegencyResolver())->resolve($point['sign'] ?? 'aries')['modern'];
         $rulerNames = implode(' y ', array_map(fn (string $ruler): string => $this->translatePlanet($ruler), $rulers));
         $ruler = $snapshot[$rulers[0]] ?? ['sign' => 'aries', 'degrees' => 0, 'minutes' => 0, 'seconds' => 0];
+        $rulerDetails = array_map(function (string $rulerKey) use ($snapshot): array {
+            $rulerPoint = $snapshot[$rulerKey] ?? ['sign' => 'aries', 'degrees' => 0, 'minutes' => 0, 'seconds' => 0];
+
+            return [
+                'key' => $rulerKey,
+                'name' => $this->translatePlanet($rulerKey),
+                'sign' => $this->translateSign($rulerPoint['sign'] ?? 'aries'),
+                'house' => $this->resolveHouse($rulerPoint, $snapshot['houses'] ?? [])['number'],
+                'position' => [
+                    'degrees' => (int) ($rulerPoint['degrees'] ?? 0),
+                    'minutes' => (int) ($rulerPoint['minutes'] ?? 0),
+                    'seconds' => (int) round($rulerPoint['seconds'] ?? 0),
+                ],
+            ];
+        }, $rulers);
+        $stateCharacteristics = (new PhaseOneDoorCatalog())->stateCharacteristics($door, $this->translateSign($point['sign'] ?? 'aries'));
         return [
             'subject' => match ($door) {
                 'sol' => 'El Sol',
@@ -503,7 +519,10 @@ final class PhaseOneReportService
             'ruler_degrees' => (int) ($ruler['degrees'] ?? 0),
             'ruler_minutes' => (int) ($ruler['minutes'] ?? 0),
             'ruler_seconds' => (int) round($ruler['seconds'] ?? 0),
+            'ruler_details' => $rulerDetails,
+            'states' => array_map(static fn (array $characteristics): array => ['characteristics' => $characteristics], $stateCharacteristics),
             'name' => $name,
+            'door' => $door,
         ];
     }
 

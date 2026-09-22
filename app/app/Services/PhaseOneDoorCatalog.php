@@ -4,6 +4,12 @@ namespace App\Services;
 
 final class PhaseOneDoorCatalog
 {
+    /** @return array{harmony: list<string>, deficit: list<string>, excess: list<string>} */
+    public function stateCharacteristics(string $door, string $sign): array
+    {
+        return $this->stateFeatures($door, $sign);
+    }
+
     /**
      * @param array{subject: string, sign: string, degrees: int, minutes: int, seconds: int, house: int, house_sign: string, rulers: string, ruler_sign: string, ruler_house: int, name: string} $context
      * @return array<string, list<string>>
@@ -129,6 +135,12 @@ final class PhaseOneDoorCatalog
                         'El ejemplo práctico sería dejar una parte de la situación abierta, pedir información en vez de suponerla y revisar si la relación o la tarea mejora cuando la respuesta tiene más medida.',
                     ])),
                 implode(' ', array_map(fn (string $feature): string => $feature . '.', $features['excess'])),
+            ],
+            'harmonization' => [
+                'La armonización desde el defecto recupera espacio para la capacidad que apenas pudo expresarse: reconoce la señal, practica una respuesta pequeña, observa el resultado y ajusta sin exigirse perfección.',
+                'La armonización desde el exceso recupera medida para una capacidad que ocupa demasiado: identifica qué intenta proteger, reduce la respuesta automática, observa qué queda disponible y redistribuye el esfuerzo.',
+                'El punto de equilibrio permite elegir cuándo utilizar el recurso, cuándo detenerlo y qué parte de la experiencia no depende de una sola respuesta.',
+                'Preguntas prácticas: ¿qué característica reconozco?, ¿qué respuesta puedo ensayar?, ¿qué resultado observaré y qué ajustaré después?',
             ],
             'closing' => [
                 sprintf('El punto de equilibrio de %s no consiste en expresarlo siempre del mismo modo, sino en poder escucharlo y elegir.', $subject),
@@ -479,8 +491,9 @@ final class PhaseOneDoorCatalog
         $prefix = match ($door) {
             'sol' => ['deficit' => ['Dejar tu opinión fuera de la decisión', 'Evitar una conversación que podría aclarar', 'Pedir menos reciprocidad de la que necesitas', 'Infravalorar tu contribución', 'Confundir discreción con no ocupar espacio', 'Retirarte antes de comprobar si se puede colaborar', 'Vivir en respuesta de las obligaciones'], 'excess' => ['Adaptarte hasta perder tu posición', 'Necesitar agradar para sentirte coherente', 'Sostener todas las tensiones del entorno', 'Convertir el compromiso en una prueba de lealtad', 'Buscar el acuerdo perfecto', 'Ofrecer más para asegurar tu lugar', 'Guardar la cuenta de las concesiones']],
             'luna' => ['deficit' => ['Ocultar que necesitas afecto explícito', 'Restar importancia a tu alegría', 'Cuidar el ambiente antes de mostrar tu emoción', 'Pedir poco espacio en tu refugio', 'Desconectarte del juego y la espontaneidad', 'Minimizar una herida', 'Dejar que otros definan cómo sentirte'], 'excess' => ['Depender del reconocimiento cercano', 'Interpretar una diferencia como falta de cariño', 'Sostener el orgullo al necesitar cercanía', 'Organizar el refugio según una única forma', 'Dar afecto esperando devolución idéntica', 'Convertir una emoción momentánea en toda la escena', 'Buscar confirmación mediante sobrecuidado']],
-            'ascendente' => ['deficit' => ['No darte tiempo para orientarte', 'Dejar poco espacio a tus preferencias', 'Descuidar tu base por sostener un vínculo', 'Desconocer los recursos que ya tienes', 'Abandonar antes de familiarizarte', 'Posponer el disfrute hasta resolverlo todo', 'No expresar tu velocidad'], 'excess' => ['Conservar porque resulta familiar', 'Esperar seguridad completa', 'Hacer del hábito una regla inamovible', 'Controlar cada detalle', 'Mantener una decisión para no ceder posición', 'Confundir cercanía con disponibilidad estable', 'Reducir la experiencia para evitar incomodidad']],
-            default => ['deficit' => ['Reservarte lo que más importa', 'Poner estructura sin expresar deseo', 'Aplazar un límite', 'No revisar acuerdos cotidianos', 'Delegar tus convicciones', 'Cerrar la confianza por anticipado', 'Evitar preguntas importantes'], 'excess' => ['Comprobar la lealtad continuamente', 'Convertir tu criterio en ley', 'Organizar el proceso del otro', 'Cargar el último detalle con todo lo anterior', 'Confundir compromiso con resistencia ilimitada', 'Buscar explicación de cada emoción ajena', 'Hacer del vínculo el centro de toda decisión']],
+            'ascendente' => ['harmony' => ['Inicio pausado pero no paralizado', 'Comprobar recursos antes de comprometerse', 'Constancia después del primer paso', 'Escuchar señales corporales para orientarse', 'Crear referencias estables ante lo desconocido', 'Convertir un comienzo en una práctica sostenible', 'Reajustar el ritmo cuando cambia la situación'], 'deficit' => ['No darte tiempo para orientarte', 'Dejar poco espacio a tus preferencias', 'Descuidar tu base por sostener un vínculo', 'Desconocer los recursos que ya tienes', 'Abandonar antes de familiarizarte', 'Posponer el disfrute hasta resolverlo todo', 'No expresar tu velocidad'], 'excess' => ['Conservar porque resulta familiar', 'Esperar seguridad completa', 'Hacer del hábito una regla inamovible', 'Controlar cada detalle', 'Mantener una decisión para no ceder posición', 'Confundir preparación con disponibilidad permanente', 'Reducir la experiencia para evitar incomodidad']],
+            'descendente' => ['harmony' => ['Expresar deseos sin convertirlos en exigencias', 'Pedir dejando espacio para una respuesta real', 'Construir acuerdos comprensibles y revisables', 'Escuchar diferencias sin abandonar el criterio propio', 'Conservar privacidad y autonomía dentro del vínculo', 'Distribuir responsabilidades de forma explícita', 'Reparar una tensión mediante conversación y hechos'], 'deficit' => ['Reservarte lo que más importa', 'Poner estructura sin expresar deseo', 'Aplazar un límite', 'No revisar acuerdos cotidianos', 'Delegar tus convicciones', 'Cerrar la confianza por anticipado', 'Evitar preguntas importantes'], 'excess' => ['Comprobar la lealtad continuamente', 'Convertir tu criterio en ley', 'Organizar el proceso del otro', 'Cargar el último detalle con todo lo anterior', 'Confundir compromiso con resistencia ilimitada', 'Buscar explicación de cada emoción ajena', 'Hacer del vínculo el centro de toda decisión']],
+            default => ['harmony' => [], 'deficit' => ['Reservarte lo que más importa', 'Poner estructura sin expresar deseo', 'Aplazar un límite', 'No revisar acuerdos cotidianos', 'Delegar tus convicciones', 'Cerrar la confianza por anticipado', 'Evitar preguntas importantes'], 'excess' => ['Comprobar la lealtad continuamente', 'Convertir tu criterio en ley', 'Organizar el proceso del otro', 'Cargar el último detalle con todo lo anterior', 'Confundir compromiso con resistencia ilimitada', 'Buscar explicación de cada emoción ajena', 'Hacer del vínculo el centro de toda decisión']],
         };
 
         return $prefix;

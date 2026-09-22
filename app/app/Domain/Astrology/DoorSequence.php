@@ -17,7 +17,7 @@ final class DoorSequence
     public const SHARED_BLOCKS = ['shared_intro', 'shared_states', 'shared_conclusions'];
 
     public const DOOR_BLOCKS = [
-        'function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'closing',
+        'function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'harmonization', 'closing',
     ];
 
     /**
