@@ -112,7 +112,8 @@
                     });
                     const responseBody = await response.text();
                     if (!response.ok || responseBody.includes('Error de IA:')) {
-                        throw new Error(`No se pudo generar ${door}.`);
+                        const errorMatch = responseBody.match(/Error de IA:\s*([^<]+)/i);
+                        throw new Error(errorMatch ? errorMatch[1].trim() : `No se pudo generar ${door}. HTTP ${response.status}.`);
                     }
                 }
 
