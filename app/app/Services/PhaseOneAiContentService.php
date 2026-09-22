@@ -61,6 +61,16 @@ final class PhaseOneAiContentService
                 static fn (mixed $paragraph): bool => is_string($paragraph) && trim($paragraph) !== '',
             ));
 
+            if (! in_array($block, ['harmony', 'deficit', 'excess'], true)) {
+                $result[$block] = array_values(array_filter(
+                    array_merge(...array_map(
+                        static fn (string $paragraph): array => preg_split('/\R{2,}/', trim($paragraph)) ?: [$paragraph],
+                        $result[$block],
+                    )),
+                    static fn (string $paragraph): bool => trim($paragraph) !== '',
+                ));
+            }
+
             if ($result[$block] === []) {
                 throw new RuntimeException("El bloque de IA está vacío: {$block}");
             }
