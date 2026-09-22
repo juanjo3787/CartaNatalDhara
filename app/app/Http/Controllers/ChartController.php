@@ -326,7 +326,27 @@ class ChartController extends Controller
             ]);
 
             return redirect()->route('charts.report', $chart)
-                ->with('error', 'No se pudo generar esta puerta con IA. Revisa la configuración y los logs.');
+                ->with('error', 'Error de IA: '.$message);
+        }
+    }
+
+    public function generateAllAiReport(Chart $chart, PhaseOneAiGenerationService $generationService): RedirectResponse
+    {
+        try {
+            $blocks = $generationService->generateAll($chart);
+
+            return redirect()->route('charts.report.edit', $chart)
+                ->with('success', "Se han generado {$blocks} bloques con IA para las cuatro puertas.");
+        } catch (\Throwable $exception) {
+            $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
+            Log::error('Phase 1 AI full generation failed', [
+                'exception' => $exception::class,
+                'message' => mb_substr($message, 0, 500),
+                'chart' => $chart->id,
+            ]);
+
+            return redirect()->route('charts.report.edit', $chart)
+                ->with('error', 'Error de IA: '.$message);
         }
     }
 

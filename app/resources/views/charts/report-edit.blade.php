@@ -34,6 +34,10 @@
 <div class="report-editor">
     <div class="editor-toolbar">
         <div><span class="badge">Edición del informe</span><h1>Editar informe Fase 1</h1></div>
+        <form method="POST" action="{{ route('charts.report.ai.all', $chart) }}" data-confirm-message="¿Generar las cuatro puertas con IA en orden de continuidad?">
+            @csrf
+            <button type="submit" style="margin:0; padding:.65rem .9rem; font-size:.78rem;">Generar las cuatro puertas con IA</button>
+        </form>
     </div>
 
     @if ($errors->any())
@@ -53,7 +57,7 @@
 
         @foreach ($report['doors'] as $door)
             <section class="editor-section">
-                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small><form method="POST" action="{{ route('charts.report.ai', [$chart, $door['key']]) }}" style="margin-top:.75rem;">@csrf<button type="submit" style="margin:0; padding:.55rem .8rem; font-size:.78rem;">Generar con ChatGPT</button></form></h2>
+                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small><form method="POST" action="{{ route('charts.report.ai', [$chart, $door['key']]) }}" style="margin-top:.75rem;">@csrf<button type="submit" style="margin:0; padding:.55rem .8rem; font-size:.78rem;">Generar esta puerta con IA</button></form></h2>
                 @foreach ($editable['doors'][$door['key']] as $block => $content)
                     <div class="editor-block"><label for="{{ $door['key'] }}-{{ $block }}">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</label><div id="toolbar-{{ $door['key'] }}-{{ $block }}" class="quill-toolbar"><span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button></span><span class="ql-formats"><button class="ql-link"></button><button class="ql-clean"></button></span></div><div id="{{ $door['key'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! old('doors.' . $door['key'] . '.' . $block, $content) !!}</div><textarea name="doors[{{ $door['key'] }}][{{ $block }}]" data-editor-value="{{ $door['key'] }}-{{ $block }}" hidden></textarea></div>
                 @endforeach

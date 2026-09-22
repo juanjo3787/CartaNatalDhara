@@ -7,6 +7,22 @@ use RuntimeException;
 
 final class PhaseOneAiContentService
 {
+    /** @var array{input_tokens: int, output_tokens: int, total_tokens: int} */
+    private array $lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
+
+    private const MINIMUM_PARAGRAPHS = [
+        'shared_intro' => 3,
+        'function' => 3,
+        'sign' => 4,
+        'house' => 6,
+        'ruler' => 6,
+        'integration' => 4,
+        'harmony' => 4,
+        'deficit' => 4,
+        'excess' => 4,
+        'closing' => 3,
+    ];
+
     public function __construct(
         private readonly AiTextGenerator $generator,
         private readonly PhaseOnePromptBuilder $promptBuilder,
@@ -25,6 +41,12 @@ final class PhaseOneAiContentService
 
         $prompts = $this->promptBuilder->build($door, $context);
         $result = $this->generator->generate($prompts['system'], $prompts['user']);
+        $usage = $result['_usage'] ?? [];
+        $this->lastUsage = [
+            'input_tokens' => (int) ($usage['input_tokens'] ?? 0),
+            'output_tokens' => (int) ($usage['output_tokens'] ?? 0),
+            'total_tokens' => (int) ($usage['total_tokens'] ?? 0),
+        ];
 
         foreach ($this->promptBuilder->blocks() as $block) {
             if (! isset($result[$block]) || ! is_array($result[$block])) {
@@ -39,8 +61,19 @@ final class PhaseOneAiContentService
             if ($result[$block] === []) {
                 throw new RuntimeException("El bloque de IA está vacío: {$block}");
             }
+
+            $minimum = self::MINIMUM_PARAGRAPHS[$block] ?? 1;
+            if (count($result[$block]) < $minimum) {
+                throw new RuntimeException("El bloque de IA {$block} debe contener al menos {$minimum} párrafos.");
+            }
         }
 
         return array_intersect_key($result, array_flip($this->promptBuilder->blocks()));
+    }
+
+    /** @return array{input_tokens: int, output_tokens: int, total_tokens: int} */
+    public function usage(): array
+    {
+        return $this->lastUsage;
     }
 }

@@ -11,6 +11,10 @@ final class PhaseOnePromptBuilder
         'integration', 'harmony', 'deficit', 'excess', 'closing',
     ];
 
+    public function __construct(private readonly PhaseOneInstructionCatalog $instructionCatalog = new PhaseOneInstructionCatalog())
+    {
+    }
+
     /**
      * @param array<string, mixed> $context
      * @return array{system: string, user: string}
@@ -21,30 +25,25 @@ final class PhaseOnePromptBuilder
             throw new InvalidArgumentException("Puerta Fase 1 no válida: {$door}");
         }
 
-        $system = <<<'PROMPT'
-Eres una redactora editorial especializada en informes de astrología simbólica.
-Escribe en español claro, cálido y no determinista. No hagas predicciones, diagnósticos
-ni afirmaciones biográficas. El signo y la casa abren preguntas; no demuestran traumas,
-historia familiar ni hechos de la vida de la persona.
-
-Debes respetar estas reglas del dossier Fase 1:
-- Diferencia la función de la puerta, el signo, la casa y el regente.
-- Desarrolla la explicación, añade una pauta concreta y un ejemplo cotidiano reconocible.
-- En el Descendente distingue deseo, petición, acuerdo y norma; no predigas qué persona llegará.
-- En el Ascendente céntrate en cómo la persona entra y se posiciona; la casa VII solo es un contrapunto breve.
-- Si hay dos regentes, explica ambos sin convertir el regente moderno lento en un rasgo individual exclusivo.
-- Si un regente ya fue explicado, cambia la pregunta funcional y no repitas su definición base.
-- Mantén la correspondencia: cada característica debe tener una pauta y un ejemplo en el mismo orden.
-
-Devuelve exclusivamente un objeto JSON con las claves solicitadas. Cada valor debe ser una
-lista de párrafos en español. No incluyas Markdown, encabezados ni texto fuera del JSON.
-PROMPT;
+        $instructions = $this->instructionCatalog->forDoor($door);
+        $system = implode("\n", [
+            'Eres una redactora editorial especializada en informes de astrología simbólica.',
+            'Estas instrucciones son obligatorias. La fuente específica de esta puerta es: '.$instructions['source'],
+            ...array_map(static fn (string $rule): string => '- '.$rule, $this->instructionCatalog->general()),
+            ...array_map(static fn (string $rule): string => '- '.$rule, $instructions['rules']),
+            'Devuelve exclusivamente un objeto JSON con las claves solicitadas. Cada valor debe ser una lista de párrafos en español. No incluyas Markdown, encabezados ni texto fuera del JSON.',
+        ]);
 
         $user = json_encode([
             'tarea' => 'Generar los bloques editoriales de una puerta del informe de Carta Natal Fase 1.',
             'puerta' => $door,
             'pregunta_central' => $context['question'] ?? null,
             'datos_carta' => $context,
+            'continuidad' => [
+                'puertas_anteriores' => $context['previous_doors'] ?? [],
+                'regentes_ya_presentados' => $context['introduced_rulers'] ?? [],
+                'regla' => 'Usa el contenido anterior como contexto. No repitas definiciones; añade una relación, consecuencia o matiz nuevo.',
+            ],
             'bloques_obligatorios' => self::BLOCKS,
             'requisitos_de_extension' => [
                 'shared_intro' => '3 párrafos de contexto y conexión personal.',
