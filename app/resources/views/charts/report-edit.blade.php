@@ -26,6 +26,10 @@
     .editor-toolbar-actions button { margin: 0; padding: .35rem .55rem; border: 1px solid #b58b67; border-radius: 4px; background: #fffaf5; color: #674b39; font-size: .78rem; box-shadow: none; }
     .ai-generation-status { margin: .5rem 0 0; color: #674b39; font-size: .84rem; }
     .ai-generation-status.is-error { color: #9f2d2d; }
+    .ai-generation-progress { display: none; gap: .6rem; align-items: center; margin: .65rem 0 1rem; color: #674b39; font-size: .82rem; }
+    .ai-generation-progress.is-visible { display: flex; }
+    .ai-generation-progress-bar { width: min(22rem, 60vw); height: .55rem; accent-color: #795c48; }
+    .ai-generation-progress-value { min-width: 3.5rem; font-weight: 700; }
     .quill-toolbar { border: 1px solid #d7d1ca !important; border-bottom: 0 !important; border-radius: 4px 4px 0 0; background: #fffaf5; }
     .rich-editor { min-height: 150px; border: 1px solid #d7d1ca !important; border-radius: 0 0 4px 4px; background: #fff; }
     .rich-editor .ql-editor { min-height: 150px; font: 1rem/1.6 Aptos, 'Segoe UI', sans-serif; color: #202020; }
@@ -42,6 +46,10 @@
         </form>
     </div>
     <p class="ai-generation-status" data-ai-generation-status role="status" aria-live="polite"></p>
+    <div class="ai-generation-progress" data-ai-generation-progress aria-hidden="true">
+        <progress class="ai-generation-progress-bar" data-ai-generation-progress-bar max="100" value="0"></progress>
+        <span class="ai-generation-progress-value" data-ai-generation-progress-value>0%</span>
+    </div>
 
     @if ($errors->any())
         <div class="note"><strong>Revisa el formulario:</strong><ul>@foreach ($errors->all() as $error)<li class="error">{{ $error }}</li>@endforeach</ul></div>
@@ -92,6 +100,14 @@
 
         const generateAllForm = document.getElementById('generate-all-ai-form');
         const generationStatus = document.querySelector('[data-ai-generation-status]');
+        const generationProgress = document.querySelector('[data-ai-generation-progress]');
+        const progressBar = document.querySelector('[data-ai-generation-progress-bar]');
+        const progressValue = document.querySelector('[data-ai-generation-progress-value]');
+        const setProgress = (value) => {
+            const percentage = Math.max(0, Math.min(100, value));
+            progressBar.value = percentage;
+            progressValue.textContent = `${percentage}%`;
+        };
         generateAllForm?.addEventListener('submit', async (event) => {
             if (event.defaultPrevented) return;
 
@@ -100,11 +116,16 @@
             const doors = ['sol', 'luna', 'ascendente', 'descendente'];
             button.disabled = true;
             generationStatus.classList.remove('is-error');
+            generationProgress.classList.add('is-visible');
+            generationProgress.setAttribute('aria-hidden', 'false');
+            setProgress(0);
 
             try {
                 for (let index = 0; index < doors.length; index += 1) {
                     const door = doors[index];
-                    generationStatus.textContent = `Generando ${door} (${index + 1} de ${doors.length})...`;
+                    const completedPercentage = Math.round((index / doors.length) * 100);
+                    setProgress(completedPercentage);
+                    generationStatus.textContent = `Generando ${door} (${index + 1} de ${doors.length}) · ${completedPercentage}% completado...`;
                     const response = await fetch(`${generateAllForm.action}/${door}`, {
                         method: 'POST',
                         body: new FormData(generateAllForm),
@@ -115,13 +136,15 @@
                         const errorMatch = responseBody.match(/Error de IA:\s*([^<]+)/i);
                         throw new Error(errorMatch ? errorMatch[1].trim() : `No se pudo generar ${door}. HTTP ${response.status}.`);
                     }
+                    setProgress(Math.round(((index + 1) / doors.length) * 100));
                 }
 
-                generationStatus.textContent = 'Las cuatro puertas se han generado. Actualizando el informe...';
+                generationStatus.textContent = 'Las cuatro puertas se han generado · 100%. Actualizando el informe...';
                 window.location.assign('{{ route('charts.report.edit', $chart) }}');
             } catch (error) {
                 generationStatus.textContent = error.message || 'No se pudo completar la generación con IA.';
                 generationStatus.classList.add('is-error');
+                generationProgress.setAttribute('aria-hidden', 'false');
                 button.disabled = false;
             }
         });

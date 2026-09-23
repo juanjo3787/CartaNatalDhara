@@ -46,10 +46,16 @@ final class PhaseOnePromptBuilder
             'En ruler explica primero qué aporta el regente a la pregunta de esta puerta y después cómo su signo y casa lo matizan; si ya se presentó, úsalo solo como puente y aporta una consecuencia nueva.',
             'En integration construye consecuencias que solo aparecen al reunir puerta, signo, casa o eje y regente. Incluye una escena o proceso observable, no una suma de resúmenes.',
             'En harmony, deficit y excess conserva exactamente las características recibidas en datos_carta. Cada característica debe tener su propio Desarrollo, Pauta y Ejemplo, en el mismo orden, y los ejemplos deben variar de contexto.',
+            'Estructura obligatoria de los estados: antes de las características de harmony incluye exactamente el rótulo "Características que puedes observar", seguido de "Pautas y consideraciones para reconocer este equilibrio" y "Ejemplos cotidianos de estas pautas". En deficit utiliza exactamente "Características que puedes observar", "Pautas y consideraciones para empezar a armonizar" y "Ejemplos cotidianos y formas de empezar a armonizar". En excess utiliza exactamente "Características que puedes observar", "Pautas y consideraciones para recuperar una medida adecuada" y "Ejemplos cotidianos y formas de recuperar medida".',
+            'No escribas "Características que puedes observer" ni ninguna variante: la cadena correcta es exactamente "Características que puedes observar".',
             'En harmonization trabaja únicamente con las características ya desarrolladas: separa el recorrido desde defecto y desde exceso, e indica reconocimiento, práctica, resultado y ajuste.',
             'En closing incluye, en ese orden, síntesis, aprendizaje principal, recurso, riesgo, exactamente cinco preguntas de autoobservación y una frase central con frases breves de apoyo.',
             'Profundidad mínima obligatoria: cada párrafo debe contener una idea desarrollada, un matiz y una consecuencia o forma de observación. No cuentes frases introductorias, definiciones repetidas ni cierres genéricos como desarrollo.',
             'Regla de no repetición endurecida: antes de redactar cada bloque, identifica qué conceptos, ejemplos y regentes ya aparecen en puertas_anteriores. Solo puedes retomarlos como puente breve seguido de una consecuencia nueva; no repitas definiciones, escenas, pautas ni frases con sinónimos.',
+            'Objetivo editorial obligatorio: produce un dossier desarrollado, no una síntesis. La plantilla marca la estructura mínima; no reduzcas extensión, personalización ni utilidad práctica para ahorrar tokens.',
+            'Personalización obligatoria: cada bloque debe mencionar y utilizar los datos concretos de esta puerta y su combinación completa. Los textos genéricos intercambiables entre cartas no cumplen el contrato.',
+            'Cada característica debe seguir la secuencia: nombrar, explicar, contextualizar en esta carta, traducir a experiencia cotidiana, proponer una pauta y dar un ejemplo coherente. Mantén el mismo orden entre característica, pauta y ejemplo.',
+            'Si una respuesta amenaza con quedarse corta, desarrolla cada pieza y su consecuencia con más detalle; no agrupes ideas distintas en una frase ni elimines pasos prácticos.',
             'Devuelve exclusivamente un objeto JSON con las claves solicitadas y sin texto fuera del JSON.',
             'Esquema JSON obligatorio: la respuesta raíz debe ser un objeto; debe contener exactamente las claves de bloques_obligatorios; cada valor debe ser un array JSON de strings no vacíos; no uses objetos, null, claves adicionales, Markdown ni texto fuera del JSON.',
             $stateFormat,
@@ -85,8 +91,37 @@ final class PhaseOnePromptBuilder
             'lista_de_comprobacion_antes_de_responder' => [
                 'Cada bloque responde su propia pregunta y no anticipa el contenido de un bloque posterior.',
                 'No hay párrafos equivalentes ni listas con ejemplos del mismo contexto repetido.',
+                'El resultado tiene profundidad de dossier y no es una síntesis ni una versión abreviada.',
+                'Cada bloque usa la combinación concreta de puerta, signo, casa o eje, regente y posición del regente.',
+                'Cada característica tiene explicación, contexto, pauta y ejemplo correspondientes.',
                 'Luna solo aborda necesidad emocional, cuidado y regulación; Ascendente solo inicio, orientación y ritmo; Descendente solo reciprocidad, acuerdos y dos subjetividades.',
                 'No hay predicciones, diagnósticos, etiquetas fijas ni hechos biográficos atribuidos a la persona.',
+            ],
+            'control_calidad_dossier' => [
+                'No es una síntesis, resumen ni versión abreviada del dossier.',
+                'Cada bloque utiliza puerta, signo, casa o eje, regente o regentes y posición del regente concretos.',
+                'Cada característica importante tiene nombre, explicación, contexto de esta carta, experiencia cotidiana, pauta y ejemplo correspondiente.',
+                'Armonía, defecto y exceso son desarrollos diferentes; sus ejemplos no repiten una plantilla ni un único contexto.',
+                'La profundidad de Luna, Ascendente y Descendente debe igualar la profundidad del Sol.',
+                'No se elimina desarrollo para ahorrar tokens; si una idea es importante, se desarrolla con mecanismo, matiz, consecuencia y acción práctica.',
+                'Los tres rótulos paraguas de cada estado aparecen con la redacción exacta solicitada y en el orden características, pautas y ejemplos.',
+            ],
+            'rotulos_estados_obligatorios' => [
+                'harmony' => [
+                    'Características que puedes observar',
+                    'Pautas y consideraciones para reconocer este equilibrio',
+                    'Ejemplos cotidianos de estas pautas',
+                ],
+                'deficit' => [
+                    'Características que puedes observar',
+                    'Pautas y consideraciones para empezar a armonizar',
+                    'Ejemplos cotidianos y formas de empezar a armonizar',
+                ],
+                'excess' => [
+                    'Características que puedes observar',
+                    'Pautas y consideraciones para recuperar una medida adecuada',
+                    'Ejemplos cotidianos y formas de recuperar medida',
+                ],
             ],
         ];
 
@@ -114,6 +149,11 @@ final class PhaseOnePromptBuilder
                 'regla' => 'Cada característica ocupa un string independiente.',
                 'estructura' => '<ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>',
                 'prohibido' => 'No agrupar, añadir, eliminar, fusionar, renombrar ni reordenar características.',
+                'rotulos_exactos' => [
+                    'harmony' => ['Características que puedes observar', 'Pautas y consideraciones para reconocer este equilibrio', 'Ejemplos cotidianos de estas pautas'],
+                    'deficit' => ['Características que puedes observar', 'Pautas y consideraciones para empezar a armonizar', 'Ejemplos cotidianos y formas de empezar a armonizar'],
+                    'excess' => ['Características que puedes observar', 'Pautas y consideraciones para recuperar una medida adecuada', 'Ejemplos cotidianos y formas de recuperar medida'],
+                ],
             ];
             $user['criterios_de_continuidad'] = [
                 'Cada bloque responde una pregunta diferente.',
@@ -155,6 +195,11 @@ final class PhaseOnePromptBuilder
                 'regla' => 'Cada una de las siete características de cada estado ocupa un string independiente.',
                 'estructura' => '<ol><li><strong>Característica:</strong> ...<br><strong>Desarrollo:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>',
                 'prohibido' => 'No agrupar, añadir, eliminar, fusionar, renombrar ni reordenar características.',
+                'rotulos_exactos' => [
+                    'harmony' => ['Características que puedes observar', 'Pautas y consideraciones para reconocer este equilibrio', 'Ejemplos cotidianos de estas pautas'],
+                    'deficit' => ['Características que puedes observar', 'Pautas y consideraciones para empezar a armonizar', 'Ejemplos cotidianos y formas de empezar a armonizar'],
+                    'excess' => ['Características que puedes observar', 'Pautas y consideraciones para recuperar una medida adecuada', 'Ejemplos cotidianos y formas de recuperar medida'],
+                ],
             ];
             $user['criterios_de_continuidad'] = [
                 'El Ascendente responde cómo entro en una experiencia nueva y qué ritmo puedo sostener.',

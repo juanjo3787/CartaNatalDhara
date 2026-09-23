@@ -94,6 +94,14 @@ final class PhaseOneInstructionCatalog
             'El lenguaje general debe seguir siendo no determinista: se formulan posibilidades para observar, no hechos biográficos no contados por la persona.',
             'No hagas predicciones, diagnósticos ni afirmaciones biográficas; signo y casa abren preguntas, no demuestran hechos.',
             'La continuidad se mide por la profundidad añadida, no por la cantidad de veces que repites una definición; si una idea ya aparece, reutilízala solo como puente y añade matiz nuevo.',
+            'El resultado debe tener la profundidad, personalización, explicación y utilidad práctica del dossier de referencia. La plantilla define la estructura mínima, no la extensión máxima: no entregues una síntesis, un resumen ni una versión abreviada.',
+            'Cada interpretación debe surgir de la combinación concreta puerta + signo + casa o eje + regente o regentes + signo del regente + casa del regente. Explica qué aporta cada pieza, qué ocurre al combinarlas, qué necesidades genera, cómo puede reconocerse y qué acciones permiten recuperar medida.',
+            'No reutilices párrafos genéricos que funcionarían para otra carta cambiando solo el nombre del planeta, signo o casa. Si una frase no utiliza datos concretos de esta carta, amplíala con una consecuencia específica o elimínala.',
+            'No compactes varios conceptos diferentes en una sola frase para ahorrar espacio. Si el contenido es extenso, conserva la profundidad y la correspondencia entre desarrollo, pauta y ejemplo; nunca resumas para que quepa.',
+            'Cada característica importante debe nombrarse, explicarse, contextualizarse en esta carta, traducirse a una experiencia cotidiana, acompañarse de una pauta práctica y relacionarse con un ejemplo concreto.',
+            'En armonía, defecto y exceso diferencia el funcionamiento completo. No uses variaciones de una misma plantilla: las características, pautas y ejemplos deben corresponderse uno a uno y ser reconociblemente distintos.',
+            'Incluye en ruler un apartado de acciones y consideraciones para llevar el regente a la experiencia. En integration desarrolla la combinación particular durante varios párrafos, no solo la función genérica de signo, casa y regente.',
+            'Antes de devolver el JSON comprueba que cada puerta usa realmente sus datos, que no hay bloques genéricos reutilizados entre puertas, que cada pauta corresponde a su característica, que cada ejemplo corresponde a su pauta y que Luna, Ascendente y Descendente tienen la misma profundidad que Sol.',
         ];
     }
 }

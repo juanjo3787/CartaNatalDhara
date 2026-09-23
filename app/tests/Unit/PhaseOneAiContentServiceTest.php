@@ -50,6 +50,11 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertStringContainsString('Regla de no repetición endurecida', $prompts['system']);
         $this->assertStringContainsString('¿Qué quiero aportar y elegir?', $prompts['user']);
         $this->assertStringContainsString('exactamente 3 strings independientes', $prompts['user']);
+        $this->assertStringContainsString('El resultado debe tener la profundidad, personalización', $prompts['system']);
+        $this->assertStringContainsString('control_calidad_dossier', $prompts['user']);
+        $this->assertStringContainsString('Características que puedes observar', $prompts['system']);
+        $this->assertStringContainsString('No escribas "Características que puedes observer"', $prompts['system']);
+        $this->assertStringContainsString('Pautas y consideraciones para recuperar una medida adecuada', $prompts['user']);
     }
 
     public function test_it_builds_the_lunar_user_prompt_with_ten_blocks_and_venus_continuity(): void
