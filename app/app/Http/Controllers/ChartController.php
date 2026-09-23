@@ -373,6 +373,23 @@ class ChartController extends Controller
         }
     }
 
+    public function generateSunAiStage(Request $request, Chart $chart, string $stage, PhaseOneAiGenerationService $generationService): JsonResponse
+    {
+        try {
+            return response()->json($generationService->generateSunStage($chart, $stage, $request->session()->getId()));
+        } catch (\Throwable $exception) {
+            $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
+            Log::error('Solar AI stage failed', [
+                'exception' => $exception::class,
+                'message' => mb_substr($message, 0, 500),
+                'chart' => $chart->id,
+                'stage' => $stage,
+            ]);
+
+            return response()->json(['message' => 'Error de IA: '.$message], 422);
+        }
+    }
+
     public function generateAllAiReport(Request $request, Chart $chart, PhaseOneAiGenerationService $generationService): RedirectResponse|JsonResponse
     {
         try {

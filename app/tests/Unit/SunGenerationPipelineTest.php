@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 final class SunGenerationPipelineTest extends TestCase
 {
-    public function test_solar_generation_uses_five_structured_calls_and_places_content_under_each_heading(): void
+    public function test_solar_generation_uses_nine_structured_calls_and_places_content_under_each_heading(): void
     {
         config(['ai.enabled' => true]);
         $generator = new class implements StructuredAiTextGenerator {
@@ -45,8 +45,8 @@ final class SunGenerationPipelineTest extends TestCase
         $service = new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder());
         $blocks = $service->generate('sol', self::context());
 
-        $this->assertSame(['foundation', 'harmony', 'deficit', 'excess', 'final'], $generator->stages);
-        $this->assertSame(150, $service->usage()['total_tokens']);
+        $this->assertSame(['function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'final'], $generator->stages);
+        $this->assertSame(270, $service->usage()['total_tokens']);
         $this->assertCount(11, $blocks);
         $harmony = implode('', $blocks['harmony']);
         $this->assertLessThan(strpos($harmony, '<h3>Características'), strpos($harmony, '<p>'));
@@ -119,7 +119,7 @@ final class SunGenerationPipelineTest extends TestCase
         };
 
         $blocks = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate('sol', self::context());
-        $this->assertSame(6, $generator->calls);
+        $this->assertSame(10, $generator->calls);
         $this->assertCount(11, $blocks);
     }
 
@@ -135,10 +135,8 @@ final class SunGenerationPipelineTest extends TestCase
         ];
 
         return match ($stage) {
-            'foundation' => array_map(
-                static fn (int $count): array => ['paragraphs' => array_fill(0, $count, $paragraph)],
-                ['shared_intro' => 3, 'function' => 3, 'sign' => 4, 'house' => 6, 'ruler' => 6, 'integration' => 4],
-            ),
+            'function' => ['shared_intro' => ['paragraphs' => array_fill(0, 3, $paragraph)], 'function' => ['paragraphs' => array_fill(0, 3, $paragraph)]],
+            'sign', 'house', 'ruler', 'integration' => [$stage => ['paragraphs' => array_fill(0, ['sign' => 4, 'house' => 6, 'ruler' => 6, 'integration' => 4][$stage], $paragraph)]],
             'harmony', 'deficit', 'excess' => [$stage => $state],
             'final' => [
                 'harmonization' => [

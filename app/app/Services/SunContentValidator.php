@@ -14,8 +14,11 @@ final class SunContentValidator
     public function validate(string $stage, array $result, array $context): array
     {
         unset($result['_usage']);
-        if ($stage === 'foundation') {
+        if (in_array($stage, ['function', 'sign', 'house', 'ruler', 'integration'], true)) {
             foreach (self::FOUNDATION_COUNTS as $key => $count) {
+                if ($key !== $stage && ! ($stage === 'function' && $key === 'shared_intro')) {
+                    continue;
+                }
                 $minimumWords = match ($key) {
                     'shared_intro' => 20,
                     'house', 'ruler' => 80,
@@ -29,7 +32,7 @@ final class SunContentValidator
                 throw new RuntimeException("Falta el estado solar {$stage}.");
             }
             $this->paragraphs($state['development'] ?? null, 4, 6, 50, "{$stage}.development");
-            $count = $stage === 'harmony' ? 7 : 7;
+            $count = 7;
             foreach (['characteristics' => 3, 'guidelines' => 40, 'examples' => 80] as $key => $minimumWords) {
                 $items = $state[$key] ?? null;
                 if (! is_array($items) || count($items) !== $count) {

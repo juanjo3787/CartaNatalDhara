@@ -4,7 +4,10 @@ namespace App\Services;
 
 final class SunPromptBuilder
 {
-    public const STAGES = ['foundation', 'harmony', 'deficit', 'excess', 'final'];
+    public const STAGES = [
+        'function', 'sign', 'house', 'ruler', 'integration',
+        'harmony', 'deficit', 'excess', 'final',
+    ];
 
     public function build(string $stage, array $context, array $completed): array
     {
@@ -22,14 +25,14 @@ final class SunPromptBuilder
         ]);
 
         $requirements = match ($stage) {
-            'foundation' => [
+            'function' => [
                 'shared_intro' => '3 párrafos breves de entrada a la puerta solar.',
                 'function' => '3 párrafos de al menos 70 palabras: función psicológica, diferencia con las otras puertas y posición particular.',
-                'sign' => '4 párrafos de al menos 70 palabras sobre lo que necesita ESTE Sol en su signo: necesidad, recurso, tensión y aprendizaje cotidiano.',
-                'house' => '6 párrafos de al menos 80 palabras sobre el territorio de la casa, con situaciones reales; separa casa y signo.',
-                'ruler' => '6 párrafos de al menos 80 palabras: significado del regente, su signo, su casa, su canal de expresión y consecuencias concretas.',
-                'integration' => '4 párrafos de al menos 70 palabras sobre consecuencias que solo surgen al reunir todas las piezas, incluida una escena cotidiana.',
             ],
+            'sign' => ['sign' => '4 párrafos de al menos 70 palabras sobre lo que necesita ESTE Sol en su signo: necesidad, recurso, tensión y aprendizaje cotidiano.'],
+            'house' => ['house' => '6 párrafos de al menos 80 palabras sobre el territorio de la casa, con situaciones reales; separa casa y signo.'],
+            'ruler' => ['ruler' => '6 párrafos de al menos 80 palabras: significado del regente, su signo, su casa, su canal de expresión y consecuencias concretas.'],
+            'integration' => ['integration' => '4 párrafos de al menos 70 palabras sobre consecuencias que solo surgen al reunir todas las piezas, incluida una escena cotidiana.'],
             'harmony' => $this->stateRequirements('harmony', $context),
             'deficit' => $this->stateRequirements('deficit', $context),
             'excess' => $this->stateRequirements('excess', $context),
@@ -46,14 +49,11 @@ final class SunPromptBuilder
             'ASTROLOGICAL_FACTS' => $context['astrological_facts'] ?? [],
             'required_output' => $requirements,
             'output_shape' => match ($stage) {
-                'foundation' => [
+                'function' => [
                     'shared_intro' => ['paragraphs' => ['texto']],
                     'function' => ['paragraphs' => ['texto']],
-                    'sign' => ['paragraphs' => ['texto']],
-                    'house' => ['paragraphs' => ['texto']],
-                    'ruler' => ['paragraphs' => ['texto']],
-                    'integration' => ['paragraphs' => ['texto']],
                 ],
+                'sign', 'house', 'ruler', 'integration' => [$stage => ['paragraphs' => ['texto']]],
                 'final' => [
                     'harmonization' => [
                         'from_deficit' => ['paragraphs' => ['texto'], 'points' => ['texto']],
@@ -75,7 +75,7 @@ final class SunPromptBuilder
             },
         ];
 
-        if ($stage !== 'foundation') {
+        if ($stage !== 'function') {
             $user['foundation'] = array_intersect_key($completed, array_flip(['function', 'sign', 'house', 'ruler', 'integration']));
         }
         if ($stage === 'final') {

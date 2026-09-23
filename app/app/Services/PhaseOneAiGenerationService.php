@@ -7,7 +7,9 @@ use App\Models\ChartTemplate;
 use App\Domain\Astrology\DoorSequence;
 use App\Domain\Astrology\RulerUsageRegistry;
 use App\Models\ReportGeneration;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 final class PhaseOneAiGenerationService
 {
@@ -24,11 +26,65 @@ final class PhaseOneAiGenerationService
         $context['introduced_rulers'] = (new RulerUsageRegistry())->alreadyIntroduced($chart, $door);
         $blocks = $this->contentService->generate($door, $context);
         $usage = $this->contentService->usage();
-        $this->storeAiCost($chart, $door, $usage, $this->contentService->prompts());
-        $saved = 0;
+        return DB::transaction(function () use ($chart, $door, $blocks, $context, $usage): int {
+            $saved = $this->persistBlocks($chart, $door, $blocks, $context);
+            $this->storeAiCost($chart, $door, $usage, $this->contentService->prompts());
+            return $saved;
+        });
+    }
 
-        DB::transaction(function () use ($chart, $door, $blocks, $context, &$saved): void {
-            $chart->interpretations()
+    public function generateSunStage(Chart $chart, string $stage, string $sessionId): array
+    {
+        $stageIndex = array_search($stage, SunPromptBuilder::STAGES, true);
+        if ($stageIndex === false) {
+            throw new RuntimeException("Etapa solar no válida: {$stage}");
+        }
+
+        $key = 'sun_ai_draft_'.$chart->id.'_'.hash('sha256', $sessionId);
+        $draft = $stageIndex === 0 ? null : Cache::get($key);
+        if ($stageIndex > 0 && (! is_array($draft) || ($draft['next'] ?? null) !== $stageIndex)) {
+            throw new RuntimeException('La generación solar debe comenzar por la función y seguir el orden de etapas.');
+        }
+        $draft ??= [
+            'next' => 0,
+            'completed' => [],
+            'usage' => ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0],
+            'prompts' => [],
+        ];
+
+        $context = $this->reportService->contextForDoor($chart, 'sol');
+        $result = $this->contentService->generateSunStage($stage, $context, $draft['completed']);
+        $draft['completed'] = array_merge($draft['completed'], $result);
+        foreach (array_keys($draft['usage']) as $tokenKey) {
+            $draft['usage'][$tokenKey] += $this->contentService->usage()[$tokenKey];
+        }
+        $draft['prompts'][] = ['stage' => $stage, ...$this->contentService->prompts()];
+        $draft['next'] = $stageIndex + 1;
+
+        if ($draft['next'] < count(SunPromptBuilder::STAGES)) {
+            Cache::put($key, $draft, now()->addHour());
+            return ['stage' => $stage, 'complete' => false, 'blocks' => 0];
+        }
+
+        $blocks = (new SunContentRenderer())->render($draft['completed']);
+        $prompts = [
+            'system' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['system']}", $draft['prompts'])),
+            'user' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['user']}", $draft['prompts'])),
+        ];
+        $saved = DB::transaction(function () use ($chart, $blocks, $context, $draft, $prompts): int {
+            $saved = $this->persistBlocks($chart, 'sol', $blocks, $context);
+            $this->storeAiCost($chart, 'sol', $draft['usage'], $prompts);
+            return $saved;
+        });
+        Cache::forget($key);
+
+        return ['stage' => $stage, 'complete' => true, 'blocks' => $saved];
+    }
+
+    private function persistBlocks(Chart $chart, string $door, array $blocks, array $context): int
+    {
+        $saved = 0;
+        $chart->interpretations()
                 ->where('door', $door)
                 ->where('ai_assisted', true)
                 ->delete();
@@ -59,8 +115,7 @@ final class PhaseOneAiGenerationService
                 ]);
                 $saved++;
             }
-        });
-
+        
         return $saved;
     }
 

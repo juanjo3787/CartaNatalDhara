@@ -139,49 +139,67 @@ final class PhaseOneAiContentService
 
     private function generateSun(array $context): array
     {
-        $builder = new SunPromptBuilder();
-        $validator = new SunContentValidator();
         $completed = [];
         $promptLog = [];
-        $this->lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
+        $usage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
 
         foreach (SunPromptBuilder::STAGES as $stage) {
-            $prompts = $builder->build($stage, $context, $completed);
-            $lastError = null;
-            for ($attempt = 1; $attempt <= 2; $attempt++) {
-                $userPrompt = $prompts['user'];
-                if ($lastError !== null) {
-                    $repair = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR);
-                    $repair['validation_feedback'] = "La respuesta anterior no pasó la validación: {$lastError}. Devuelve de nuevo el bloque completo con la estructura y profundidad solicitadas.";
-                    $userPrompt = json_encode($repair, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-                }
-                $promptLog[] = ['stage' => $stage, 'system' => $prompts['system'], 'user' => $userPrompt];
-                $result = $this->generator instanceof StructuredAiTextGenerator
-                    ? $this->generator->generateStructured($prompts['system'], $userPrompt, (new SunResponseSchema())->forStage($stage))
-                    : $this->generator->generate($prompts['system'], $userPrompt);
-                foreach (['input_tokens', 'output_tokens', 'total_tokens'] as $key) {
-                    $this->lastUsage[$key] += (int) ($result['_usage'][$key] ?? 0);
-                }
-                try {
-                    $valid = $validator->validate($stage, $result, $context);
-                    $completed = array_merge($completed, $valid);
-                    $lastError = null;
-                    break;
-                } catch (RuntimeException $exception) {
-                    $lastError = $exception->getMessage();
-                }
+            $valid = $this->generateSunStage($stage, $context, $completed);
+            $completed = array_merge($completed, $valid);
+            foreach (array_keys($usage) as $key) {
+                $usage[$key] += $this->lastUsage[$key];
             }
-            if ($lastError !== null) {
-                throw new RuntimeException("La etapa solar {$stage} no superó la validación: {$lastError}");
-            }
+            $promptLog[] = ['stage' => $stage, ...$this->lastPrompts];
         }
 
+        $this->lastUsage = $usage;
         $this->lastPrompts = [
             'system' => implode("\n\n", array_map(static fn (array $prompt): string => "[{$prompt['stage']}]\n{$prompt['system']}", $promptLog)),
             'user' => implode("\n\n", array_map(static fn (array $prompt): string => "[{$prompt['stage']}]\n{$prompt['user']}", $promptLog)),
         ];
 
         return (new SunContentRenderer())->render($completed);
+    }
+
+    public function generateSunStage(string $stage, array $context, array $completed = []): array
+    {
+        if (! config('ai.enabled')) {
+            throw new RuntimeException('La generación de IA está desactivada.');
+        }
+        $prompts = (new SunPromptBuilder())->build($stage, $context, $completed);
+        $this->lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
+        $promptLog = [];
+        $lastError = null;
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $userPrompt = $prompts['user'];
+            if ($lastError !== null) {
+                $repair = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR);
+                $repair['validation_feedback'] = "La respuesta anterior no pasó la validación: {$lastError}. Devuelve de nuevo el bloque completo con la estructura y profundidad solicitadas.";
+                $userPrompt = json_encode($repair, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            }
+            $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
+            $result = $this->generator instanceof StructuredAiTextGenerator
+                ? $this->generator->generateStructured($prompts['system'], $userPrompt, (new SunResponseSchema())->forStage($stage))
+                : $this->generator->generate($prompts['system'], $userPrompt);
+            foreach (array_keys($this->lastUsage) as $key) {
+                $this->lastUsage[$key] += (int) ($result['_usage'][$key] ?? 0);
+            }
+            try {
+                $valid = (new SunContentValidator())->validate($stage, $result, $context);
+                $lastError = null;
+                break;
+            } catch (RuntimeException $exception) {
+                $lastError = $exception->getMessage();
+            }
+        }
+        $this->lastPrompts = [
+            'system' => implode("\n\n", array_column($promptLog, 'system')),
+            'user' => implode("\n\n", array_column($promptLog, 'user')),
+        ];
+        if ($lastError !== null) {
+            throw new RuntimeException("La etapa solar {$stage} no superó la validación: {$lastError}");
+        }
+        return $valid;
     }
 
     /** @return array{input_tokens: int, output_tokens: int, total_tokens: int} */

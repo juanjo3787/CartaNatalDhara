@@ -16,9 +16,8 @@ final class SunResponseSchema
         ]);
 
         return match ($stage) {
-            'foundation' => $this->object(array_fill_keys(
-                ['shared_intro', 'function', 'sign', 'house', 'ruler', 'integration'], $paragraphs,
-            )),
+            'function' => $this->object(['shared_intro' => $paragraphs, 'function' => $paragraphs]),
+            'sign', 'house', 'ruler', 'integration' => $this->object([$stage => $paragraphs]),
             'harmony', 'deficit', 'excess' => $this->object([$stage => $state]),
             'final' => $this->object([
                 'harmonization' => $this->object([
