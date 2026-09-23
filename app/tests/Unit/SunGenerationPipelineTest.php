@@ -3,12 +3,12 @@
 namespace Tests\Unit;
 
 use App\Contracts\StructuredAiTextGenerator;
+use App\Services\Doors\DoorPipelineFactory;
+use App\Services\Doors\SolPipeline;
 use App\Services\PhaseOneAiContentService;
 use App\Services\PhaseOnePromptBuilder;
 use App\Services\SunAstrologicalFactValidator;
-use App\Services\SunContentValidator;
 use App\Services\OpenAiTextGenerator;
-use App\Services\SunResponseSchema;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Tests\TestCase;
@@ -72,7 +72,7 @@ final class SunGenerationPipelineTest extends TestCase
         $state = self::sample('harmony');
         array_pop($state['harmony']['examples']);
         $this->expectException(RuntimeException::class);
-        (new SunContentValidator())->validate('harmony', $state, self::context());
+        (new SolPipeline())->validate('harmony', $state, self::context());
     }
 
     public function test_openai_request_uses_strict_json_schema_for_the_solar_pilot(): void
@@ -83,7 +83,7 @@ final class SunGenerationPipelineTest extends TestCase
             'usage' => ['prompt_tokens' => 2, 'completion_tokens' => 3, 'total_tokens' => 5],
         ])]);
 
-        $result = (new OpenAiTextGenerator())->generateStructured('system', 'user', (new SunResponseSchema())->forStage('harmony'));
+        $result = (new OpenAiTextGenerator())->generateStructured('system', 'user', (new SolPipeline())->schemaForStage('harmony'));
 
         $this->assertSame(5, $result['_usage']['total_tokens']);
         Http::assertSent(static fn ($request): bool =>
@@ -123,8 +123,9 @@ final class SunGenerationPipelineTest extends TestCase
         $this->assertCount(11, $blocks);
     }
 
-    public static function sample(string $stage): array
+    public static function sample(string $stage, string $door = 'sol'): array
     {
+        $rulerCounts = ['sol' => 6, 'luna' => 6, 'ascendente' => 6, 'descendente' => 8];
         $paragraph = trim(str_repeat('Una decisión concreta permite observar la necesidad solar y revisar su resultado con tiempo y cuidado. ', 8));
         $example = trim(str_repeat('En una situación cotidiana, una persona observa su reacción, nombra su necesidad, responde con claridad y aprende del resultado. ', 5));
         $state = [
@@ -133,28 +134,79 @@ final class SunGenerationPipelineTest extends TestCase
             'guidelines' => array_map(static fn (int $id): array => ['id' => $id, 'text' => $paragraph], range(1, 7)),
             'examples' => array_map(static fn (int $id): array => ['id' => $id, 'text' => $example], range(1, 7)),
         ];
+        $closing = [
+            'question_intro' => [$paragraph],
+            'questions' => array_fill(0, 5, '¿Qué preferencia propia puedo expresar en esta decisión?'),
+            'central_phrase' => 'Puedo elegir con claridad y revisar después.',
+            'support_phrases' => array_fill_keys(['to_begin', 'to_restore_measure', 'to_review', 'to_integrate'], 'Puedo observar una decisión y ajustar con calma.'),
+        ];
 
         return match ($stage) {
             'function' => ['shared_intro' => ['paragraphs' => array_fill(0, 3, $paragraph)], 'function' => ['paragraphs' => array_fill(0, 3, $paragraph)]],
-            'sign', 'house', 'ruler', 'integration' => [$stage => ['paragraphs' => array_fill(0, ['sign' => 4, 'house' => 6, 'ruler' => 6, 'integration' => 4][$stage], $paragraph)]],
+            'sign', 'house', 'integration' => [$stage => ['paragraphs' => array_fill(0, ['sign' => 4, 'house' => 6, 'integration' => 4][$stage], $paragraph)]],
+            'ruler' => ['ruler' => ['paragraphs' => array_fill(0, $rulerCounts[$door] ?? 6, $paragraph)]],
             'harmony', 'deficit', 'excess' => [$stage => $state],
-            'final' => [
+            'final' => $door === 'sol' ? [
                 'harmonization' => [
                     'from_deficit' => ['paragraphs' => [$paragraph, $paragraph], 'points' => array_fill(0, 3, 'Observa una decisión propia y comprueba qué cambia después.')],
                     'from_excess' => ['paragraphs' => [$paragraph, $paragraph], 'points' => array_fill(0, 3, 'Observa una decisión propia y comprueba qué cambia después.')],
                     'equilibrium' => ['paragraphs' => [$paragraph, $paragraph], 'references' => array_fill(0, 4, 'Una preferencia expresada y revisada con claridad.')],
                 ],
-                'closing' => [
-                    'question_intro' => [$paragraph],
-                    'questions' => array_fill(0, 5, '¿Qué preferencia propia puedo expresar en esta decisión?'),
-                    'central_phrase' => 'Puedo elegir con claridad y revisar después.',
-                    'support_phrases' => array_fill_keys(['to_begin', 'to_restore_measure', 'to_review', 'to_integrate'], 'Puedo observar una decisión y ajustar con calma.'),
-                ],
-            ],
+                'closing' => $closing,
+            ] : ['closing' => $closing],
         };
     }
 
-    private static function context(): array
+    /** @return list<array{0: string}> */
+    public static function doorProvider(): array
+    {
+        return [['sol'], ['luna'], ['ascendente'], ['descendente']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('doorProvider')]
+    public function test_each_door_uses_its_own_independent_pipeline_class(string $door): void
+    {
+        $pipeline = DoorPipelineFactory::for($door);
+        $this->assertSame($door, $pipeline->door());
+        $this->assertSame($door === 'sol', $pipeline->hasHarmonization());
+        $this->assertSame($door === 'descendente' ? 8 : 6, $pipeline->rulerParagraphCount());
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('doorProvider')]
+    public function test_generation_works_for_every_door_with_correct_stage_count_and_shapes(string $door): void
+    {
+        config(['ai.enabled' => true]);
+        $generator = new class implements StructuredAiTextGenerator {
+            public array $stages = [];
+            public array $doors = [];
+
+            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array
+            {
+                throw new RuntimeException('This pipeline must request a schema.');
+            }
+
+            public function generateStructured(string $systemPrompt, string $userPrompt, array $schema, array $meta = []): array
+            {
+                $decoded = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR);
+                $stage = $decoded['stage'];
+                $door = $decoded['door'];
+                $this->stages[] = $stage;
+                $this->doors[] = $door;
+
+                return SunGenerationPipelineTest::sample($stage, $door) + ['_usage' => ['input_tokens' => 10, 'output_tokens' => 20, 'total_tokens' => 30]];
+            }
+        };
+
+        $blocks = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate($door, self::context($door));
+
+        $this->assertSame(['function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'final'], $generator->stages);
+        $this->assertSame(array_fill(0, 9, $door), $generator->doors);
+        $this->assertSame($door === 'sol' ? 11 : 10, count($blocks));
+        $this->assertSame($door === 'sol', isset($blocks['harmonization']));
+        $this->assertStringContainsString('<h3>Preguntas de autoobservación</h3>', implode('', $blocks['closing']));
+    }
+
+    private static function context(string $door = 'sol'): array
     {
         $facts = [];
         foreach (['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'ascendant', 'descendant'] as $key) {
@@ -164,6 +216,6 @@ final class SunGenerationPipelineTest extends TestCase
         $facts['mars'] = ['sign' => 'Capricornio', 'house' => 9, 'degrees' => 8, 'minutes' => 0, 'seconds' => 0];
         $facts['pluto']['sign'] = 'Escorpio';
         $facts['rulers'] = ['traditional' => ['venus'], 'modern' => ['venus']];
-        return ['name' => 'María', 'question' => '¿Qué quiero aportar y elegir?', 'astrological_facts' => $facts];
+        return ['door' => $door, 'name' => 'María', 'question' => '¿Qué quiero aportar y elegir?', 'astrological_facts' => $facts];
     }
 }

@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Contracts\AiTextGenerator;
 use App\Contracts\StructuredAiTextGenerator;
 use App\Exceptions\AiGenerationException;
+use App\Services\Doors\AbstractDoorPipeline;
+use App\Services\Doors\DoorPipelineFactory;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
@@ -148,7 +150,7 @@ final class PhaseOneAiContentService
         $promptLog = [];
         $usage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
 
-        foreach (SunPromptBuilder::STAGES as $stage) {
+        foreach (AbstractDoorPipeline::STAGES as $stage) {
             $valid = $this->generateSunStage($stage, $context, $completed);
             $completed = array_merge($completed, $valid);
             foreach (array_keys($usage) as $key) {
@@ -163,7 +165,7 @@ final class PhaseOneAiContentService
             'user' => implode("\n\n", array_map(static fn (array $prompt): string => "[{$prompt['stage']}]\n{$prompt['user']}", $promptLog)),
         ];
 
-        return (new SunContentRenderer())->render($completed, $door);
+        return DoorPipelineFactory::for($door)->render($completed);
     }
 
     public function generateSunStage(string $stage, array $context, array $completed = []): array
@@ -172,7 +174,8 @@ final class PhaseOneAiContentService
             throw new RuntimeException('La generación de IA está desactivada.');
         }
         $door = $context['door'] ?? 'sol';
-        $prompts = (new SunPromptBuilder())->build($stage, $context, $completed);
+        $pipeline = DoorPipelineFactory::for($door);
+        $prompts = $pipeline->buildPrompt($stage, $context, $completed);
         $this->lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
         $promptLog = [];
         $lastError = null;
@@ -187,13 +190,13 @@ final class PhaseOneAiContentService
             $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
             $meta = ['door' => $door, 'stage' => $stage, 'attempt' => $attempt, 'chart_id' => $context['chart_id'] ?? null];
             $result = $this->generator instanceof StructuredAiTextGenerator
-                ? $this->generator->generateStructured($prompts['system'], $userPrompt, (new SunResponseSchema())->forStage($stage, $door), $meta)
+                ? $this->generator->generateStructured($prompts['system'], $userPrompt, $pipeline->schemaForStage($stage), $meta)
                 : $this->generator->generate($prompts['system'], $userPrompt, $meta);
             foreach (array_keys($this->lastUsage) as $key) {
                 $this->lastUsage[$key] += (int) ($result['_usage'][$key] ?? 0);
             }
             try {
-                $valid = (new SunContentValidator())->validate($stage, $result, $context);
+                $valid = $pipeline->validate($stage, $result, $context);
                 $lastError = null;
                 break;
             } catch (RuntimeException $exception) {

@@ -7,6 +7,8 @@ use App\Models\ChartTemplate;
 use App\Domain\Astrology\DoorSequence;
 use App\Domain\Astrology\RulerUsageRegistry;
 use App\Models\ReportGeneration;
+use App\Services\Doors\AbstractDoorPipeline;
+use App\Services\Doors\DoorPipelineFactory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -39,7 +41,7 @@ final class PhaseOneAiGenerationService
      */
     public function generateDoorStage(Chart $chart, string $door, string $stage, string $sessionId): array
     {
-        $stageIndex = array_search($stage, SunPromptBuilder::STAGES, true);
+        $stageIndex = array_search($stage, AbstractDoorPipeline::STAGES, true);
         if ($stageIndex === false) {
             throw new RuntimeException("Etapa no válida: {$stage}");
         }
@@ -65,12 +67,12 @@ final class PhaseOneAiGenerationService
         $draft['prompts'][] = ['stage' => $stage, ...$this->contentService->prompts()];
         $draft['next'] = $stageIndex + 1;
 
-        if ($draft['next'] < count(SunPromptBuilder::STAGES)) {
+        if ($draft['next'] < count(AbstractDoorPipeline::STAGES)) {
             Cache::put($key, $draft, now()->addHour());
             return ['stage' => $stage, 'complete' => false, 'blocks' => 0];
         }
 
-        $blocks = (new SunContentRenderer())->render($draft['completed'], $door);
+        $blocks = DoorPipelineFactory::for($door)->render($draft['completed']);
         $prompts = [
             'system' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['system']}", $draft['prompts'])),
             'user' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['user']}", $draft['prompts'])),

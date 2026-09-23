@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const doors = ['sol', 'luna', 'ascendente', 'descendente'];
     // One small HTTP request per stage instead of chaining several OpenAI calls behind a single
     // request: a single big request used to exceed Cloudflare's 120s proxy read timeout (524).
-    const STAGES = @json(\App\Services\SunPromptBuilder::STAGES);
+    const STAGES = @json(\App\Services\Doors\AbstractDoorPipeline::STAGES);
     const stageUrlTemplate = @json(url('/charts/' . $chart->id . '/report/ai/DOOR_PLACEHOLDER/stages/STAGE_PLACEHOLDER'));
 
     form?.addEventListener('submit', async (event) => {
