@@ -6,6 +6,16 @@ use Tests\TestCase;
 
 final class LocalValidationAccessTest extends TestCase
 {
+    public function test_local_access_still_requires_login_when_the_indicator_is_off(): void
+    {
+        app()->detectEnvironment(fn (): string => 'local');
+        config(['validation.bypass_login' => false]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->get('http://localhost/')
+            ->assertRedirect('/login');
+    }
+
     public function test_the_indicator_allows_local_validation_without_a_session(): void
     {
         app()->detectEnvironment(fn (): string => 'local');
