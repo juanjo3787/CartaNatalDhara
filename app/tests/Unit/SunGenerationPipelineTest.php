@@ -75,6 +75,45 @@ final class SunGenerationPipelineTest extends TestCase
         (new SolPipeline())->validate('harmony', $state, self::context());
     }
 
+    public function test_it_rejects_a_verbatim_generic_phrase_reused_across_doors(): void
+    {
+        $harmonization = self::sample('final')['harmonization'];
+        $harmonization['equilibrium']['paragraphs'][0] .= ' El punto de equilibrio permite elegir cuándo utilizar el recurso y cuándo detenerlo.';
+        $result = ['harmonization' => $harmonization, 'closing' => self::sample('final')['closing']];
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/frase genérica/');
+        (new \App\Services\Doors\LunaPipeline())->validate('final', $result, self::context('luna'));
+    }
+
+    /** @return list<array{0: string}> */
+    public static function nonSolDoorProvider(): array
+    {
+        return [['luna'], ['ascendente'], ['descendente']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('nonSolDoorProvider')]
+    public function test_non_sol_doors_get_door_specific_instructions_instead_of_a_generic_template(string $door): void
+    {
+        $pipeline = DoorPipelineFactory::for($door);
+        $prompt = $pipeline->buildPrompt('function', self::context($door), []);
+        $payload = json_decode($prompt['user'], true, 512, JSON_THROW_ON_ERROR);
+
+        $genericTemplate = sprintf('función psicológica de %s, diferencia con las otras puertas', $pipeline->label());
+        $this->assertStringNotContainsString($genericTemplate, $payload['required_output']['function']);
+    }
+
+    public function test_sol_prompts_are_unchanged_by_the_shared_pipeline_refactor(): void
+    {
+        $prompt = (new SolPipeline())->buildPrompt('function', self::context(), []);
+        $payload = json_decode($prompt['user'], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(
+            '3 párrafos de al menos 70 palabras: función psicológica de el Sol, diferencia con las otras puertas y posición particular.',
+            $payload['required_output']['function'],
+        );
+    }
+
     public function test_openai_request_uses_strict_json_schema_for_the_solar_pilot(): void
     {
         config(['ai.api_key' => 'test-key', 'ai.base_url' => 'https://api.openai.com/v1']);
@@ -146,14 +185,14 @@ final class SunGenerationPipelineTest extends TestCase
             'sign', 'house', 'integration' => [$stage => ['paragraphs' => array_fill(0, ['sign' => 4, 'house' => 6, 'integration' => 4][$stage], $paragraph)]],
             'ruler' => ['ruler' => ['paragraphs' => array_fill(0, $rulerCounts[$door] ?? 6, $paragraph)]],
             'harmony', 'deficit', 'excess' => [$stage => $state],
-            'final' => $door === 'sol' ? [
+            'final' => [
                 'harmonization' => [
                     'from_deficit' => ['paragraphs' => [$paragraph, $paragraph], 'points' => array_fill(0, 3, 'Observa una decisión propia y comprueba qué cambia después.')],
                     'from_excess' => ['paragraphs' => [$paragraph, $paragraph], 'points' => array_fill(0, 3, 'Observa una decisión propia y comprueba qué cambia después.')],
                     'equilibrium' => ['paragraphs' => [$paragraph, $paragraph], 'references' => array_fill(0, 4, 'Una preferencia expresada y revisada con claridad.')],
                 ],
                 'closing' => $closing,
-            ] : ['closing' => $closing],
+            ],
         };
     }
 
@@ -168,7 +207,6 @@ final class SunGenerationPipelineTest extends TestCase
     {
         $pipeline = DoorPipelineFactory::for($door);
         $this->assertSame($door, $pipeline->door());
-        $this->assertSame($door === 'sol', $pipeline->hasHarmonization());
         $this->assertSame($door === 'descendente' ? 8 : 6, $pipeline->rulerParagraphCount());
     }
 
@@ -201,8 +239,8 @@ final class SunGenerationPipelineTest extends TestCase
 
         $this->assertSame(['function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'final'], $generator->stages);
         $this->assertSame(array_fill(0, 9, $door), $generator->doors);
-        $this->assertSame($door === 'sol' ? 11 : 10, count($blocks));
-        $this->assertSame($door === 'sol', isset($blocks['harmonization']));
+        $this->assertCount(11, $blocks);
+        $this->assertArrayHasKey('harmonization', $blocks);
         $this->assertStringContainsString('<h3>Preguntas de autoobservación</h3>', implode('', $blocks['closing']));
     }
 

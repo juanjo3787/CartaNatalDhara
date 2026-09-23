@@ -35,8 +35,56 @@ abstract class AbstractDoorPipeline
 
     abstract public function rulerParagraphCount(): int;
 
-    /** Only sol keeps the extra "harmonization" closing block; the other doors just get "closing". */
-    abstract public function hasHarmonization(): bool;
+    /**
+     * Every door reproduces the Sol block structure exactly (function, sign, house/eje, ruler,
+     * integration, harmony, deficit, excess, harmonización final, preguntas y frases de integración).
+     */
+    protected function functionRequirement(): string
+    {
+        return "3 párrafos de al menos 70 palabras: función psicológica de {$this->label()}, diferencia con las otras puertas y posición particular.";
+    }
+
+    protected function signRequirement(): string
+    {
+        return "4 párrafos de al menos 70 palabras sobre lo que necesita este signo aplicado a {$this->label()}: necesidad, recurso, tensión y aprendizaje cotidiano.";
+    }
+
+    protected function houseRequirement(): string
+    {
+        return '6 párrafos de al menos 80 palabras sobre el territorio de la casa o el eje correspondiente, con situaciones reales; separa casa y signo.';
+    }
+
+    protected function rulerRequirement(): string
+    {
+        return "{$this->rulerParagraphCount()} párrafos de al menos 80 palabras: significado del regente o regentes, su signo, su casa, su canal de expresión y consecuencias concretas. Si hay dos regentes, explica ambos individualmente antes de relacionarlos.";
+    }
+
+    protected function integrationRequirement(): string
+    {
+        return '4 párrafos de al menos 70 palabras sobre consecuencias que solo surgen al reunir todas las piezas, incluida una escena cotidiana.';
+    }
+
+    protected function harmonizationRequirement(): string
+    {
+        return 'Desde el defecto: 2-4 párrafos y 3 puntos concretos. Desde el exceso: 2-4 párrafos y 3 puntos. Equilibrio: varios párrafos que integren todas las posiciones y 4 referencias observables.';
+    }
+
+    protected function closingRequirement(): string
+    {
+        return 'Un párrafo que explique cómo usar 5 preguntas específicas de esta puerta. Una frase central y cuatro frases de apoyo: empezar, recuperar medida, revisar y reunir lo aprendido.';
+    }
+
+    /** Extra thematic guidance for a harmony/deficit/excess stage; empty string means "use the generic wording". */
+    protected function stateThemes(string $stage): string
+    {
+        return '';
+    }
+
+    /** @return list<string> Extra system rules appended only for this door (sol keeps its current rules unchanged). */
+    protected function additionalSystemRules(): array
+    {
+        return [];
+    }
 
     /** @return array{system: string, user: string} */
     public function buildPrompt(string $stage, array $context, array $completed): array
@@ -52,6 +100,7 @@ abstract class AbstractDoorPipeline
             'Los datos de ASTROLOGICAL_FACTS son canónicos: no recalcules, corrijas, completes ni inventes signos, casas, grados o posiciones. Interprétalos solamente. Una casa no equivale al signo tradicionalmente asociado a ella.',
             "Esta puerta trata sobre {$this->label()}: {$this->focus()}.",
             ...array_map(static fn (string $rule): string => '- '.$rule, $instructions['rules']),
+            ...array_map(static fn (string $rule): string => '- '.$rule, $this->additionalSystemRules()),
             'Explica todo término astrológico antes de aplicarlo y traduce la combinación a escenas posibles de la vida cotidiana. No reutilices texto genérico que sirva para otra carta.',
             'Mantén la segunda persona sin adjetivos de género si no se ha proporcionado un tratamiento gramatical. No afirmes hechos biográficos, diagnósticos ni predicciones. Evita "eres así", "siempre" y "tu carta demuestra".',
             'Cada string debe contener solo texto plano, sin Markdown, HTML, cabeceras ni numeración. Devuelve exclusivamente un objeto JSON con las claves solicitadas.',
@@ -60,20 +109,18 @@ abstract class AbstractDoorPipeline
         $requirements = match ($stage) {
             'function' => [
                 'shared_intro' => "3 párrafos breves de entrada a la puerta de {$this->label()}.",
-                'function' => "3 párrafos de al menos 70 palabras: función psicológica de {$this->label()}, diferencia con las otras puertas y posición particular.",
+                'function' => $this->functionRequirement(),
             ],
-            'sign' => ['sign' => "4 párrafos de al menos 70 palabras sobre lo que necesita este signo aplicado a {$this->label()}: necesidad, recurso, tensión y aprendizaje cotidiano."],
-            'house' => ['house' => '6 párrafos de al menos 80 palabras sobre el territorio de la casa o el eje correspondiente, con situaciones reales; separa casa y signo.'],
-            'ruler' => ['ruler' => "{$this->rulerParagraphCount()} párrafos de al menos 80 palabras: significado del regente o regentes, su signo, su casa, su canal de expresión y consecuencias concretas. Si hay dos regentes, explica ambos individualmente antes de relacionarlos."],
-            'integration' => ['integration' => '4 párrafos de al menos 70 palabras sobre consecuencias que solo surgen al reunir todas las piezas, incluida una escena cotidiana.'],
+            'sign' => ['sign' => $this->signRequirement()],
+            'house' => ['house' => $this->houseRequirement()],
+            'ruler' => ['ruler' => $this->rulerRequirement()],
+            'integration' => ['integration' => $this->integrationRequirement()],
             'harmony' => $this->stateRequirements('harmony', $context),
             'deficit' => $this->stateRequirements('deficit', $context),
             'excess' => $this->stateRequirements('excess', $context),
-            'final' => $this->hasHarmonization() ? [
-                'harmonization' => 'Desde el defecto: 2-4 párrafos y 3 puntos concretos. Desde el exceso: 2-4 párrafos y 3 puntos. Equilibrio: varios párrafos que integren todas las posiciones y 4 referencias observables.',
-                'closing' => 'Un párrafo que explique cómo usar 5 preguntas específicas de esta puerta. Una frase central y cuatro frases de apoyo: empezar, recuperar medida, revisar y reunir lo aprendido.',
-            ] : [
-                'closing' => "Cierra exclusivamente {$this->label()} con un párrafo que explique cómo usar 5 preguntas de autoobservación específicas de esta puerta. Añade una frase central y cuatro frases de apoyo: empezar, recuperar medida, revisar y reunir lo aprendido.",
+            'final' => [
+                'harmonization' => $this->harmonizationRequirement(),
+                'closing' => $this->closingRequirement(),
             ],
         };
 
@@ -96,14 +143,14 @@ abstract class AbstractDoorPipeline
                     'function' => ['paragraphs' => ['texto']],
                 ],
                 'sign', 'house', 'ruler', 'integration' => [$stage => ['paragraphs' => ['texto']]],
-                'final' => $this->hasHarmonization() ? [
+                'final' => [
                     'harmonization' => [
                         'from_deficit' => ['paragraphs' => ['texto'], 'points' => ['texto']],
                         'from_excess' => ['paragraphs' => ['texto'], 'points' => ['texto']],
                         'equilibrium' => ['paragraphs' => ['texto'], 'references' => ['texto']],
                     ],
                     'closing' => $closingShape,
-                ] : ['closing' => $closingShape],
+                ],
                 default => [$stage => [
                     'development' => ['texto'],
                     'characteristics' => [['id' => 1, 'text' => 'texto']],
@@ -126,10 +173,15 @@ abstract class AbstractDoorPipeline
     private function stateRequirements(string $stage, array $context): array
     {
         $count = 7;
+        $themes = $this->stateThemes($stage);
+        $development = '4-6 párrafos interpretativos de al menos 50 palabras cada uno ANTES de las listas. Explica mecanismo, protección o recurso, efecto inmediato, consecuencia posterior e intervención de signo, casa y regente.';
+        if ($themes !== '') {
+            $development .= ' '.$themes;
+        }
 
         return [
             'state' => $stage,
-            'development' => '4-6 párrafos interpretativos de al menos 50 palabras cada uno ANTES de las listas. Explica mecanismo, protección o recurso, efecto inmediato, consecuencia posterior e intervención de signo, casa y regente.',
+            'development' => $development,
             'characteristics' => "{$count} características breves, numeradas con IDs del 1 al {$count}.",
             'guidelines' => "{$count} pautas de 40-90 palabras cada una. Cada pauta observa, distingue, comprueba y explica qué señala equilibrio o recuperación de medida. Usa los mismos IDs.",
             'examples' => "{$count} escenas narrativas de 80-150 palabras: contexto, situación, reacción, experiencia interna, respuesta y aprendizaje. Usa los mismos IDs.",
@@ -165,14 +217,14 @@ abstract class AbstractDoorPipeline
             'function' => $this->schemaObject(['shared_intro' => $paragraphs, 'function' => $paragraphs]),
             'sign', 'house', 'ruler', 'integration' => $this->schemaObject([$stage => $paragraphs]),
             'harmony', 'deficit', 'excess' => $this->schemaObject([$stage => $state]),
-            'final' => $this->hasHarmonization() ? $this->schemaObject([
+            'final' => $this->schemaObject([
                 'harmonization' => $this->schemaObject([
                     'from_deficit' => $this->schemaObject(['paragraphs' => $this->schemaStrings(), 'points' => $this->schemaStrings()]),
                     'from_excess' => $this->schemaObject(['paragraphs' => $this->schemaStrings(), 'points' => $this->schemaStrings()]),
                     'equilibrium' => $this->schemaObject(['paragraphs' => $this->schemaStrings(), 'references' => $this->schemaStrings()]),
                 ]),
                 'closing' => $closing,
-            ]) : $this->schemaObject(['closing' => $closing]),
+            ]),
             default => throw new InvalidArgumentException("Etapa no válida: {$stage}"),
         };
     }
@@ -233,15 +285,13 @@ abstract class AbstractDoorPipeline
                 }
             }
         } elseif ($stage === 'final') {
-            if ($this->hasHarmonization()) {
-                $harmonization = $result['harmonization'] ?? [];
-                foreach (['from_deficit', 'from_excess'] as $key) {
-                    $this->validateParagraphs($harmonization[$key]['paragraphs'] ?? null, 2, 4, 45, $key);
-                    $this->validateParagraphs($harmonization[$key]['points'] ?? null, 3, 3, 8, "{$key}.points");
-                }
-                $this->validateParagraphs($harmonization['equilibrium']['paragraphs'] ?? null, 2, 4, 45, 'equilibrium');
-                $this->validateParagraphs($harmonization['equilibrium']['references'] ?? null, 4, 4, 6, 'references');
+            $harmonization = $result['harmonization'] ?? [];
+            foreach (['from_deficit', 'from_excess'] as $key) {
+                $this->validateParagraphs($harmonization[$key]['paragraphs'] ?? null, 2, 4, 45, $key);
+                $this->validateParagraphs($harmonization[$key]['points'] ?? null, 3, 3, 8, "{$key}.points");
             }
+            $this->validateParagraphs($harmonization['equilibrium']['paragraphs'] ?? null, 2, 4, 45, 'equilibrium');
+            $this->validateParagraphs($harmonization['equilibrium']['references'] ?? null, 4, 4, 6, 'references');
             $closing = $result['closing'] ?? [];
             $this->validateParagraphs($closing['question_intro'] ?? null, 1, 2, 25, 'question_intro');
             $this->validateParagraphs($closing['questions'] ?? null, 5, 5, 7, 'questions');
@@ -259,8 +309,37 @@ abstract class AbstractDoorPipeline
         }
 
         (new SunAstrologicalFactValidator())->validate($result, $context['astrological_facts']);
+        $this->assertNoGenericPhrases($result);
 
         return $result;
+    }
+
+    /**
+     * Reject verbatim reuse of known generic sentences across doors (e.g. copy-pasting the Sol wording
+     * instead of writing a Luna/Ascendente/Descendente-specific paragraph). Comparison is case-insensitive.
+     */
+    private const BANNED_GENERIC_PHRASES = [
+        'recupera espacio para la capacidad que apenas pudo expresarse',
+        'el punto de equilibrio permite elegir cuándo utilizar el recurso',
+        'encuentra una medida adecuada: tiene espacio suficiente para participar sin ocuparlo todo',
+    ];
+
+    private function assertNoGenericPhrases(array $result): void
+    {
+        $texts = [];
+        array_walk_recursive($result, static function (mixed $value) use (&$texts): void {
+            if (is_string($value)) {
+                $texts[] = mb_strtolower($value);
+            }
+        });
+
+        foreach (self::BANNED_GENERIC_PHRASES as $phrase) {
+            foreach ($texts as $text) {
+                if (str_contains($text, $phrase)) {
+                    throw new RuntimeException("El texto reutiliza una frase genérica no específica de esta puerta: \"{$phrase}\".");
+                }
+            }
+        }
     }
 
     private function validateParagraphs(mixed $items, int $minimum, int $maximum, int $minimumWords, string $path): void
@@ -308,23 +387,21 @@ abstract class AbstractDoorPipeline
             ];
         }
 
-        if ($this->hasHarmonization()) {
-            $harmonization = $content['harmonization'];
-            $blocks['harmonization'] = [
-                '<h3>Desde el defecto</h3>',
-                ...$this->renderParagraphs($harmonization['from_deficit']['paragraphs']),
-                '<p>Puntos concretos para comenzar:</p>',
-                $this->orderedList($harmonization['from_deficit']['points']),
-                '<h3>Desde el exceso</h3>',
-                ...$this->renderParagraphs($harmonization['from_excess']['paragraphs']),
-                '<p>Puntos concretos para recuperar medida:</p>',
-                $this->orderedList($harmonization['from_excess']['points']),
-                '<h3>El punto de equilibrio</h3>',
-                ...$this->renderParagraphs($harmonization['equilibrium']['paragraphs']),
-                '<p>Referencias para reconocer ese equilibrio:</p>',
-                $this->unorderedList($harmonization['equilibrium']['references']),
-            ];
-        }
+        $harmonization = $content['harmonization'];
+        $blocks['harmonization'] = [
+            '<h3>Desde el defecto</h3>',
+            ...$this->renderParagraphs($harmonization['from_deficit']['paragraphs']),
+            '<p>Puntos concretos para comenzar:</p>',
+            $this->orderedList($harmonization['from_deficit']['points']),
+            '<h3>Desde el exceso</h3>',
+            ...$this->renderParagraphs($harmonization['from_excess']['paragraphs']),
+            '<p>Puntos concretos para recuperar medida:</p>',
+            $this->orderedList($harmonization['from_excess']['points']),
+            '<h3>El punto de equilibrio</h3>',
+            ...$this->renderParagraphs($harmonization['equilibrium']['paragraphs']),
+            '<p>Referencias para reconocer ese equilibrio:</p>',
+            $this->unorderedList($harmonization['equilibrium']['references']),
+        ];
 
         $closing = $content['closing'];
         $blocks['closing'] = [

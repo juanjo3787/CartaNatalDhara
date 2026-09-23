@@ -23,9 +23,4 @@ final class SolPipeline extends AbstractDoorPipeline
     {
         return 6;
     }
-
-    public function hasHarmonization(): bool
-    {
-        return true;
-    }
 }
