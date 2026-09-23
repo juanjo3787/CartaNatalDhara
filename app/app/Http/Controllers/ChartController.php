@@ -346,6 +346,14 @@ class ChartController extends Controller
         try {
             $blocks = $generationService->generateDoor($chart, $door);
 
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'message' => "Se han generado {$blocks} bloques con IA para la puerta {$door}.",
+                    'door' => $door,
+                    'blocks' => $blocks,
+                ]);
+            }
+
             return redirect()->route('charts.report', $chart)
                 ->with('success', "Se han generado {$blocks} bloques con IA para la puerta {$door}.");
         } catch (\Throwable $exception) {
