@@ -4,8 +4,8 @@
         'shared_intro' => 'Función y posición', 'function' => 'Función y posición',
         'sign' => 'Qué necesita este signo', 'house' => 'La casa y el territorio de experiencia',
         'ruler' => 'El regente y su posición', 'integration' => 'Integración de las piezas',
-        'harmony' => 'Expresión armónica', 'deficit' => 'Expresión des-armónica por defecto',
-        'excess' => 'Expresión des-armónica por exceso', 'harmonization' => 'Armonización e integración final', 'closing' => 'Armonización e integración final',
+        'harmony' => 'Expresión Armónica', 'deficit' => 'Expresión Des-Armónica por defecto',
+        'excess' => 'Expresión Des-Armónica por exceso', 'harmonization' => 'Armonización e integración final', 'closing' => 'Preguntas y frases de integración',
     ];
 @endphp
 
