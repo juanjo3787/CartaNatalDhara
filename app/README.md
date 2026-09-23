@@ -57,6 +57,19 @@ php artisan serve
 
 `.env` ya apunta al MySQL del Synology. Asegurate de que tu equipo puede alcanzar `192.168.0.245:3306` en la red local antes de migrar.
 
+### Validar localmente sin iniciar sesión
+
+El indicador `VALIDATION_BYPASS_LOGIN` está desactivado por defecto. Para usarlo solo durante una sesión local de validación, inicia el servidor desde `app/` con estas variables de proceso:
+
+```powershell
+$env:APP_ENV = 'local'
+$env:VALIDATION_BYPASS_LOGIN = 'true'
+php artisan config:clear
+php artisan serve --host=127.0.0.1
+```
+
+Abre `http://127.0.0.1:8000`. El acceso sin sesión solo funciona cuando `APP_ENV` es `local` o `testing` y la conexión llega directamente desde `127.0.0.1` o `::1`. En producción se sigue exigiendo el inicio de sesión aunque el indicador se active por error.
+
 ## Arranque con Docker en el Synology
 
 El despliegue usa dos rutas en el Synology:
