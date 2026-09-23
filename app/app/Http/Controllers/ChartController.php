@@ -356,7 +356,7 @@ class ChartController extends Controller
                 'door' => $door,
             ]);
 
-            if ($request->expectsJson()) {
+            if ($request->ajax() || $request->expectsJson()) {
                 return response()->json(['message' => 'Error de IA: '.$message], 422);
             }
 
@@ -380,7 +380,7 @@ class ChartController extends Controller
                 'chart' => $chart->id,
             ]);
 
-            if ($request->expectsJson()) {
+            if ($request->ajax() || $request->expectsJson()) {
                 return response()->json(['message' => 'Error de IA: '.$message], 422);
             }
 

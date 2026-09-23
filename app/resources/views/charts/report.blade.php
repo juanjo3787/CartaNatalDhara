@@ -73,8 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 let payload = null;
                 try { payload = JSON.parse(body); } catch (_) {}
                 if (!response.ok || body.includes('Error de IA:')) {
-                    const match = body.match(/Error de IA:\s*([^<]+)/i);
-                    const message = payload?.message || (match ? match[1].trim() : `No se pudo generar ${doors[index]}. HTTP ${response.status}.`);
+                    const htmlMessage = new DOMParser().parseFromString(body, 'text/html').querySelector('[data-toast], [role="alert"], .error')?.textContent?.trim();
+                    const message = payload?.message || htmlMessage || `No se pudo generar ${doors[index]}. HTTP ${response.status}.`;
                     throw new Error(message.replace(/<[^>]+>/g, '').trim());
                 }
                 setProgress(Math.round(((index + 1) / doors.length) * 100));
