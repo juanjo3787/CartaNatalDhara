@@ -263,7 +263,65 @@ final class PhaseOneReportService
         $context['question'] = $points[$door]['question'];
         $context['chart_id'] = $chart->id;
 
+        // Añadir datos astrológicos canónicos para evitar recálculos
+        $snapshot = $chart->snapshot;
+        $context['canonical_positions'] = [
+            'Sol' => $this->formatCanonicalPosition($snapshot['sun'] ?? []),
+            'Luna' => $this->formatCanonicalPosition($snapshot['moon'] ?? []),
+            'Mercurio' => $this->formatCanonicalPosition($snapshot['mercury'] ?? []),
+            'Venus' => $this->formatCanonicalPosition($snapshot['venus'] ?? []),
+            'Marte' => $this->formatCanonicalPosition($snapshot['mars'] ?? []),
+            'Júpiter' => $this->formatCanonicalPosition($snapshot['jupiter'] ?? []),
+            'Saturno' => $this->formatCanonicalPosition($snapshot['saturn'] ?? []),
+            'Urano' => $this->formatCanonicalPosition($snapshot['uranus'] ?? []),
+            'Neptuno' => $this->formatCanonicalPosition($snapshot['neptune'] ?? []),
+            'Plutón' => $this->formatCanonicalPosition($snapshot['pluto'] ?? []),
+            'Ascendente' => $this->formatCanonicalPosition($snapshot['ascendant'] ?? []),
+            'Descendente' => $this->formatCanonicalPosition($snapshot['descendant'] ?? []),
+        ];
+
+        // Regentes canónicos
+        $context['canonical_positions']['Regente del Sol'] = $this->formatRuler($snapshot['sun']['sign'] ?? 'aries');
+        $context['canonical_positions']['Regente de la Luna'] = $this->formatRuler($snapshot['moon']['sign'] ?? 'aries');
+        $context['canonical_positions']['Regente del Ascendente'] = $this->formatRuler($snapshot['ascendant']['sign'] ?? 'aries');
+        $context['canonical_positions']['Regente tradicional del Descendente'] = $this->formatRuler($snapshot['descendant']['sign'] ?? 'aries');
+        $context['canonical_positions']['Regente moderno del Descendente'] = $this->formatRuler($snapshot['descendant']['sign'] ?? 'aries');
+
         return $context;
+    }
+
+    /** @param array<string, mixed> $position */
+    private function formatCanonicalPosition(array $position): string
+    {
+        if (empty($position)) {
+            return 'No disponible';
+        }
+
+        $sign = $this->translateSign($position['sign'] ?? 'aries');
+        $house = $this->resolveHouse($position, $this->snapshot['houses'] ?? [])['number'] ?? null;
+        $houseRoman = $house ? $this->romanHouse($house) : 'No disponible';
+
+        return sprintf('%s en casa %s', $sign, $houseRoman);
+    }
+
+    private function formatRuler(string $sign): string
+    {
+        $rulers = [
+            'aries' => 'Marte',
+            'tauro' => 'Venus',
+            'geminis' => 'Mercurio',
+            'cancer' => 'Luna',
+            'leo' => 'Sol',
+            'virgo' => 'Mercurio',
+            'libra' => 'Venus',
+            'escorpio' => 'Marte (tradicional) y Plutón (moderno)',
+            'sagitario' => 'Júpiter',
+            'capricornio' => 'Saturno',
+            'acuario' => 'Saturno (tradicional) y Urano (moderno)',
+            'piscis' => 'Júpiter (tradicional) y Neptuno (moderno)',
+        ];
+
+        return $rulers[$sign] ?? 'No disponible';
     }
 
     private function buildDoorIntroduction(string $name, array $snapshot): array

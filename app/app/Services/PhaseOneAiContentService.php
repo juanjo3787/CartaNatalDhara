@@ -19,9 +19,9 @@ final class PhaseOneAiContentService
         'house' => 6,
         'ruler' => 6,
         'integration' => 4,
-        'harmony' => 4,
-        'deficit' => 4,
-        'excess' => 4,
+        'harmony' => 4, // Mínimo base, pero debe tener desarrollo interpretativo + características + pautas + ejemplos
+        'deficit' => 4, // Mínimo base, pero debe tener desarrollo interpretativo + características + pautas + ejemplos
+        'excess' => 4, // Mínimo base, pero debe tener desarrollo interpretativo + características + pautas + ejemplos
         'closing' => 3,
     ];
 
@@ -81,8 +81,18 @@ final class PhaseOneAiContentService
             }
 
             $expectedCount = $this->expectedCount($door, $block, $context);
-            if ($expectedCount !== null && count($result[$block]) !== $expectedCount) {
-                throw new RuntimeException("El bloque de IA {$block} debe contener exactamente {$expectedCount} strings independientes.");
+            if ($expectedCount !== null) {
+                $actualCount = count($result[$block]);
+                // Permitimos una tolerancia de ±2 strings para bloques de estados
+                if (in_array($block, ['harmony', 'deficit', 'excess'], true)) {
+                    $minAllowed = max(1, $expectedCount - 2);
+                    $maxAllowed = $expectedCount + 2;
+                    if ($actualCount < $minAllowed || $actualCount > $maxAllowed) {
+                        throw new RuntimeException("El bloque de IA {$block} debe contener entre {$minAllowed} y {$maxAllowed} strings (se esperaban {$expectedCount}). Se recibieron {$actualCount}.");
+                    }
+                } elseif ($actualCount !== $expectedCount) {
+                    throw new RuntimeException("El bloque de IA {$block} debe contener exactamente {$expectedCount} strings independientes.");
+                }
             }
 
             if (in_array($block, ['harmony', 'deficit', 'excess'], true)) {
@@ -90,12 +100,64 @@ final class PhaseOneAiContentService
                     ?? $context['caracteristicas_estados'][$block]
                     ?? [];
 
-                if (is_array($characteristics) && $characteristics !== [] && count($result[$block]) !== count($characteristics)) {
-                    throw new RuntimeException(sprintf(
-                        'El bloque de IA %s debe contener exactamente %d strings, uno por característica.',
-                        $block,
-                        count($characteristics),
-                    ));
+                if (is_array($characteristics) && $characteristics !== []) {
+                    $expectedCount = count($characteristics);
+                    $actualCount = count($result[$block]);
+                    
+                    // Permitimos una tolerancia de ±2 strings para dar flexibilidad a la IA
+                    $minAllowed = max(1, $expectedCount - 2);
+                    $maxAllowed = $expectedCount + 2;
+                    
+                    if ($actualCount < $minAllowed || $actualCount > $maxAllowed) {
+                        throw new RuntimeException(sprintf(
+                            'El bloque de IA %s debe contener entre %d y %d strings (se esperaban %d características). Se recibieron %d strings.',
+                            $block,
+                            $minAllowed,
+                            $maxAllowed,
+                            $expectedCount,
+                            $actualCount,
+                        ));
+                    }
+                }
+
+                // Validar estructura de 4 capas: verificar que existen las cabeceras requeridas
+                $requiredHeaders = [
+                    'harmony' => ['Características que puedes observar', 'Pautas y consideraciones para reconocer este equilibrio', 'Ejemplos cotidianos de estas pautas'],
+                    'deficit' => ['Características que puedes observar', 'Pautas y consideraciones para empezar a armonizar', 'Ejemplos cotidianos y formas de empezar a armonizar'],
+                    'excess' => ['Características que puedes observar', 'Pautas y consideraciones para recuperar una medida adecuada', 'Ejemplos cotidianos y formas de recuperar medida'],
+                ];
+
+                $blockHeaders = $requiredHeaders[$block] ?? [];
+                $content = implode(' ', $result[$block]);
+                
+                foreach ($blockHeaders as $header) {
+                    if (!str_contains($content, $header)) {
+                        throw new RuntimeException("El bloque de IA {$block} debe contener la cabecera '{$header}'. Estructura de 4 capas incompleta.");
+                    }
+                }
+
+                // Validar profundidad: verificar que existe contenido antes de las cabeceras (desarrollo interpretativo)
+                $firstHeader = $blockHeaders[0] ?? '';
+                if ($firstHeader && str_contains($content, $firstHeader)) {
+                    $contentBeforeHeader = explode($firstHeader, $content)[0] ?? '';
+                    $wordCountBefore = str_word_count(strip_tags($contentBeforeHeader));
+                    if ($wordCount < 30) {
+                        throw new RuntimeException("El bloque de IA {$block} debe tener un DESARROLLO INTERPRETATIVO AMPLIO (mínimo 30 palabras) antes de la primera cabecera '{$firstHeader}'. Solo tiene {$wordCount} palabras.");
+                    }
+                }
+
+                // Validar profundidad de ejemplos: verificar longitud de strings después de la cabecera de ejemplos
+                $exampleHeader = $blockHeaders[2] ?? '';
+                if ($exampleHeader && str_contains($content, $exampleHeader)) {
+                    $contentAfterExamples = explode($exampleHeader, $content)[1] ?? '';
+                    // Verificar que los ejemplos tengan suficiente longitud
+                    $shortExamples = array_filter($result[$block], function($string) use ($exampleHeader) {
+                        return str_contains($string, $exampleHeader) || str_word_count(strip_tags($string)) < 40;
+                    });
+                    
+                    if (count($shortExamples) > 0) {
+                        throw new RuntimeException("El bloque de IA {$block} contiene ejemplos demasiado cortos. Cada ejemplo debe tener al menos 40 palabras para ser una mini escena narrativa con contexto, respuesta, experiencia, alternativa y aprendizaje.");
+                    }
                 }
             }
         }
@@ -123,7 +185,9 @@ final class PhaseOneAiContentService
                 ?? $context['caracteristicas_estados'][$block]
                 ?? [];
 
-            return is_array($characteristics) && $characteristics !== [] ? count($characteristics) : null;
+            if (is_array($characteristics) && $characteristics !== []) {
+                return count($characteristics);
+            }
         }
 
         return null;
