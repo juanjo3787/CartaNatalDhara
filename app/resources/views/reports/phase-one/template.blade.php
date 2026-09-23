@@ -19,7 +19,7 @@
     .report-cover-name { margin-top: 3rem; font-size: 1.5rem; }
     .report-cover-meta { color: #6f665f; font: .95rem/1.8 Aptos, 'Segoe UI', sans-serif; }
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
-    .report-page h2 { display: block; width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
+    .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
     .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.75; }
     .report-page ul, .report-page ol { max-width: 68ch; margin: 1rem auto 1.5rem; padding-left: 1.5rem; line-height: 1.7; }
