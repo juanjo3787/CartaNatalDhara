@@ -74,7 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try { payload = JSON.parse(body); } catch (_) {}
                 if (!response.ok || body.includes('Error de IA:')) {
                     const match = body.match(/Error de IA:\s*([^<]+)/i);
-                    throw new Error(payload?.message || (match ? match[1].trim() : `No se pudo generar ${doors[index]}. HTTP ${response.status}.`));
+                    const message = payload?.message || (match ? match[1].trim() : `No se pudo generar ${doors[index]}. HTTP ${response.status}.`);
+                    throw new Error(message.replace(/<[^>]+>/g, '').trim());
                 }
                 setProgress(Math.round(((index + 1) / doors.length) * 100));
                 loadingMessage.textContent = `${doors[index]} completado. Preparando la siguiente puerta...`;
