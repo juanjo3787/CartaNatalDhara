@@ -42,7 +42,9 @@ final class PhaseOneAiContentService
             throw new RuntimeException('La generación de IA está desactivada. Configura AI_ENABLED=true.');
         }
 
-        if ($door === 'sol' && isset($context['astrological_facts'])) {
+        // Every door now goes through the staged, schema-validated pipeline (see generateSun()) instead of a
+        // single monolithic completion, which used to get truncated (finish_reason=length) for large dossiers.
+        if (isset($context['astrological_facts'])) {
             return $this->generateSun($context);
         }
 
@@ -127,8 +129,8 @@ final class PhaseOneAiContentService
                 if ($firstHeader && str_contains($content, $firstHeader)) {
                     $contentBeforeHeader = explode($firstHeader, $content)[0] ?? '';
                     $wordCountBefore = str_word_count(strip_tags($contentBeforeHeader));
-                    if ($wordCount < 15) {
-                        throw new RuntimeException("El bloque de IA {$block} debe tener desarrollo interpretativo antes de la primera cabecera '{$firstHeader}'. Solo tiene {$wordCount} palabras.");
+                    if ($wordCountBefore < 15) {
+                        throw new RuntimeException("El bloque de IA {$block} debe tener desarrollo interpretativo antes de la primera cabecera '{$firstHeader}'. Solo tiene {$wordCountBefore} palabras.");
                     }
                 }
             }
@@ -139,6 +141,7 @@ final class PhaseOneAiContentService
 
     private function generateSun(array $context): array
     {
+        $door = $context['door'] ?? 'sol';
         $completed = [];
         $promptLog = [];
         $usage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
@@ -158,7 +161,7 @@ final class PhaseOneAiContentService
             'user' => implode("\n\n", array_map(static fn (array $prompt): string => "[{$prompt['stage']}]\n{$prompt['user']}", $promptLog)),
         ];
 
-        return (new SunContentRenderer())->render($completed);
+        return (new SunContentRenderer())->render($completed, $door);
     }
 
     public function generateSunStage(string $stage, array $context, array $completed = []): array
@@ -166,6 +169,7 @@ final class PhaseOneAiContentService
         if (! config('ai.enabled')) {
             throw new RuntimeException('La generación de IA está desactivada.');
         }
+        $door = $context['door'] ?? 'sol';
         $prompts = (new SunPromptBuilder())->build($stage, $context, $completed);
         $this->lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
         $promptLog = [];
@@ -178,9 +182,10 @@ final class PhaseOneAiContentService
                 $userPrompt = json_encode($repair, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
             }
             $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
+            $meta = ['door' => $door, 'stage' => $stage, 'attempt' => $attempt, 'chart_id' => $context['chart_id'] ?? null];
             $result = $this->generator instanceof StructuredAiTextGenerator
-                ? $this->generator->generateStructured($prompts['system'], $userPrompt, (new SunResponseSchema())->forStage($stage))
-                : $this->generator->generate($prompts['system'], $userPrompt);
+                ? $this->generator->generateStructured($prompts['system'], $userPrompt, (new SunResponseSchema())->forStage($stage, $door), $meta)
+                : $this->generator->generate($prompts['system'], $userPrompt, $meta);
             foreach (array_keys($this->lastUsage) as $key) {
                 $this->lastUsage[$key] += (int) ($result['_usage'][$key] ?? 0);
             }
@@ -197,7 +202,7 @@ final class PhaseOneAiContentService
             'user' => implode("\n\n", array_column($promptLog, 'user')),
         ];
         if ($lastError !== null) {
-            throw new RuntimeException("La etapa solar {$stage} no superó la validación: {$lastError}");
+            throw new RuntimeException("La etapa {$stage} de la puerta {$door} no superó la validación: {$lastError}");
         }
         return $valid;
     }

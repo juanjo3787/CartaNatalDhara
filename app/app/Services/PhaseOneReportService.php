@@ -263,10 +263,8 @@ final class PhaseOneReportService
         $context['question'] = $points[$door]['question'];
         $context['chart_id'] = $chart->id;
 
-        // Keep the calculated positions as typed facts for the solar pilot.
-        if ($door === 'sol') {
-            $context['astrological_facts'] = $this->astrologicalFacts($chart->snapshot, $door);
-        }
+        // Typed astrological facts, used by the structured (schema-validated) staged generation for all four doors.
+        $context['astrological_facts'] = $this->astrologicalFacts($chart->snapshot, $door);
 
         // Añadir datos astrológicos canónicos para evitar recálculos
         $snapshot = $chart->snapshot;

@@ -33,17 +33,21 @@ final class PhaseOneAiGenerationService
         });
     }
 
-    public function generateSunStage(Chart $chart, string $stage, string $sessionId): array
+    /**
+     * Generates one stage of a door's dossier at a time, caching a draft between requests so a failed
+     * stage can be retried without regenerating the stages already completed and persisted.
+     */
+    public function generateDoorStage(Chart $chart, string $door, string $stage, string $sessionId): array
     {
         $stageIndex = array_search($stage, SunPromptBuilder::STAGES, true);
         if ($stageIndex === false) {
-            throw new RuntimeException("Etapa solar no válida: {$stage}");
+            throw new RuntimeException("Etapa no válida: {$stage}");
         }
 
-        $key = 'sun_ai_draft_'.$chart->id.'_'.hash('sha256', $sessionId);
+        $key = 'phase1_ai_draft_'.$door.'_'.$chart->id.'_'.hash('sha256', $sessionId);
         $draft = $stageIndex === 0 ? null : Cache::get($key);
         if ($stageIndex > 0 && (! is_array($draft) || ($draft['next'] ?? null) !== $stageIndex)) {
-            throw new RuntimeException('La generación solar debe comenzar por la función y seguir el orden de etapas.');
+            throw new RuntimeException('La generación por etapas debe comenzar por la primera etapa y seguir el orden.');
         }
         $draft ??= [
             'next' => 0,
@@ -52,7 +56,7 @@ final class PhaseOneAiGenerationService
             'prompts' => [],
         ];
 
-        $context = $this->reportService->contextForDoor($chart, 'sol');
+        $context = $this->reportService->contextForDoor($chart, $door);
         $result = $this->contentService->generateSunStage($stage, $context, $draft['completed']);
         $draft['completed'] = array_merge($draft['completed'], $result);
         foreach (array_keys($draft['usage']) as $tokenKey) {
@@ -66,19 +70,25 @@ final class PhaseOneAiGenerationService
             return ['stage' => $stage, 'complete' => false, 'blocks' => 0];
         }
 
-        $blocks = (new SunContentRenderer())->render($draft['completed']);
+        $blocks = (new SunContentRenderer())->render($draft['completed'], $door);
         $prompts = [
             'system' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['system']}", $draft['prompts'])),
             'user' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['user']}", $draft['prompts'])),
         ];
-        $saved = DB::transaction(function () use ($chart, $blocks, $context, $draft, $prompts): int {
-            $saved = $this->persistBlocks($chart, 'sol', $blocks, $context);
-            $this->storeAiCost($chart, 'sol', $draft['usage'], $prompts);
+        $saved = DB::transaction(function () use ($chart, $door, $blocks, $context, $draft, $prompts): int {
+            $saved = $this->persistBlocks($chart, $door, $blocks, $context);
+            $this->storeAiCost($chart, $door, $draft['usage'], $prompts);
             return $saved;
         });
         Cache::forget($key);
 
         return ['stage' => $stage, 'complete' => true, 'blocks' => $saved];
+    }
+
+    /** @deprecated Kept for backward compatibility with the sol-only stage route; delegates to generateDoorStage(). */
+    public function generateSunStage(Chart $chart, string $stage, string $sessionId): array
+    {
+        return $this->generateDoorStage($chart, 'sol', $stage, $sessionId);
     }
 
     private function persistBlocks(Chart $chart, string $door, array $blocks, array $context): int

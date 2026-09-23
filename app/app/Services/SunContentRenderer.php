@@ -10,7 +10,7 @@ final class SunContentRenderer
         'excess' => ['Pautas y consideraciones para recuperar una medida adecuada', 'Ejemplos cotidianos y formas de recuperar medida'],
     ];
 
-    public function render(array $content): array
+    public function render(array $content, string $door = 'sol'): array
     {
         $blocks = [];
         foreach (['shared_intro', 'function', 'sign', 'house', 'ruler', 'integration'] as $key) {
@@ -30,21 +30,23 @@ final class SunContentRenderer
             ];
         }
 
-        $harmonization = $content['harmonization'];
-        $blocks['harmonization'] = [
-            '<h3>Desde el defecto</h3>',
-            ...$this->paragraphs($harmonization['from_deficit']['paragraphs']),
-            '<p>Puntos concretos para comenzar:</p>',
-            $this->orderedList($harmonization['from_deficit']['points']),
-            '<h3>Desde el exceso</h3>',
-            ...$this->paragraphs($harmonization['from_excess']['paragraphs']),
-            '<p>Puntos concretos para recuperar medida:</p>',
-            $this->orderedList($harmonization['from_excess']['points']),
-            '<h3>El punto de equilibrio</h3>',
-            ...$this->paragraphs($harmonization['equilibrium']['paragraphs']),
-            '<p>Referencias para reconocer ese equilibrio:</p>',
-            $this->unorderedList($harmonization['equilibrium']['references']),
-        ];
+        if ($door === 'sol') {
+            $harmonization = $content['harmonization'];
+            $blocks['harmonization'] = [
+                '<h3>Desde el defecto</h3>',
+                ...$this->paragraphs($harmonization['from_deficit']['paragraphs']),
+                '<p>Puntos concretos para comenzar:</p>',
+                $this->orderedList($harmonization['from_deficit']['points']),
+                '<h3>Desde el exceso</h3>',
+                ...$this->paragraphs($harmonization['from_excess']['paragraphs']),
+                '<p>Puntos concretos para recuperar medida:</p>',
+                $this->orderedList($harmonization['from_excess']['points']),
+                '<h3>El punto de equilibrio</h3>',
+                ...$this->paragraphs($harmonization['equilibrium']['paragraphs']),
+                '<p>Referencias para reconocer ese equilibrio:</p>',
+                $this->unorderedList($harmonization['equilibrium']['references']),
+            ];
+        }
 
         $closing = $content['closing'];
         $blocks['closing'] = [

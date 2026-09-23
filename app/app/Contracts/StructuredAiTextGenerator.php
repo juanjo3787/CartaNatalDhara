@@ -4,5 +4,6 @@ namespace App\Contracts;
 
 interface StructuredAiTextGenerator extends AiTextGenerator
 {
-    public function generateStructured(string $systemPrompt, string $userPrompt, array $schema): array;
+    /** @param array<string, mixed> $meta Optional logging context (door, stage, attempt, chart_id). */
+    public function generateStructured(string $systemPrompt, string $userPrompt, array $schema, array $meta = []): array;
 }

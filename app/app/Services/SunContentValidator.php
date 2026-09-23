@@ -7,15 +7,19 @@ use RuntimeException;
 final class SunContentValidator
 {
     private const FOUNDATION_COUNTS = [
-        'shared_intro' => 3, 'function' => 3, 'sign' => 4,
-        'house' => 6, 'ruler' => 6, 'integration' => 4,
+        'shared_intro' => 3, 'function' => 3, 'sign' => 4, 'house' => 6, 'integration' => 4,
     ];
+
+    private const RULER_COUNTS = ['sol' => 6, 'luna' => 6, 'ascendente' => 6, 'descendente' => 8];
 
     public function validate(string $stage, array $result, array $context): array
     {
         unset($result['_usage']);
+        $door = $context['door'] ?? 'sol';
+
         if (in_array($stage, ['function', 'sign', 'house', 'ruler', 'integration'], true)) {
-            foreach (self::FOUNDATION_COUNTS as $key => $count) {
+            $counts = self::FOUNDATION_COUNTS + ['ruler' => self::RULER_COUNTS[$door] ?? 6];
+            foreach ($counts as $key => $count) {
                 if ($key !== $stage && ! ($stage === 'function' && $key === 'shared_intro')) {
                     continue;
                 }
@@ -29,7 +33,7 @@ final class SunContentValidator
         } elseif (in_array($stage, ['harmony', 'deficit', 'excess'], true)) {
             $state = $result[$stage] ?? null;
             if (! is_array($state)) {
-                throw new RuntimeException("Falta el estado solar {$stage}.");
+                throw new RuntimeException("Falta el estado {$stage}.");
             }
             $this->paragraphs($state['development'] ?? null, 4, 6, 50, "{$stage}.development");
             $count = 7;
@@ -49,19 +53,21 @@ final class SunContentValidator
                 }
             }
         } elseif ($stage === 'final') {
-            $harmonization = $result['harmonization'] ?? [];
-            foreach (['from_deficit', 'from_excess'] as $key) {
-                $this->paragraphs($harmonization[$key]['paragraphs'] ?? null, 2, 4, 45, $key);
-                $this->paragraphs($harmonization[$key]['points'] ?? null, 3, 3, 8, "{$key}.points");
+            if ($door === 'sol') {
+                $harmonization = $result['harmonization'] ?? [];
+                foreach (['from_deficit', 'from_excess'] as $key) {
+                    $this->paragraphs($harmonization[$key]['paragraphs'] ?? null, 2, 4, 45, $key);
+                    $this->paragraphs($harmonization[$key]['points'] ?? null, 3, 3, 8, "{$key}.points");
+                }
+                $this->paragraphs($harmonization['equilibrium']['paragraphs'] ?? null, 2, 4, 45, 'equilibrium');
+                $this->paragraphs($harmonization['equilibrium']['references'] ?? null, 4, 4, 6, 'references');
             }
-            $this->paragraphs($harmonization['equilibrium']['paragraphs'] ?? null, 2, 4, 45, 'equilibrium');
-            $this->paragraphs($harmonization['equilibrium']['references'] ?? null, 4, 4, 6, 'references');
             $closing = $result['closing'] ?? [];
             $this->paragraphs($closing['question_intro'] ?? null, 1, 2, 25, 'question_intro');
             $this->paragraphs($closing['questions'] ?? null, 5, 5, 7, 'questions');
             foreach ($closing['questions'] as $question) {
                 if (! str_contains($question, '?')) {
-                    throw new RuntimeException('Las preguntas solares deben formularse como preguntas.');
+                    throw new RuntimeException('Las preguntas de autoobservación deben formularse como preguntas.');
                 }
             }
             $this->plainText($closing['central_phrase'] ?? null, 5, 'central_phrase');
@@ -69,7 +75,7 @@ final class SunContentValidator
                 $this->plainText($closing['support_phrases'][$key] ?? null, 5, "support_phrases.{$key}");
             }
         } else {
-            throw new RuntimeException("Etapa solar desconocida: {$stage}");
+            throw new RuntimeException("Etapa desconocida: {$stage}");
         }
 
         (new SunAstrologicalFactValidator())->validate($result, $context['astrological_facts']);

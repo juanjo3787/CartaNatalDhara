@@ -9,6 +9,7 @@ use App\Models\Person;
 use App\Models\Place;
 use App\Models\PersonChangeLog;
 use App\Models\ReportGeneration;
+use App\Exceptions\AiGenerationException;
 use App\Services\ChartService;
 use App\Services\PhaseOneReportService;
 use App\Services\PhaseOneAiGenerationService;
@@ -360,6 +361,7 @@ class ChartController extends Controller
             $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
             Log::error('Phase 1 AI generation failed', [
                 'exception' => $exception::class,
+                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : null,
                 'message' => mb_substr($message, 0, 500),
                 'door' => $door,
             ]);
@@ -373,16 +375,18 @@ class ChartController extends Controller
         }
     }
 
-    public function generateSunAiStage(Request $request, Chart $chart, string $stage, PhaseOneAiGenerationService $generationService): JsonResponse
+    public function generateDoorAiStage(Request $request, Chart $chart, string $door, string $stage, PhaseOneAiGenerationService $generationService): JsonResponse
     {
         try {
-            return response()->json($generationService->generateSunStage($chart, $stage, $request->session()->getId()));
+            return response()->json($generationService->generateDoorStage($chart, $door, $stage, $request->session()->getId()));
         } catch (\Throwable $exception) {
             $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
-            Log::error('Solar AI stage failed', [
+            Log::error('Phase 1 AI stage failed', [
                 'exception' => $exception::class,
+                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : null,
                 'message' => mb_substr($message, 0, 500),
                 'chart' => $chart->id,
+                'door' => $door,
                 'stage' => $stage,
             ]);
 
@@ -401,6 +405,7 @@ class ChartController extends Controller
             $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
             Log::error('Phase 1 AI full generation failed', [
                 'exception' => $exception::class,
+                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : null,
                 'message' => mb_substr($message, 0, 500),
                 'chart' => $chart->id,
             ]);
