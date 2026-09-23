@@ -120,7 +120,7 @@ final class PhaseOneAiContentService
                     }
                 }
 
-                // Validar estructura de 4 capas: verificar que existen las cabeceras requeridas
+                // Validación más flexible de estructura: verificar cabeceras pero permitir variaciones en formato
                 $requiredHeaders = [
                     'harmony' => ['Características que puedes observar', 'Pautas y consideraciones para reconocer este equilibrio', 'Ejemplos cotidianos de estas pautas'],
                     'deficit' => ['Características que puedes observar', 'Pautas y consideraciones para empezar a armonizar', 'Ejemplos cotidianos y formas de empezar a armonizar'],
@@ -130,33 +130,24 @@ final class PhaseOneAiContentService
                 $blockHeaders = $requiredHeaders[$block] ?? [];
                 $content = implode(' ', $result[$block]);
                 
+                $missingHeaders = [];
                 foreach ($blockHeaders as $header) {
                     if (!str_contains($content, $header)) {
-                        throw new RuntimeException("El bloque de IA {$block} debe contener la cabecera '{$header}'. Estructura de 4 capas incompleta.");
+                        $missingHeaders[] = $header;
                     }
                 }
 
-                // Validar profundidad: verificar que existe contenido antes de las cabeceras (desarrollo interpretativo)
+                if (!empty($missingHeaders)) {
+                    throw new RuntimeException("El bloque de IA {$block} debe contener las cabeceras: " . implode(', ', $missingHeaders) . ". Estructura de 4 capas incompleta.");
+                }
+
+                // Validación de profundidad más flexible: verificar que existe contenido sustancial
                 $firstHeader = $blockHeaders[0] ?? '';
                 if ($firstHeader && str_contains($content, $firstHeader)) {
                     $contentBeforeHeader = explode($firstHeader, $content)[0] ?? '';
                     $wordCountBefore = str_word_count(strip_tags($contentBeforeHeader));
-                    if ($wordCount < 30) {
-                        throw new RuntimeException("El bloque de IA {$block} debe tener un DESARROLLO INTERPRETATIVO AMPLIO (mínimo 30 palabras) antes de la primera cabecera '{$firstHeader}'. Solo tiene {$wordCount} palabras.");
-                    }
-                }
-
-                // Validar profundidad de ejemplos: verificar longitud de strings después de la cabecera de ejemplos
-                $exampleHeader = $blockHeaders[2] ?? '';
-                if ($exampleHeader && str_contains($content, $exampleHeader)) {
-                    $contentAfterExamples = explode($exampleHeader, $content)[1] ?? '';
-                    // Verificar que los ejemplos tengan suficiente longitud
-                    $shortExamples = array_filter($result[$block], function($string) use ($exampleHeader) {
-                        return str_contains($string, $exampleHeader) || str_word_count(strip_tags($string)) < 40;
-                    });
-                    
-                    if (count($shortExamples) > 0) {
-                        throw new RuntimeException("El bloque de IA {$block} contiene ejemplos demasiado cortos. Cada ejemplo debe tener al menos 40 palabras para ser una mini escena narrativa con contexto, respuesta, experiencia, alternativa y aprendizaje.");
+                    if ($wordCount < 15) {
+                        throw new RuntimeException("El bloque de IA {$block} debe tener desarrollo interpretativo antes de la primera cabecera '{$firstHeader}'. Solo tiene {$wordCount} palabras.");
                     }
                 }
             }

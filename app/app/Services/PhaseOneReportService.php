@@ -266,18 +266,18 @@ final class PhaseOneReportService
         // Añadir datos astrológicos canónicos para evitar recálculos
         $snapshot = $chart->snapshot;
         $context['canonical_positions'] = [
-            'Sol' => $this->formatCanonicalPosition($snapshot['sun'] ?? []),
-            'Luna' => $this->formatCanonicalPosition($snapshot['moon'] ?? []),
-            'Mercurio' => $this->formatCanonicalPosition($snapshot['mercury'] ?? []),
-            'Venus' => $this->formatCanonicalPosition($snapshot['venus'] ?? []),
-            'Marte' => $this->formatCanonicalPosition($snapshot['mars'] ?? []),
-            'Júpiter' => $this->formatCanonicalPosition($snapshot['jupiter'] ?? []),
-            'Saturno' => $this->formatCanonicalPosition($snapshot['saturn'] ?? []),
-            'Urano' => $this->formatCanonicalPosition($snapshot['uranus'] ?? []),
-            'Neptuno' => $this->formatCanonicalPosition($snapshot['neptune'] ?? []),
-            'Plutón' => $this->formatCanonicalPosition($snapshot['pluto'] ?? []),
-            'Ascendente' => $this->formatCanonicalPosition($snapshot['ascendant'] ?? []),
-            'Descendente' => $this->formatCanonicalPosition($snapshot['descendant'] ?? []),
+            'Sol' => $this->formatCanonicalPosition($snapshot['sun'] ?? [], $snapshot),
+            'Luna' => $this->formatCanonicalPosition($snapshot['moon'] ?? [], $snapshot),
+            'Mercurio' => $this->formatCanonicalPosition($snapshot['mercury'] ?? [], $snapshot),
+            'Venus' => $this->formatCanonicalPosition($snapshot['venus'] ?? [], $snapshot),
+            'Marte' => $this->formatCanonicalPosition($snapshot['mars'] ?? [], $snapshot),
+            'Júpiter' => $this->formatCanonicalPosition($snapshot['jupiter'] ?? [], $snapshot),
+            'Saturno' => $this->formatCanonicalPosition($snapshot['saturn'] ?? [], $snapshot),
+            'Urano' => $this->formatCanonicalPosition($snapshot['uranus'] ?? [], $snapshot),
+            'Neptuno' => $this->formatCanonicalPosition($snapshot['neptune'] ?? [], $snapshot),
+            'Plutón' => $this->formatCanonicalPosition($snapshot['pluto'] ?? [], $snapshot),
+            'Ascendente' => $this->formatCanonicalPosition($snapshot['ascendant'] ?? [], $snapshot),
+            'Descendente' => $this->formatCanonicalPosition($snapshot['descendant'] ?? [], $snapshot),
         ];
 
         // Regentes canónicos
@@ -291,14 +291,14 @@ final class PhaseOneReportService
     }
 
     /** @param array<string, mixed> $position */
-    private function formatCanonicalPosition(array $position): string
+    private function formatCanonicalPosition(array $position, array $snapshot): string
     {
         if (empty($position)) {
             return 'No disponible';
         }
 
         $sign = $this->translateSign($position['sign'] ?? 'aries');
-        $house = $this->resolveHouse($position, $this->snapshot['houses'] ?? [])['number'] ?? null;
+        $house = $this->resolveHouse($position, $snapshot['houses'] ?? [])['number'] ?? null;
         $houseRoman = $house ? $this->romanHouse($house) : 'No disponible';
 
         return sprintf('%s en casa %s', $sign, $houseRoman);
