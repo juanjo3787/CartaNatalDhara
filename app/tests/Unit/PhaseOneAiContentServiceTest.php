@@ -28,7 +28,7 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertStringContainsString('Venus ya explicado', $prompts['user']);
         $this->assertStringContainsString('regentes_ya_presentados', $prompts['user']);
         $this->assertStringContainsString('No des una explicación genérica de astrología', $prompts['system']);
-        $this->assertStringContainsString('Cada característica debe tener su propio Desarrollo, Pauta y Ejemplo', $prompts['system']);
+        $this->assertStringContainsString('No generes la ficha repetitiva Característica/Desarrollo/Pauta/Ejemplo', $prompts['system']);
         $this->assertStringContainsString('lista_de_comprobacion_antes_de_responder', $prompts['user']);
         $this->assertSame(10, count($builder->blocks('descendente')));
         $this->assertSame(11, count($builder->blocks('sol')));
@@ -46,7 +46,7 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertStringContainsString('Añade una armonización completa', $prompts['system']);
         $this->assertStringContainsString('La profundidad es obligatoria', $prompts['system']);
         $this->assertStringContainsString('Esquema JSON obligatorio', $prompts['system']);
-        $this->assertStringContainsString('exactamente una <strong>Característica:', $prompts['system']);
+        $this->assertStringContainsString('No agrupes Característica + Desarrollo + Pauta + Ejemplo', $prompts['system']);
         $this->assertStringContainsString('Regla de no repetición endurecida', $prompts['system']);
         $this->assertStringContainsString('¿Qué quiero aportar y elegir?', $prompts['user']);
         $this->assertStringContainsString('exactamente 3 strings independientes', $prompts['user']);

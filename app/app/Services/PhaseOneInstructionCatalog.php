@@ -30,9 +30,9 @@ final class PhaseOneInstructionCatalog
                 'En ruler explica qué vía concreta añade el regente a la identidad solar y cómo su signo y casa cambian la forma de decidir, sostener una dirección, colaborar o revisar una elección. Si ya apareció antes, no repitas sus significados generales.',
                 'En integration no resumas signo, casa y regente por separado: explica las consecuencias de su combinación mediante una escena cotidiana, un proceso de decisión y un aprendizaje que no pueda deducirse de una sola pieza.',
                 'Añade una armonización completa: recorrido desde el defecto para recuperar espacio, recorrido desde el exceso para recuperar medida, punto de equilibrio, pasos graduales y tres acciones observables. Armonizar no significa eliminar incomodidad ni alcanzar perfección.',
-                'En harmony desarrolla primero cuatro párrafos de proceso: reconocer la necesidad, identificar una respuesta proporcionada, practicarla, observar el resultado y ajustarla. Después desarrolla individualmente cada característica con su pauta y su ejemplo.',
-                'En defecto y exceso diferencia el funcionamiento y desarrolla cada característica de forma individual: una explicación propia, una pauta concreta y un ejemplo distinto. Conserva el número y el orden de las características; no las agrupes ni las sustituyas.',
-                'En closing estructura el cierre en este orden: síntesis de la combinación, aprendizaje principal, recurso disponible, riesgo a vigilar, armonización desde defecto, armonización desde exceso, punto de equilibrio, cinco preguntas de autoobservación y una frase central con cuatro frases de apoyo.',
+                'En harmony, deficit y excess sigue cuatro capas separadas: desarrollo interpretativo amplio; "Características que puedes observar" con frases breves; el rótulo de pautas con todas las pautas desarrolladas; y el rótulo de ejemplos con todas las escenas desarrolladas. No mezcles los niveles en una numeración.',
+                'En armonización final utiliza una sola aparición del bloque externo. Desarrolla Desde el defecto, Desde el exceso, El punto de equilibrio, Referencias para reconocer ese equilibrio, Preguntas de autoobservación y Frases de integración.',
+                'En closing estructura el cierre sin repetir el título de armonización: síntesis, aprendizaje principal, recurso disponible, riesgo a vigilar, preguntas específicas y frases de integración.',
                 'La profundidad es obligatoria: cada párrafo debe desarrollar una idea completa con mecanismo, matiz y consecuencia observable. Usa al menos 80 palabras en function, sign, integration y closing; al menos 90 palabras en cada párrafo de house y ruler. No reduzcas profundidad a repetir la misma idea.',
             ],
             'luna' => [
@@ -102,6 +102,9 @@ final class PhaseOneInstructionCatalog
             'En armonía, defecto y exceso diferencia el funcionamiento completo. No uses variaciones de una misma plantilla: las características, pautas y ejemplos deben corresponderse uno a uno y ser reconociblemente distintos.',
             'Incluye en ruler un apartado de acciones y consideraciones para llevar el regente a la experiencia. En integration desarrolla la combinación particular durante varios párrafos, no solo la función genérica de signo, casa y regente.',
             'Antes de devolver el JSON comprueba que cada puerta usa realmente sus datos, que no hay bloques genéricos reutilizados entre puertas, que cada pauta corresponde a su característica, que cada ejemplo corresponde a su pauta y que Luna, Ascendente y Descendente tienen la misma profundidad que Sol.',
+            'La arquitectura obligatoria de cada estado es: explicación interpretativa amplia, características resumidas, pautas y consideraciones desarrolladas, y ejemplos cotidianos desarrollados. No generes la ficha repetitiva Característica/Desarrollo/Pauta/Ejemplo.',
+            'En armonía utiliza aproximadamente cinco características; en defecto y exceso utiliza siete. Las características son frases breves; todas las pautas van después, y todos los ejemplos van después de las pautas.',
+            'La armonización final aparece una sola vez. Incluye Desde el defecto y tres acciones, Desde el exceso y tres acciones, El punto de equilibrio, Referencias para reconocer ese equilibrio, preguntas específicas y frases de integración.',
         ];
     }
 }

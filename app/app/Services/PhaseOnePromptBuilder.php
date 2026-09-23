@@ -31,9 +31,7 @@ final class PhaseOnePromptBuilder
         }
 
         $instructions = $this->instructionCatalog->forDoor($door);
-        $stateFormat = in_array($door, ['luna', 'descendente'], true)
-            ? 'Esquema HTML obligatorio para esta puerta: harmony, deficit y excess deben devolver un string independiente por característica, con exactamente <ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>. No incluyas Desarrollo ni agrupes características.'
-            : 'Esquema HTML obligatorio: cada <li> debe incluir exactamente una <strong>Característica:</strong>, una <strong>Desarrollo:</strong>, una <strong>Pauta:</strong> y un <strong>Ejemplo:</strong>, separados por <br>. Cada estado debe conservar un único <ol> y cada característica ocupa un <li> independiente.';
+        $stateFormat = 'No agrupes Característica + Desarrollo + Pauta + Ejemplo dentro de cada punto. Cada estado debe devolver cuatro capas separadas: desarrollo interpretativo amplio y personalizado; características resumidas; pautas y consideraciones desarrolladas; ejemplos cotidianos desarrollados. Usa bloques de párrafos/listas separados por capas, nunca una ficha repetitiva por característica.';
         $system = implode("\n", [
             'Eres una redactora editorial especializada en informes de astrología simbólica.',
             'Estas instrucciones son obligatorias. La fuente específica de esta puerta es: '.$instructions['source'],
@@ -45,10 +43,10 @@ final class PhaseOnePromptBuilder
             'En house desarrolla seis perspectivas distintas del territorio o eje indicado. Cada párrafo debe añadir una condición, proceso, responsabilidad, participación o cambio temporal nuevo.',
             'En ruler explica primero qué aporta el regente a la pregunta de esta puerta y después cómo su signo y casa lo matizan; si ya se presentó, úsalo solo como puente y aporta una consecuencia nueva.',
             'En integration construye consecuencias que solo aparecen al reunir puerta, signo, casa o eje y regente. Incluye una escena o proceso observable, no una suma de resúmenes.',
-            'En harmony, deficit y excess conserva exactamente las características recibidas en datos_carta. Cada característica debe tener su propio Desarrollo, Pauta y Ejemplo, en el mismo orden, y los ejemplos deben variar de contexto.',
+            'En harmony, deficit y excess conserva exactamente las características recibidas en datos_carta, pero preséntalas en capas separadas: primero explica el estado concreto, después enumera solo las características, luego desarrolla todas las pautas y finalmente todos los ejemplos en el mismo orden.',
             'Estructura obligatoria de los estados: antes de las características de harmony incluye exactamente el rótulo "Características que puedes observar", seguido de "Pautas y consideraciones para reconocer este equilibrio" y "Ejemplos cotidianos de estas pautas". En deficit utiliza exactamente "Características que puedes observar", "Pautas y consideraciones para empezar a armonizar" y "Ejemplos cotidianos y formas de empezar a armonizar". En excess utiliza exactamente "Características que puedes observar", "Pautas y consideraciones para recuperar una medida adecuada" y "Ejemplos cotidianos y formas de recuperar medida".',
             'No escribas "Características que puedes observer" ni ninguna variante: la cadena correcta es exactamente "Características que puedes observar".',
-            'En harmonization trabaja únicamente con las características ya desarrolladas: separa el recorrido desde defecto y desde exceso, e indica reconocimiento, práctica, resultado y ajuste.',
+            'En harmonization no repitas el título del bloque. Desarrolla "Desde el defecto", "Desde el exceso", "El punto de equilibrio", "Referencias para reconocer ese equilibrio", "Preguntas de autoobservación" y "Frases de integración".',
             'En closing incluye, en ese orden, síntesis, aprendizaje principal, recurso, riesgo, exactamente cinco preguntas de autoobservación y una frase central con frases breves de apoyo.',
             'Profundidad mínima obligatoria: cada párrafo debe contener una idea desarrollada, un matiz y una consecuencia o forma de observación. No cuentes frases introductorias, definiciones repetidas ni cierres genéricos como desarrollo.',
             'Regla de no repetición endurecida: antes de redactar cada bloque, identifica qué conceptos, ejemplos y regentes ya aparecen en puertas_anteriores. Solo puedes retomarlos como puente breve seguido de una consecuencia nueva; no repitas definiciones, escenas, pautas ni frases con sinónimos.',
@@ -60,7 +58,7 @@ final class PhaseOnePromptBuilder
             'Esquema JSON obligatorio: la respuesta raíz debe ser un objeto; debe contener exactamente las claves de bloques_obligatorios; cada valor debe ser un array JSON de strings no vacíos; no uses objetos, null, claves adicionales, Markdown ni texto fuera del JSON.',
             $stateFormat,
             'En los bloques narrativos usa strings HTML con párrafos completos (<p>...</p>) o texto limpio, pero nunca mezcles JSON dentro del HTML ni HTML sin cerrar. Escapa comillas dentro del JSON y conserva caracteres Unicode válidos.',
-            'No uses Markdown, listas planas ni etiquetas HTML fuera de p, ol, ul, li, strong, em y br. No uses atributos, enlaces, estilos, scripts ni etiquetas sin cerrar.',
+            'No uses Markdown ni etiquetas HTML fuera de p, ol, ul, li, strong, em y br. En los estados, separa las listas de características, pautas y ejemplos; no pongas los cuatro niveles dentro del mismo li. No uses atributos, enlaces, estilos, scripts ni etiquetas sin cerrar.',
             'No introduzcas etiquetas HTML peligrosas, scripts, estilos, enlaces ni atributos; solo se permiten p, ul, ol, li, strong, em y br.',
             'Prioriza claridad editorial, continuidad, orden lógico y lectura fluida. Cada string debe ser una unidad completa, no una concatenación de frases sueltas.',
         ]);
@@ -83,17 +81,17 @@ final class PhaseOnePromptBuilder
                 'house' => 'Seis perspectivas diferentes del territorio: experiencia, necesidad, participación, responsabilidad, condiciones y evolución temporal.',
                 'ruler' => 'Aporte del regente, después signo y casa del regente, con necesidades, consecuencias y manifestaciones nuevas.',
                 'integration' => 'Consecuencias que solo aparecen al reunir todas las piezas, con proceso o escena observable.',
-                'harmony' => 'Explicación inicial y después cada característica en orden con Característica, Desarrollo, Pauta y Ejemplo.',
-                'deficit' => 'Explicación inicial y cada característica en orden con Característica, Desarrollo, Pauta y Ejemplo.',
-                'excess' => 'Explicación inicial y cada característica en orden con Característica, Desarrollo, Pauta y Ejemplo.',
-                'closing' => 'Síntesis, aprendizaje, recurso, riesgo, exactamente cinco preguntas y frase central con apoyos.',
+                'harmony' => 'Cuatro capas separadas: desarrollo interpretativo amplio; aproximadamente 5 características resumidas; pautas desarrolladas; ejemplos cotidianos desarrollados.',
+                'deficit' => 'Cuatro capas separadas: desarrollo interpretativo amplio; 7 características resumidas; 7 pautas desarrolladas; 7 ejemplos cotidianos desarrollados.',
+                'excess' => 'Cuatro capas separadas: desarrollo interpretativo amplio; 7 características resumidas; 7 pautas desarrolladas; 7 ejemplos cotidianos desarrollados.',
+                'closing' => 'No repitas el título de armonización. Incluye Desde el defecto, Desde el exceso, El punto de equilibrio, Referencias para reconocer ese equilibrio, preguntas específicas y frases de integración.',
             ],
             'lista_de_comprobacion_antes_de_responder' => [
                 'Cada bloque responde su propia pregunta y no anticipa el contenido de un bloque posterior.',
                 'No hay párrafos equivalentes ni listas con ejemplos del mismo contexto repetido.',
                 'El resultado tiene profundidad de dossier y no es una síntesis ni una versión abreviada.',
                 'Cada bloque usa la combinación concreta de puerta, signo, casa o eje, regente y posición del regente.',
-                'Cada característica tiene explicación, contexto, pauta y ejemplo correspondientes.',
+                'Los estados están separados en desarrollo, características, pautas y ejemplos; no usan la ficha Característica/Desarrollo/Pauta/Ejemplo repetida.',
                 'Luna solo aborda necesidad emocional, cuidado y regulación; Ascendente solo inicio, orientación y ritmo; Descendente solo reciprocidad, acuerdos y dos subjetividades.',
                 'No hay predicciones, diagnósticos, etiquetas fijas ni hechos biográficos atribuidos a la persona.',
             ],
@@ -146,8 +144,8 @@ final class PhaseOnePromptBuilder
             $user['continuidad']['instruccion_regente'] = 'Venus ya fue presentado en la Puerta del Sol. Utiliza aquella explicación únicamente como puente. No vuelvas a explicar Venus de forma general ni repitas su interpretación solar. Desarrolla exclusivamente qué aporta Venus a la experiencia lunar: regulación emocional, formas de cuidado, reconocimiento, expresión de necesidades, vulnerabilidad y seguridad emocional.';
             $user['requisitos_de_extension'] = $this->lunaRequirements();
             $user['formato_estados'] = [
-                'regla' => 'Cada característica ocupa un string independiente.',
-                'estructura' => '<ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>',
+                'regla' => 'Las características, las pautas y los ejemplos ocupan capas separadas; no agrupes los cuatro niveles dentro de cada punto.',
+                'estructura' => 'Desarrollo narrativo → Características que puedes observar → Pautas y consideraciones → Ejemplos cotidianos desarrollados.',
                 'prohibido' => 'No agrupar, añadir, eliminar, fusionar, renombrar ni reordenar características.',
                 'rotulos_exactos' => [
                     'harmony' => ['Características que puedes observar', 'Pautas y consideraciones para reconocer este equilibrio', 'Ejemplos cotidianos de estas pautas'],
@@ -192,8 +190,8 @@ final class PhaseOnePromptBuilder
                 'closing' => ['numero_strings' => 3, 'instruccion' => 'Cierra exclusivamente el Ascendente con síntesis, aprendizaje, recurso, riesgo, cinco preguntas y frase central con apoyos.'],
             ];
             $user['formato_estados'] = [
-                'regla' => 'Cada una de las siete características de cada estado ocupa un string independiente.',
-                'estructura' => '<ol><li><strong>Característica:</strong> ...<br><strong>Desarrollo:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>',
+                'regla' => 'Las siete características se enumeran juntas; después van las siete pautas juntas y después los siete ejemplos juntos, siempre en el mismo orden.',
+                'estructura' => 'Desarrollo narrativo → Características que puedes observar → Pautas y consideraciones → Ejemplos cotidianos desarrollados.',
                 'prohibido' => 'No agrupar, añadir, eliminar, fusionar, renombrar ni reordenar características.',
                 'rotulos_exactos' => [
                     'harmony' => ['Características que puedes observar', 'Pautas y consideraciones para reconocer este equilibrio', 'Ejemplos cotidianos de estas pautas'],
@@ -238,8 +236,8 @@ final class PhaseOnePromptBuilder
                 'closing' => ['numero_strings' => 3, 'instruccion' => 'Cierra exclusivamente el Descendente con síntesis, aprendizaje, recurso, riesgo, cinco preguntas y frase central con apoyos.'],
             ];
             $user['formato_estados'] = [
-                'regla' => 'Cada una de las siete características de cada estado ocupa un string independiente.',
-                'estructura' => '<ol><li><strong>Característica:</strong> ...<br><strong>Pauta:</strong> ...<br><strong>Ejemplo:</strong> ...</li></ol>',
+                'regla' => 'Las siete características se enumeran juntas; después van las siete pautas juntas y después los siete ejemplos juntos, siempre en el mismo orden.',
+                'estructura' => 'Desarrollo narrativo → Características que puedes observar → Pautas y consideraciones → Ejemplos cotidianos desarrollados.',
                 'prohibido' => 'No agrupar, añadir, eliminar, fusionar, renombrar ni reordenar características.',
             ];
             $user['criterios_de_continuidad'] = [
