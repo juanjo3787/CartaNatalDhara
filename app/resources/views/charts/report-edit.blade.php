@@ -60,7 +60,7 @@
 
         @foreach ($report['doors'] as $door)
             <section class="editor-section">
-                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small><form method="POST" action="{{ route('charts.report.ai', [$chart, $door['key']]) }}" style="margin-top:.75rem;">@csrf<button type="submit" style="margin:0; padding:.55rem .8rem; font-size:.78rem;">Generar esta puerta con IA</button></form></h2>
+                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small><button type="button" class="generate-door-ai" data-door="{{ $door['key'] }}" style="margin-top:.75rem; padding:.55rem .8rem; font-size:.78rem;">Generar esta puerta con IA</button></h2>
                 @foreach ($editable['doors'][$door['key']] as $block => $content)
                     <div class="editor-block"><label for="{{ $door['key'] }}-{{ $block }}">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</label><div id="toolbar-{{ $door['key'] }}-{{ $block }}" class="quill-toolbar"><span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button></span><span class="ql-formats"><button class="ql-link"></button><button class="ql-clean"></button></span></div><div id="{{ $door['key'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! old('doors.' . $door['key'] . '.' . $block, $content) !!}</div><textarea name="doors[{{ $door['key'] }}][{{ $block }}]" data-editor-value="{{ $door['key'] }}-{{ $block }}" hidden></textarea></div>
                 @endforeach
@@ -100,12 +100,68 @@
             progressBar.value = percentage;
             progressValue.textContent = `${percentage}%`;
         };
+
+        // One small HTTP request per stage instead of chaining several OpenAI calls behind a single
+        // request: a single big request used to exceed Cloudflare's 120s proxy read timeout (524).
+        const STAGES = @json(\App\Services\SunPromptBuilder::STAGES);
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const stageUrlTemplate = @json(route('charts.report.ai.stage', [$chart, 'DOOR_PLACEHOLDER', 'STAGE_PLACEHOLDER']));
+
+        async function generateDoorByStages(door, onStageComplete) {
+            for (let index = 0; index < STAGES.length; index += 1) {
+                const stage = STAGES[index];
+                const url = stageUrlTemplate.replace('DOOR_PLACEHOLDER', door).replace('STAGE_PLACEHOLDER', stage);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                        Accept: 'application/json',
+                    },
+                });
+                const body = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const message = typeof body.message === 'string' ? body.message.replace(/^Error de IA:\s*/, '') : null;
+                    throw new Error(message || `No se pudo generar ${door} (etapa ${stage}). HTTP ${response.status}.`);
+                }
+                onStageComplete?.(stage, index);
+            }
+        }
+
+        document.querySelectorAll('.generate-door-ai').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const door = button.dataset.door;
+                button.disabled = true;
+                generationStatus.classList.remove('is-error');
+                generationProgress.classList.add('is-visible');
+                generationProgress.setAttribute('aria-hidden', 'false');
+                setProgress(0);
+
+                try {
+                    await generateDoorByStages(door, (stage, index) => {
+                        const percentage = Math.round(((index + 1) / STAGES.length) * 100);
+                        setProgress(percentage);
+                        generationStatus.textContent = `Generando ${door} · etapa ${stage} (${index + 1} de ${STAGES.length}) · ${percentage}% completado...`;
+                    });
+                    generationStatus.textContent = `Puerta ${door} generada · 100%. Actualizando el informe...`;
+                    window.location.assign('{{ route('charts.report.edit', $chart) }}');
+                } catch (error) {
+                    generationStatus.textContent = error.message || `No se pudo generar ${door} con IA.`;
+                    generationStatus.classList.add('is-error');
+                    generationProgress.setAttribute('aria-hidden', 'false');
+                    button.disabled = false;
+                }
+            });
+        });
+
         generateAllForm?.addEventListener('submit', async (event) => {
             if (event.defaultPrevented) return;
 
             event.preventDefault();
             const button = generateAllForm.querySelector('button[type="submit"]');
             const doors = ['sol', 'luna', 'ascendente', 'descendente'];
+            const totalSteps = doors.length * STAGES.length;
+            let completedSteps = 0;
             button.disabled = true;
             generationStatus.classList.remove('is-error');
             generationProgress.classList.add('is-visible');
@@ -113,22 +169,13 @@
             setProgress(0);
 
             try {
-                for (let index = 0; index < doors.length; index += 1) {
-                    const door = doors[index];
-                    const completedPercentage = Math.round((index / doors.length) * 100);
-                    setProgress(completedPercentage);
-                    generationStatus.textContent = `Generando ${door} (${index + 1} de ${doors.length}) · ${completedPercentage}% completado...`;
-                    const response = await fetch(`${generateAllForm.action}/${door}`, {
-                        method: 'POST',
-                        body: new FormData(generateAllForm),
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                for (const door of doors) {
+                    await generateDoorByStages(door, (stage, index) => {
+                        completedSteps += 1;
+                        const percentage = Math.round((completedSteps / totalSteps) * 100);
+                        setProgress(percentage);
+                        generationStatus.textContent = `Generando ${door} · etapa ${stage} (${index + 1} de ${STAGES.length}) · ${percentage}% completado...`;
                     });
-                    const responseBody = await response.text();
-                    if (!response.ok || responseBody.includes('Error de IA:')) {
-                        const errorMatch = responseBody.match(/Error de IA:\s*([^<]+)/i);
-                        throw new Error(errorMatch ? errorMatch[1].trim() : `No se pudo generar ${door}. HTTP ${response.status}.`);
-                    }
-                    setProgress(Math.round(((index + 1) / doors.length) * 100));
                 }
 
                 generationStatus.textContent = 'Las cuatro puertas se han generado · 100%. Actualizando el informe...';

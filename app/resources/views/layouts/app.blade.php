@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Carta Natal - @yield('title', 'Fase 1')</title>
     @if (empty($pdf))
         @vite(['resources/css/app.css', 'resources/js/app.js'])

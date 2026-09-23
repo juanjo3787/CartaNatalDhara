@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingMessage = document.querySelector('[data-app-loading-message]');
     const errorPanel = document.querySelector('[data-report-regenerate-error]');
     const doors = ['sol', 'luna', 'ascendente', 'descendente'];
+    // One small HTTP request per stage instead of chaining several OpenAI calls behind a single
+    // request: a single big request used to exceed Cloudflare's 120s proxy read timeout (524).
+    const STAGES = @json(\App\Services\SunPromptBuilder::STAGES);
+    const stageUrlTemplate = @json(url('/charts/' . $chart->id . '/report/ai/DOOR_PLACEHOLDER/stages/STAGE_PLACEHOLDER'));
 
     form?.addEventListener('submit', async (event) => {
         if (event.defaultPrevented || form.dataset.confirmed !== 'true') return;
@@ -59,26 +63,25 @@ document.addEventListener('DOMContentLoaded', () => {
         setProgress(0);
 
         try {
-            for (let index = 0; index < doors.length; index += 1) {
-                const controller = new AbortController();
-                const timeout = window.setTimeout(() => controller.abort(), doors[index] === 'sol' ? 1200000 : 90000);
-                const response = await fetch(`{{ url('/charts/' . $chart->id . '/report/ai') }}/${doors[index]}`, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ _token: csrf }),
-                    signal: controller.signal,
-                });
-                window.clearTimeout(timeout);
-                const body = await response.text();
-                let payload = null;
-                try { payload = JSON.parse(body); } catch (_) {}
-                if (!response.ok || body.includes('Error de IA:')) {
-                    const htmlMessage = new DOMParser().parseFromString(body, 'text/html').querySelector('[data-toast], [role="alert"], .error')?.textContent?.trim();
-                    const message = payload?.message || htmlMessage || `No se pudo generar ${doors[index]}. HTTP ${response.status}.`;
-                    throw new Error(message.replace(/<[^>]+>/g, '').trim());
+            const totalSteps = doors.length * STAGES.length;
+            let completedSteps = 0;
+            for (const door of doors) {
+                for (const stage of STAGES) {
+                    const url = stageUrlTemplate.replace('DOOR_PLACEHOLDER', door).replace('STAGE_PLACEHOLDER', stage);
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ _token: csrf }),
+                    });
+                    const body = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        const message = typeof body.message === 'string' ? body.message.replace(/^Error de IA:\s*/, '') : null;
+                        throw new Error(message || `No se pudo generar ${door} (etapa ${stage}). HTTP ${response.status}.`);
+                    }
+                    completedSteps += 1;
+                    setProgress(Math.round((completedSteps / totalSteps) * 100));
+                    loadingMessage.textContent = `${door} · etapa ${stage} completada. Preparando la siguiente...`;
                 }
-                setProgress(Math.round(((index + 1) / doors.length) * 100));
-                loadingMessage.textContent = `${doors[index]} completado. Preparando la siguiente puerta...`;
             }
 
             const pdfResponse = await fetch(form.action, {
