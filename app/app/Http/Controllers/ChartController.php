@@ -15,6 +15,7 @@ use App\Services\PhaseOneAiGenerationService;
 use App\Services\PhaseOneManualSaveService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Validation\Rule;
@@ -137,9 +138,11 @@ class ChartController extends Controller
 
     public function regenerateReport(Chart $chart, PhaseOneReportService $reportService): RedirectResponse
     {
-        $chart->interpretations()
-            ->where('phase', 'fase-1')
-            ->delete();
+        if (! request()->boolean('ai_ready')) {
+            $chart->interpretations()
+                ->where('phase', 'fase-1')
+                ->delete();
+        }
 
         $chart->forceFill([
             'phase_one_pdf' => null,
@@ -173,6 +176,11 @@ class ChartController extends Controller
 
         return redirect()->route('charts.report', $chart)
             ->with('success', $successMessage);
+            if (! request()->boolean('ai_ready')) {
+                $chart->interpretations()
+                    ->where('phase', 'fase-1')
+                    ->delete();
+            }
     }
 
     private function registrationRules(?Person $person = null): array
@@ -333,7 +341,7 @@ class ChartController extends Controller
             ->with('success', "Informe guardado correctamente ({$saved} bloques).");
     }
 
-    public function generateAiReport(Chart $chart, string $door, PhaseOneAiGenerationService $generationService): RedirectResponse
+    public function generateAiReport(Request $request, Chart $chart, string $door, PhaseOneAiGenerationService $generationService): RedirectResponse|JsonResponse
     {
         try {
             $blocks = $generationService->generateDoor($chart, $door);
@@ -348,12 +356,16 @@ class ChartController extends Controller
                 'door' => $door,
             ]);
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Error de IA: '.$message], 422);
+            }
+
             return redirect()->route('charts.report', $chart)
                 ->with('error', 'Error de IA: '.$message);
         }
     }
 
-    public function generateAllAiReport(Chart $chart, PhaseOneAiGenerationService $generationService): RedirectResponse
+    public function generateAllAiReport(Request $request, Chart $chart, PhaseOneAiGenerationService $generationService): RedirectResponse|JsonResponse
     {
         try {
             $blocks = $generationService->generateAll($chart);
@@ -367,6 +379,10 @@ class ChartController extends Controller
                 'message' => mb_substr($message, 0, 500),
                 'chart' => $chart->id,
             ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Error de IA: '.$message], 422);
+            }
 
             return redirect()->route('charts.report.edit', $chart)
                 ->with('error', 'Error de IA: '.$message);

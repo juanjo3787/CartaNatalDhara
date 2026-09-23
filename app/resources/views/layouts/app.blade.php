@@ -452,6 +452,7 @@
         .app-loading-progress.is-visible { display: inline-flex; }
         .app-loading-progress-bar { width: 7rem; height: .5rem; accent-color: #795c48; }
         .app-loading-progress-value { min-width: 2.8rem; font-size: .78rem; }
+        .app-loading-message.is-error { color: #9f2d2d; }
 
         @keyframes app-loading-spin { to { transform: rotate(360deg); } }
 
@@ -582,7 +583,7 @@
     <div class="app-loading" data-app-loading aria-live="polite" aria-busy="false">
         <div class="app-loading-panel">
             <span class="app-loading-spinner" aria-hidden="true"></span>
-            <span>Procesando...</span>
+            <span class="app-loading-message" data-app-loading-message>Procesando...</span>
             <span class="app-loading-progress" data-app-loading-progress aria-hidden="true">
                 <progress class="app-loading-progress-bar" data-app-loading-progress-bar max="100" value="0"></progress>
                 <span class="app-loading-progress-value" data-app-loading-progress-value>0%</span>
