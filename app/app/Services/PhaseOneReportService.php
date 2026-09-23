@@ -87,7 +87,7 @@ final class PhaseOneReportService
                 ['number' => '02', 'title' => 'La Luna', 'summary' => 'Calidez, expresión y pertenencia'],
                 ['number' => '03', 'title' => 'El Ascendente', 'summary' => 'Ritmo, estabilidad y continuidad'],
                 ['number' => '04', 'title' => 'El Descendente', 'summary' => 'Confianza, compromiso y autonomía'],
-                ['number' => '05', 'title' => 'Cierre', 'summary' => 'Preguntas de autoobservación e integración'],
+                ['number' => '05', 'title' => 'Integración de las cuatro puertas', 'summary' => 'Cómo conviven tus necesidades'],
                 ['number' => '06', 'title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado'],
             ],
             'doors' => $doorReports,

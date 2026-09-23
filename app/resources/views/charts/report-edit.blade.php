@@ -8,7 +8,7 @@
         'shared_intro' => 'Función y posición', 'shared_states' => 'Estados de expresión', 'shared_conclusions' => 'Conclusiones',
         'function' => 'Función y posición', 'sign' => 'Qué necesita este signo', 'house' => 'La casa y el territorio de experiencia',
         'ruler' => 'El regente y su posición', 'integration' => 'Integración de las piezas', 'harmony' => 'Expresión armónica',
-        'deficit' => 'Expresión des-armónica por defecto', 'excess' => 'Expresión des-armónica por exceso', 'closing' => 'Armonización e integración final',
+        'deficit' => 'Expresión des-armónica por defecto', 'excess' => 'Expresión des-armónica por exceso', 'harmonization' => 'Armonización e integración final', 'closing' => 'Armonización e integración final',
     ];
 @endphp
 
@@ -26,10 +26,6 @@
     .editor-toolbar-actions button { margin: 0; padding: .35rem .55rem; border: 1px solid #b58b67; border-radius: 4px; background: #fffaf5; color: #674b39; font-size: .78rem; box-shadow: none; }
     .ai-generation-status { margin: .5rem 0 0; color: #674b39; font-size: .84rem; }
     .ai-generation-status.is-error { color: #9f2d2d; }
-    .ai-generation-progress { display: none; gap: .6rem; align-items: center; margin: .65rem 0 1rem; color: #674b39; font-size: .82rem; }
-    .ai-generation-progress.is-visible { display: flex; }
-    .ai-generation-progress-bar { width: min(22rem, 60vw); height: .55rem; accent-color: #795c48; }
-    .ai-generation-progress-value { min-width: 3.5rem; font-weight: 700; }
     .quill-toolbar { border: 1px solid #d7d1ca !important; border-bottom: 0 !important; border-radius: 4px 4px 0 0; background: #fffaf5; }
     .rich-editor { min-height: 150px; border: 1px solid #d7d1ca !important; border-radius: 0 0 4px 4px; background: #fff; }
     .rich-editor .ql-editor { min-height: 150px; font: 1rem/1.6 Aptos, 'Segoe UI', sans-serif; color: #202020; }
@@ -46,10 +42,6 @@
         </form>
     </div>
     <p class="ai-generation-status" data-ai-generation-status role="status" aria-live="polite"></p>
-    <div class="ai-generation-progress" data-ai-generation-progress aria-hidden="true">
-        <progress class="ai-generation-progress-bar" data-ai-generation-progress-bar max="100" value="0"></progress>
-        <span class="ai-generation-progress-value" data-ai-generation-progress-value>0%</span>
-    </div>
 
     @if ($errors->any())
         <div class="note"><strong>Revisa el formulario:</strong><ul>@foreach ($errors->all() as $error)<li class="error">{{ $error }}</li>@endforeach</ul></div>
@@ -100,9 +92,9 @@
 
         const generateAllForm = document.getElementById('generate-all-ai-form');
         const generationStatus = document.querySelector('[data-ai-generation-status]');
-        const generationProgress = document.querySelector('[data-ai-generation-progress]');
-        const progressBar = document.querySelector('[data-ai-generation-progress-bar]');
-        const progressValue = document.querySelector('[data-ai-generation-progress-value]');
+        const generationProgress = document.querySelector('[data-app-loading-progress]');
+        const progressBar = document.querySelector('[data-app-loading-progress-bar]');
+        const progressValue = document.querySelector('[data-app-loading-progress-value]');
         const setProgress = (value) => {
             const percentage = Math.max(0, Math.min(100, value));
             progressBar.value = percentage;

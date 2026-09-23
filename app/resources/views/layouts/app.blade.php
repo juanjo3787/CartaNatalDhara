@@ -448,6 +448,11 @@
             animation: app-loading-spin .75s linear infinite;
         }
 
+        .app-loading-progress { display: none; align-items: center; gap: .45rem; margin-left: .25rem; }
+        .app-loading-progress.is-visible { display: inline-flex; }
+        .app-loading-progress-bar { width: 7rem; height: .5rem; accent-color: #795c48; }
+        .app-loading-progress-value { min-width: 2.8rem; font-size: .78rem; }
+
         @keyframes app-loading-spin { to { transform: rotate(360deg); } }
 
         .app-action-bar {
@@ -578,6 +583,10 @@
         <div class="app-loading-panel">
             <span class="app-loading-spinner" aria-hidden="true"></span>
             <span>Procesando...</span>
+            <span class="app-loading-progress" data-app-loading-progress aria-hidden="true">
+                <progress class="app-loading-progress-bar" data-app-loading-progress-bar max="100" value="0"></progress>
+                <span class="app-loading-progress-value" data-app-loading-progress-value>0%</span>
+            </span>
         </div>
     </div>
 
