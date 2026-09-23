@@ -171,7 +171,7 @@ class PhaseOneAiContentServiceTest extends TestCase
         $generator = new class($blocks) implements AiTextGenerator {
             public function __construct(private array $blocks) {}
 
-            public function generate(string $systemPrompt, string $userPrompt): array
+            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array
             {
                 return $this->blocks;
             }
@@ -197,7 +197,7 @@ class PhaseOneAiContentServiceTest extends TestCase
         ];
         $generator = new class($minimums) implements AiTextGenerator {
             public function __construct(private array $blocks) {}
-            public function generate(string $systemPrompt, string $userPrompt): array { return $this->blocks; }
+            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array { return $this->blocks; }
         };
 
         $result = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate('descendente', ['subject' => 'El Descendente']);

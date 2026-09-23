@@ -13,6 +13,7 @@ return [
     'sun_max_completion_tokens' => (int) env('AI_SUN_MAX_COMPLETION_TOKENS', 6000),
     'connect_timeout' => (int) env('AI_CONNECT_TIMEOUT', 10),
     'verify_ssl' => (bool) env('AI_VERIFY_SSL', true),
+    'stage_validation_attempts' => (int) env('AI_STAGE_VALIDATION_ATTEMPTS', 3),
     'currency' => env('AI_CURRENCY', 'EUR'),
     'usd_to_eur' => (float) env('AI_USD_TO_EUR', 0.92),
     'tax_rate' => (float) env('AI_TAX_RATE', 21),

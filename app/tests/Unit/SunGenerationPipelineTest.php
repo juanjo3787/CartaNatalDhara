@@ -21,12 +21,12 @@ final class SunGenerationPipelineTest extends TestCase
         $generator = new class implements StructuredAiTextGenerator {
             public array $stages = [];
 
-            public function generate(string $systemPrompt, string $userPrompt): array
+            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array
             {
                 throw new RuntimeException('The solar pilot must request a schema.');
             }
 
-            public function generateStructured(string $systemPrompt, string $userPrompt, array $schema): array
+            public function generateStructured(string $systemPrompt, string $userPrompt, array $schema, array $meta = []): array
             {
                 $stage = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR)['stage'];
                 $this->stages[] = $stage;
@@ -100,12 +100,12 @@ final class SunGenerationPipelineTest extends TestCase
             public int $calls = 0;
             private bool $failedHarmony = false;
 
-            public function generate(string $systemPrompt, string $userPrompt): array
+            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array
             {
                 throw new RuntimeException('Unexpected legacy call.');
             }
 
-            public function generateStructured(string $systemPrompt, string $userPrompt, array $schema): array
+            public function generateStructured(string $systemPrompt, string $userPrompt, array $schema, array $meta = []): array
             {
                 $this->calls++;
                 $stage = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR)['stage'];

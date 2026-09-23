@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Contracts\AiTextGenerator;
 use App\Contracts\StructuredAiTextGenerator;
+use App\Exceptions\AiGenerationException;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 final class PhaseOneAiContentService
@@ -174,11 +176,12 @@ final class PhaseOneAiContentService
         $this->lastUsage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
         $promptLog = [];
         $lastError = null;
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
+        $maxAttempts = (int) config('ai.stage_validation_attempts', 3);
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $userPrompt = $prompts['user'];
             if ($lastError !== null) {
                 $repair = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR);
-                $repair['validation_feedback'] = "La respuesta anterior no pasó la validación: {$lastError}. Devuelve de nuevo el bloque completo con la estructura y profundidad solicitadas.";
+                $repair['validation_feedback'] = "La respuesta anterior no pasó la validación: {$lastError}. Corrige exclusivamente ese requisito, cumple el mínimo de palabras o elementos indicado y devuelve de nuevo el bloque completo con la estructura y profundidad solicitadas.";
                 $userPrompt = json_encode($repair, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
             }
             $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
@@ -195,6 +198,11 @@ final class PhaseOneAiContentService
                 break;
             } catch (RuntimeException $exception) {
                 $lastError = $exception->getMessage();
+                Log::warning('Phase 1 AI stage failed schema validation', [
+                    ...$meta,
+                    'validation_error' => $lastError,
+                    'max_attempts' => $maxAttempts,
+                ]);
             }
         }
         $this->lastPrompts = [
@@ -202,7 +210,10 @@ final class PhaseOneAiContentService
             'user' => implode("\n\n", array_column($promptLog, 'user')),
         ];
         if ($lastError !== null) {
-            throw new RuntimeException("La etapa {$stage} de la puerta {$door} no superó la validación: {$lastError}");
+            throw new AiGenerationException(
+                AiGenerationException::SCHEMA_VALIDATION_FAILED,
+                "La etapa {$stage} de la puerta {$door} no superó la validación: {$lastError}",
+            );
         }
         return $valid;
     }
