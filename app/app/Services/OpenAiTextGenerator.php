@@ -2,13 +2,26 @@
 
 namespace App\Services;
 
-use App\Contracts\AiTextGenerator;
+use App\Contracts\StructuredAiTextGenerator;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-final class OpenAiTextGenerator implements AiTextGenerator
+final class OpenAiTextGenerator implements StructuredAiTextGenerator
 {
     public function generate(string $systemPrompt, string $userPrompt): array
+    {
+        return $this->generateWithFormat($systemPrompt, $userPrompt, ['type' => 'json_object']);
+    }
+
+    public function generateStructured(string $systemPrompt, string $userPrompt, array $schema): array
+    {
+        return $this->generateWithFormat($systemPrompt, $userPrompt, [
+            'type' => 'json_schema',
+            'json_schema' => ['name' => 'sun_phase_one', 'strict' => true, 'schema' => $schema],
+        ]);
+    }
+
+    private function generateWithFormat(string $systemPrompt, string $userPrompt, array $responseFormat): array
     {
         $apiKey = (string) config('ai.api_key');
 
@@ -20,7 +33,7 @@ final class OpenAiTextGenerator implements AiTextGenerator
             ->withToken($apiKey)
             ->acceptJson()
             ->asJson()
-            ->timeout((int) config('ai.timeout', 25))
+            ->timeout((int) ($responseFormat['type'] === 'json_schema' ? config('ai.sun_timeout', 180) : config('ai.timeout', 25)))
             ->connectTimeout((int) config('ai.connect_timeout', 10));
 
         if (! config('ai.verify_ssl', true)) {
@@ -30,7 +43,8 @@ final class OpenAiTextGenerator implements AiTextGenerator
         $response = $http->post('/chat/completions', [
                 'model' => config('ai.model'),
                 'temperature' => config('ai.temperature', 0.7),
-                'response_format' => ['type' => 'json_object'],
+                ...($responseFormat['type'] === 'json_schema' ? ['max_completion_tokens' => (int) config('ai.sun_max_completion_tokens', 6000)] : []),
+                'response_format' => $responseFormat,
                 'messages' => [
                     ['role' => 'system', 'content' => $systemPrompt],
                     ['role' => 'user', 'content' => $userPrompt],
@@ -43,6 +57,13 @@ final class OpenAiTextGenerator implements AiTextGenerator
                 $response->status(),
                 (string) $response->json('error.message', 'Error sin detalle'),
             ));
+        }
+
+        if ($response->json('choices.0.finish_reason') !== 'stop') {
+            throw new RuntimeException('La respuesta de IA quedó incompleta o fue interrumpida.');
+        }
+        if ($response->json('choices.0.message.refusal')) {
+            throw new RuntimeException('La API de IA rechazó la generación solicitada.');
         }
 
         $content = $response->json('choices.0.message.content');

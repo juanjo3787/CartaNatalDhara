@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             for (let index = 0; index < doors.length; index += 1) {
                 const controller = new AbortController();
-                const timeout = window.setTimeout(() => controller.abort(), 90000);
+                const timeout = window.setTimeout(() => controller.abort(), doors[index] === 'sol' ? 1200000 : 90000);
                 const response = await fetch(`{{ url('/charts/' . $chart->id . '/report/ai') }}/${doors[index]}`, {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },

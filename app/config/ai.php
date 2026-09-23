@@ -8,6 +8,8 @@ return [
     'temperature' => (float) env('AI_TEMPERATURE', 0.7),
     'base_url' => env('AI_BASE_URL', 'https://api.openai.com/v1'),
     'timeout' => (int) env('AI_TIMEOUT', 25),
+    'sun_timeout' => (int) env('AI_SUN_TIMEOUT', 180),
+    'sun_max_completion_tokens' => (int) env('AI_SUN_MAX_COMPLETION_TOKENS', 6000),
     'connect_timeout' => (int) env('AI_CONNECT_TIMEOUT', 10),
     'verify_ssl' => (bool) env('AI_VERIFY_SSL', true),
     'currency' => env('AI_CURRENCY', 'EUR'),

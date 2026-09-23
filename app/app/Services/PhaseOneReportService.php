@@ -263,6 +263,11 @@ final class PhaseOneReportService
         $context['question'] = $points[$door]['question'];
         $context['chart_id'] = $chart->id;
 
+        // Keep the calculated positions as typed facts for the solar pilot.
+        if ($door === 'sol') {
+            $context['astrological_facts'] = $this->astrologicalFacts($chart->snapshot, $door);
+        }
+
         // Añadir datos astrológicos canónicos para evitar recálculos
         $snapshot = $chart->snapshot;
         $context['canonical_positions'] = [
@@ -288,6 +293,38 @@ final class PhaseOneReportService
         $context['canonical_positions']['Regente moderno del Descendente'] = $this->formatRuler($snapshot['descendant']['sign'] ?? 'aries');
 
         return $context;
+    }
+
+    private function astrologicalFacts(array $snapshot, string $door): array
+    {
+        foreach (range(1, 12) as $houseNumber) {
+            if (! isset($snapshot['houses'][$houseNumber]['longitude'])) {
+                throw new \RuntimeException("Falta la cúspide calculada de la casa {$houseNumber}.");
+            }
+        }
+        $facts = [];
+        foreach (['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'ascendant', 'descendant'] as $key) {
+            $point = $snapshot[$key] ?? null;
+            if (! is_array($point) || ! isset($point['sign'], $point['longitude'])) {
+                throw new \RuntimeException("Falta la posición calculada: {$key}");
+            }
+            $facts[$key] = [
+                'sign' => $this->translateSign($point['sign']),
+                'house' => $this->resolveHouse($point, $snapshot['houses'] ?? [])['number'],
+                'degrees' => (int) ($point['degrees'] ?? 0),
+                'minutes' => (int) ($point['minutes'] ?? 0),
+                'seconds' => (int) round($point['seconds'] ?? 0),
+            ];
+        }
+
+        $doorKey = ['sol' => 'sun', 'luna' => 'moon', 'ascendente' => 'ascendant', 'descendente' => 'descendant'][$door];
+        $rulers = (new RegencyResolver())->resolve($snapshot[$doorKey]['sign']);
+        $facts['rulers'] = [
+            'traditional' => $rulers['traditional'],
+            'modern' => $rulers['modern'],
+        ];
+
+        return $facts;
     }
 
     /** @param array<string, mixed> $position */
