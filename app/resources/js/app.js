@@ -1,6 +1,25 @@
 import { WheelChart } from '@eaprelsky/nocturna-wheel';
 import '@eaprelsky/nocturna-wheel/css/nocturna-wheel.css';
 
+window.getNatalWheelSvg = () => {
+	const svg = document.querySelector('[data-natal-wheel] svg');
+	if (!svg) return '';
+	const copy = svg.cloneNode(true);
+	const sourceNodes = [svg, ...svg.querySelectorAll('*')];
+	const copiedNodes = [copy, ...copy.querySelectorAll('*')];
+	const properties = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity', 'font-family', 'font-size', 'font-weight', 'text-anchor'];
+	sourceNodes.forEach((source, index) => {
+		const computed = window.getComputedStyle(source);
+		const target = copiedNodes[index];
+		properties.forEach((property) => {
+			const value = computed.getPropertyValue(property);
+			if (value) target.style.setProperty(property, value);
+		});
+	});
+	copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+	return new XMLSerializer().serializeToString(copy);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('[data-natal-wheel]').forEach((wheelElement) => {
 		const chartData = JSON.parse(wheelElement.dataset.chart);

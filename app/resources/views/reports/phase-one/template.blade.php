@@ -19,6 +19,7 @@
     .report-cover-name { margin-top: 3rem; font-size: 1.5rem; }
     .report-cover-wheel { width: min(100%, 620px); margin: 2rem auto 1.5rem; padding: 1rem; background: rgba(255,255,255,.72); border: 1px solid #d8cabc; border-radius: 18px; }
     .report-cover-wheel-container { width: 100%; aspect-ratio: 1; }
+    .report-cover-wheel-image { display: block; width: 100%; height: auto; }
     .report-cover-wheel-actions { display: flex; justify-content: center; margin-top: .75rem; }
     .report-wheel-refresh { border: 1px solid #b58b67; border-radius: 5px; padding: .55rem .9rem; background: #fffaf5; color: #674b39; cursor: pointer; font: 600 .8rem Aptos, 'Segoe UI', sans-serif; }
     .report-cover-meta { color: #6f665f; font: .95rem/1.8 Aptos, 'Segoe UI', sans-serif; }
@@ -62,7 +63,9 @@
     .report-action-primary { background: #795c48; color: #fff; }
     @endif
     @if ($pdf)
-    .report-cover-wheel { display: none; }
+    .report-cover-wheel { display: block; width: 82mm; margin: 5mm auto 4mm; padding: 3mm; border: 1px solid #d8cabc; background: #fff; }
+    .report-cover-wheel-container { height: 82mm; }
+    .report-cover-wheel-actions { display: none; }
     .report-pdf-only { display: block; }
     .report-pdf-header { position: fixed; top: -10mm; left: 0; right: 0; padding-bottom: 3mm; border-bottom: .4pt solid #d8cabc; color: #8a7768; font: 7.5pt Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; text-align: center; }
     .report-pdf-footer { position: fixed; right: 0; bottom: -10mm; color: #8a7768; font: 7.5pt Aptos, 'Segoe UI', sans-serif; }
@@ -81,18 +84,20 @@
     html, body { margin: 0; padding: 0; background: #fff; }
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { margin: 0; padding: 0; }
-    .report-page { min-height: 0; height: auto; padding: 0; border: 0; }
+    .report-page { min-height: 0; height: auto; padding: 0; border: 0; page-break-after: always; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
-    .report-cover { display: block; position: relative; min-height: 250mm; height: 250mm; padding: 18mm 10mm; box-sizing: border-box; page-break-after: always; }
+    .report-cover { display: block; position: relative; min-height: 250mm; height: 250mm; padding: 14mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
+    .report-cover h1 { margin: 22mm 0 5mm; font-size: 28pt; }
+    .report-cover-name { margin-top: 5mm; font-size: 13pt; line-height: 1.35; }
     .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-door { page-break-before: always; }
     .report-door-heading { page-break-inside: avoid; }
-    .report-page h2 { font-size: 21pt; } .report-page p { max-width: 72ch; font-size: 10.5pt; line-height: 1.48; }
+    .report-page h2 { font-size: 14pt; background: #f8dfcc; } .report-page p { max-width: 72ch; font-size: 10.5pt; line-height: 1.48; }
     .report-gray p { font-size: 9.5pt; line-height: 1.42; } .report-block { margin: 18pt 0; page-break-inside: avoid; }
-    .report-block-title { padding: 6pt 10pt; font-size: 11pt; box-shadow: none; } .report-table { font-size: 8.5pt; }
-    .report-table th, .report-table td { padding: 5pt; } .report-note { display: none; }
+    .report-block-title { padding: 6pt 10pt; font-size: 11pt; background: #f8dfcc; box-shadow: 3pt 3pt 0 rgba(122, 86, 61, .12); } .report-table { font-size: 8.5pt; }
+    .report-table th, .report-table td { padding: 5pt; } .report-note { display: block; }
     @endif
 </style>
 
@@ -101,7 +106,7 @@
         <div class="report-pdf-header">SARANA VEDA · {{ strtoupper($report['name']) }}</div>
         <div class="report-pdf-footer" aria-hidden="true"></div>
     @endif
-    <section class="report-page report-cover"><div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div><h1>Carta natal de<br>{{ $report['name'] }}</h1><h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2><div class="report-cover-wheel" data-wheel-panel><div class="report-cover-wheel-container" data-natal-wheel data-chart="{{ json_encode(['planets' => collect(['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'true_node', 'mean_apogee'])->mapWithKeys(function (string $name) use ($chart): array { $point = $chart->snapshot[$name] ?? null; if (! $point || ! isset($point['longitude'])) return []; $libraryName = match ($name) { 'true_node' => 'rahu', 'mean_apogee' => 'lilith', default => $name }; return [$libraryName => ['lon' => (float) $point['longitude']]]; })->all(), 'houses' => collect($chart->snapshot['houses'] ?? [])->sortKeys()->map(fn (array $house): array => ['lon' => (float) $house['longitude']])->values()->all(), 'ascendant' => (float) ($chart->snapshot['ascendant']['longitude'] ?? 0), 'midheaven' => (float) ($chart->snapshot['midheaven']['longitude'] ?? 0), 'latitude' => (float) $chart->birthData->place->latitude], JSON_HEX_APOS | JSON_HEX_QUOT) }}"></div><div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div></div><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div><div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div></section>
+    <section class="report-page report-cover"><div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div><h1>Carta natal de<br>{{ $report['name'] }}</h1><h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2><div class="report-cover-wheel" data-wheel-panel><div class="report-cover-wheel-container" @if (!$pdf) data-natal-wheel data-chart="{{ json_encode(['planets' => collect(['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'true_node', 'mean_apogee'])->mapWithKeys(function (string $name) use ($chart): array { $point = $chart->snapshot[$name] ?? null; if (! $point || ! isset($point['longitude'])) return []; $libraryName = match ($name) { 'true_node' => 'rahu', 'mean_apogee' => 'lilith', default => $name }; return [$libraryName => ['lon' => (float) $point['longitude']]]; })->all(), 'houses' => collect($chart->snapshot['houses'] ?? [])->sortKeys()->map(fn (array $house): array => ['lon' => (float) $house['longitude']])->values()->all(), 'ascendant' => (float) ($chart->snapshot['ascendant']['longitude'] ?? 0), 'midheaven' => (float) ($chart->snapshot['midheaven']['longitude'] ?? 0), 'latitude' => (float) $chart->birthData->place->latitude], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>@if ($pdf && !empty($wheelSvg))<img class="report-cover-wheel-image" src="data:image/svg+xml;base64,{{ base64_encode($wheelSvg) }}" alt="Rueda astrológica">@endif</div><div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div></div><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div><div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div></section>
     <section class="report-page"><h1>Recorrido del dossier</h1><p>Este informe puede recorrerse por bloques. Cada apartado propone una pregunta y una forma de observarla en la experiencia cotidiana.</p><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item"><div class="report-index-number">{{ $item['number'] }}</div><div><strong>{{ $item['title'] }}</strong><span>{{ $item['summary'] }}</span></div></div>@endforeach</div></section>
     <section class="report-page"><h1>Tu primera lectura</h1><div class="report-gray">@foreach ($report['shared']['intro'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div><h2>Las cuatro puertas</h2><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     <section class="report-page"><div class="report-arrow-title report-door-intro-title">UNA BREVE INTRODUCCIÓN A TUS CUATRO PUERTAS</div>@foreach ($report['door_introduction'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<table class="report-table report-doors-table"><tr><th>Puerta</th><th>Posición</th><th>Pregunta</th></tr>@foreach ($report['doors'] as $door)<tr><td>{{ str_replace(['Primera puerta el ', 'Segunda puerta la ', 'Tercera puerta el ', 'Cuarta puerta el '], '', $door['title']) }}</td><td>{{ $door['position'] }}</td><td>{{ $door['question'] }}</td></tr>@endforeach</table><div class="report-arrow-title">ESTADOS DE CADA PUERTA: Cómo reconocer armonía, defecto y exceso</div><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
