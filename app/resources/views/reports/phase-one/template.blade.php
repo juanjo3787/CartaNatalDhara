@@ -85,8 +85,9 @@
     html, body { margin: 0; padding: 0; background: #fff; }
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { width: 174mm; margin: 0 auto; padding: 0; }
-    .report-page { width: auto; min-height: 0; height: auto; margin: 0; padding: 0; border: 0; page-break-after: always; }
-    .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 12mm; }
+    .report-page { width: auto; min-height: 0; height: auto; margin: 0; padding: 15mm 10mm 12mm 10mm; border: 0; page-break-after: always; box-sizing: border-box; }
+    .report-page.report-cover { padding: 14mm 10mm; }
+    .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
     .report-cover { display: block; position: relative; min-height: 250mm; height: 250mm; padding: 14mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
     .report-worksheet { page-break-inside: avoid; }
