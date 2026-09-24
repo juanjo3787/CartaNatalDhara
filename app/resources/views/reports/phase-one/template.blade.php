@@ -82,10 +82,11 @@
         .report-index-grid { grid-template-columns: 1fr; }
         .report-page { padding-left: 10mm; padding-right: 10mm; }
     }
-    html, body { margin: 0; padding: 0; background: #fff; }
+    /* Dompdf merges html styles into @page: never reset the root margin. */
+    body { margin: 0; padding: 0; background: #fff; }
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { width: 174mm; margin: 0 auto; padding: 0; }
-    .report-page { width: auto; min-height: 0; height: auto; margin: 0; padding: 15mm 10mm 12mm 10mm; border: 0; page-break-after: always; box-sizing: border-box; }
+    .report-page { width: auto; min-height: 0; height: auto; margin: 0; padding: 0 10mm; border: 0; page-break-after: always; box-sizing: border-box; }
     .report-page.report-cover { padding: 14mm 10mm; }
     .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
@@ -120,23 +121,13 @@
             <div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
             @foreach ($door['blocks'] as $block => $paragraphs)
                 @if ($block !== 'shared_intro')
-                    @php($solarAi = $door['key'] === 'sol' && collect((array) $paragraphs)->contains(fn ($item) => str_starts_with(trim($item), '<h3>')))
-                    <div class="report-block">
+                    <div class="report-block" data-section-id="{{ $door['key'] }}.{{ $block }}">
                         <h2 class="report-block-title">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</h2>
                         <div class="report-block-body">
-                            @if (! $solarAi && $block === 'harmony')
-                                <h3>Características que puedes observar</h3><h3>Pautas y consideraciones para reconocer este equilibrio</h3><h3>Ejemplos cotidianos de estas pautas</h3>
-                            @elseif (! $solarAi && $block === 'deficit')
-                                <h3>Características que puedes observar</h3><h3>Pautas y consideraciones para empezar a armonizar</h3><h3>Ejemplos cotidianos y formas de empezar a armonizar</h3>
-                            @elseif (! $solarAi && $block === 'excess')
-                                <h3>Características que puedes observar</h3><h3>Pautas y consideraciones para recuperar una medida adecuada</h3><h3>Ejemplos cotidianos y formas de recuperar medida</h3>
-                            @elseif (! $solarAi && $block === 'harmonization')
-                                <h3>Desde el defecto</h3><h3>Desde el exceso</h3><h3>El punto de equilibrio</h3>
-                            @endif
                             @foreach ((array) $paragraphs as $paragraph)
                                 @if ($block === 'closing' && $loop->remaining === 2)<div class="report-tail-group">@endif
                                 @php($trimmedParagraph = trim($paragraph))
-                                @if (($solarAi && preg_match('/^<(?:p|h3|ol|ul)>/', $trimmedParagraph)) || str_starts_with($trimmedParagraph, '<ol') || str_starts_with($trimmedParagraph, '<ul'))
+                                @if (preg_match('/^<(?:p|h3|h4|ol|ul)(?:\s|>)/', $trimmedParagraph))
                                     {!! $trimmedParagraph !!}
                                 @else
                                     <p>{!! $paragraph !!}</p>

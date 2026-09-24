@@ -10,7 +10,7 @@
     @endif
     <style>
         @if (!empty($pdf))
-        @page { size: A4 portrait; margin: 18mm; }
+        @page { size: A4 portrait; margin: {{ \App\Services\PdfPageGeometry::MARGIN_PT }}pt; }
         @endif
         :root {
             --bg: #fffdf9;

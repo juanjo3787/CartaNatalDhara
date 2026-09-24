@@ -3,6 +3,7 @@
 namespace App\Services\Doors;
 
 use App\Services\PhaseOneInstructionCatalog;
+use App\Services\ReportState;
 use App\Services\SunAstrologicalFactValidator;
 use InvalidArgumentException;
 use RuntimeException;
@@ -341,6 +342,7 @@ abstract class AbstractDoorPipeline
             throw new RuntimeException("Falta el estado {$stateName}.");
         }
         if ($part === 'development') {
+            ReportState::assertNarrative($state['development'] ?? [], $this->door().'.'.$stateName);
             $this->validateParagraphs($state['development'] ?? null, 4, 6, 50, "{$stateName}.development");
             return;
         }
@@ -429,6 +431,7 @@ abstract class AbstractDoorPipeline
 
         foreach (self::STATE_HEADINGS as $key => [$guidelineHeading, $exampleHeading]) {
             $state = $content[$key];
+            ReportState::validate($state, $this->door().'.'.$key);
             $blocks[$key] = [
                 ...$this->renderParagraphs($state['development']),
                 '<h3>Características que puedes observar</h3>',

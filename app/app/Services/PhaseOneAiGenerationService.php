@@ -46,7 +46,7 @@ final class PhaseOneAiGenerationService
             throw new RuntimeException("Etapa no válida: {$stage}");
         }
 
-        $key = 'phase1_ai_draft_'.$door.'_'.$chart->id.'_'.hash('sha256', $sessionId);
+        $key = 'phase1_ai_draft_v'.ReportState::SCHEMA_VERSION.'_'.ReportState::PROMPT_VERSION.'_'.$door.'_'.$chart->id.'_'.hash('sha256', $sessionId);
         $draft = Cache::get($key);
         if (is_array($draft) && $stageIndex < ($draft['next'] ?? 0)) {
             return ['stage' => $stage, 'complete' => false, 'blocks' => 0, 'already_completed' => true];
@@ -56,6 +56,8 @@ final class PhaseOneAiGenerationService
         }
         $draft ??= [
             'next' => 0,
+            'schema_version' => ReportState::SCHEMA_VERSION,
+            'prompt_version' => ReportState::PROMPT_VERSION,
             'completed' => [],
             'usage' => ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0],
             'prompts' => [],
@@ -98,26 +100,7 @@ final class PhaseOneAiGenerationService
 
     private function mergeStageResult(array $completed, array $result): array
     {
-        foreach ($result as $key => $value) {
-            if ($key === '_usage') {
-                continue;
-            }
-            if ($key === 'examples' && isset($completed[$key]) && is_array($completed[$key]) && is_array($value)) {
-                $byId = [];
-                foreach ([...$completed[$key], ...$value] as $item) {
-                    $byId[(int) ($item['id'] ?? count($byId) + 1)] = $item;
-                }
-                ksort($byId);
-                $completed[$key] = array_values($byId);
-                continue;
-            }
-            if (is_array($value) && isset($completed[$key]) && is_array($completed[$key])) {
-                $completed[$key] = $this->mergeStageResult($completed[$key], $value);
-                continue;
-            }
-            $completed[$key] = $value;
-        }
-        return $completed;
+        return ReportStageMerger::merge($completed, $result);
     }
 
     private function persistBlocks(Chart $chart, string $door, array $blocks, array $context): int
@@ -132,7 +115,7 @@ final class PhaseOneAiGenerationService
                 $template = ChartTemplate::firstOrCreate(
                     [
                         'name' => "fase1_ai_{$door}_{$block}",
-                        'version' => 1,
+                        'version' => ReportState::SCHEMA_VERSION,
                     ],
                     [
                         'door' => $door,

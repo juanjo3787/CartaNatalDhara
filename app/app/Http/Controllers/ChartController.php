@@ -275,12 +275,12 @@ class ChartController extends Controller
             $size = 7.5;
             $color = [0.54, 0.47, 0.41];
             $headerWidth = $pageCanvas->get_text_width($header, $font, $size);
-            $pageCanvas->text(($width - $headerWidth) / 2, 20, $header, $font, $size, $color);
-            $pageCanvas->line(51, 32, $width - 51, 32, [0.85, 0.79, 0.74], 0.4);
+            $pageCanvas->text(($width - $headerWidth) / 2, \App\Services\PdfPageGeometry::HEADER_TOP_PT, $header, $font, $size, $color);
+            $pageCanvas->line(51, \App\Services\PdfPageGeometry::HEADER_BOTTOM_PT, $width - 51, \App\Services\PdfPageGeometry::HEADER_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
             $footer = 'CARTA NATAL · FASE 1   /   '.$pageNumber;
             $footerWidth = $pageCanvas->get_text_width($footer, $font, $size);
-            $pageCanvas->line(51, $height - 33, $width - 51, $height - 33, [0.85, 0.79, 0.74], 0.4);
-            $pageCanvas->text(($width - $footerWidth) / 2, $height - 24, $footer, $font, $size, $color);
+            $pageCanvas->line(51, $height - \App\Services\PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, $width - 51, $height - \App\Services\PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
+            $pageCanvas->text(($width - $footerWidth) / 2, $height - \App\Services\PdfPageGeometry::FOOTER_TEXT_FROM_BOTTOM_PT, $footer, $font, $size, $color);
         });
 
         Log::info('Phase 1 PDF rendered.', [
