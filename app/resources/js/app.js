@@ -1,7 +1,7 @@
 import { WheelChart } from '@eaprelsky/nocturna-wheel';
 import '@eaprelsky/nocturna-wheel/css/nocturna-wheel.css';
 
-window.getNatalWheelSvg = () => {
+window.getNatalWheelImage = async () => {
 	const svg = document.querySelector('[data-natal-wheel] svg');
 	if (!svg) return '';
 	const copy = svg.cloneNode(true);
@@ -17,7 +17,27 @@ window.getNatalWheelSvg = () => {
 		});
 	});
 	copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-	return new XMLSerializer().serializeToString(copy);
+	const source = new XMLSerializer().serializeToString(copy);
+	const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+	const url = URL.createObjectURL(blob);
+	try {
+		const image = await new Promise((resolve, reject) => {
+			const element = new Image();
+			element.onload = () => resolve(element);
+			element.onerror = reject;
+			element.src = url;
+		});
+		const canvas = document.createElement('canvas');
+		canvas.width = 1200;
+		canvas.height = 1200;
+		const context = canvas.getContext('2d');
+		context.fillStyle = '#ffffff';
+		context.fillRect(0, 0, canvas.width, canvas.height);
+		context.drawImage(image, 0, 0, canvas.width, canvas.height);
+		return canvas.toDataURL('image/jpeg', 0.96);
+	} finally {
+		URL.revokeObjectURL(url);
+	}
 };
 
 document.addEventListener('DOMContentLoaded', () => {

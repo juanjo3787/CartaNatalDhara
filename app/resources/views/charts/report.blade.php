@@ -19,7 +19,7 @@
     </style>
         <nav class="report-action-bar" aria-label="Acciones del informe">
             <form id="regenerate-report-form" method="POST" action="{{ route('charts.report.regenerate', $chart) }}" data-confirm-message="¿Regenerar el informe con IA y actualizar el PDF?">@csrf<button class="report-action report-action-primary" type="submit">Regenerar informe</button></form>
-        <form id="validate-report-form" method="POST" action="{{ route('charts.report.validate', $chart) }}">@csrf<input type="hidden" name="wheel_svg" data-wheel-svg-input><button class="report-action report-action-validate" type="submit">Validar y guardar PDF</button></form>
+        <form id="validate-report-form" method="POST" action="{{ route('charts.report.validate', $chart) }}">@csrf<input type="hidden" name="wheel_image" data-wheel-image-input><button class="report-action report-action-validate" type="submit">Validar y guardar PDF</button></form>
         <a class="report-action" href="{{ route('charts.report.download', $chart) }}">Descargar PDF</a>
         <a class="report-action report-action-primary" href="{{ route('charts.report.edit', $chart) }}">Editar informe</a>
         <a class="report-action" href="{{ route('charts.show', $chart) }}">Volver a la carta</a>
@@ -42,15 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // request: a single big request used to exceed Cloudflare's 120s proxy read timeout (524).
     const STAGES = @json(\App\Services\Doors\AbstractDoorPipeline::STAGES);
     const stageUrlTemplate = @json(url('/charts/' . $chart->id . '/report/ai/DOOR_PLACEHOLDER/stages/STAGE_PLACEHOLDER'));
-    document.getElementById('validate-report-form')?.addEventListener('submit', (event) => {
-        const svg = window.getNatalWheelSvg?.() || '';
-        if (!svg) {
-            event.preventDefault();
+    document.getElementById('validate-report-form')?.addEventListener('submit', async (event) => {
+        const validationForm = event.currentTarget;
+        if (validationForm.dataset.wheelReady === 'true') return;
+        event.preventDefault();
+        let image = '';
+        try {
+            image = await window.getNatalWheelImage?.() || '';
+        } catch (error) {
+            console.error('No se pudo convertir la rueda astrológica a PNG.', error);
+        }
+        if (!image) {
             errorPanel.hidden = false;
             errorPanel.textContent = 'La rueda astrológica todavía no ha terminado de dibujarse. Espera un instante y vuelve a validar.';
             return;
         }
-        event.currentTarget.querySelector('[data-wheel-svg-input]').value = svg;
+        validationForm.querySelector('[data-wheel-image-input]').value = image;
+        validationForm.dataset.wheelReady = 'true';
+        validationForm.requestSubmit();
     });
 
     form?.addEventListener('submit', async (event) => {
@@ -94,10 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            const wheelImage = await window.getNatalWheelImage?.() || '';
+            if (!wheelImage) throw new Error('La rueda astrológica no ha terminado de dibujarse.');
             const pdfResponse = await fetch(form.action, {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ _token: csrf, ai_ready: '1', wheel_svg: window.getNatalWheelSvg?.() || '' }),
+                body: new URLSearchParams({ _token: csrf, ai_ready: '1', wheel_image: wheelImage }),
             });
             if (!pdfResponse.ok) throw new Error(`No se pudo actualizar el PDF. HTTP ${pdfResponse.status}.`);
             window.location.assign('{{ route('charts.report', $chart) }}');

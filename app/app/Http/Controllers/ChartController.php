@@ -115,7 +115,7 @@ class ChartController extends Controller
 
         $report = $reportService->build($chart);
         $pdf = app('dompdf.wrapper')
-            ->loadView('charts.report', ['chart' => $chart, 'report' => $report, 'pdf' => true, 'wheelSvg' => null])
+            ->loadView('charts.report', ['chart' => $chart, 'report' => $report, 'pdf' => true, 'wheelImage' => null])
             ->setPaper('a4', 'portrait');
 
         $output = $pdf->output();
@@ -162,7 +162,7 @@ class ChartController extends Controller
                 'chart' => $chart,
                 'report' => $report,
                 'pdf' => true,
-                'wheelSvg' => $this->validatedWheelSvg(request()->input('wheel_svg')),
+                'wheelImage' => $this->validatedWheelImage(request()->input('wheel_image')),
             ])
             ->setPaper('a4', 'portrait')
             ->output();
@@ -189,39 +189,16 @@ class ChartController extends Controller
             }
     }
 
-    private function validatedWheelSvg(mixed $svg): ?string
+    private function validatedWheelImage(mixed $image): ?string
     {
-        if (! is_string($svg) || strlen($svg) > 2_000_000 || ! str_contains($svg, '<svg')) {
+        if (! is_string($image) || strlen($image) > 5_000_000 || ! str_starts_with($image, 'data:image/jpeg;base64,')) {
             return null;
         }
-
-        $document = new \DOMDocument();
-        $previous = libxml_use_internal_errors(true);
-        $loaded = $document->loadXML($svg, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-        if (! $loaded || $document->documentElement?->localName !== 'svg') {
+        $binary = base64_decode(substr($image, strlen('data:image/jpeg;base64,')), true);
+        if ($binary === false || ! str_starts_with($binary, "\xff\xd8\xff")) {
             return null;
         }
-
-        foreach (['script', 'foreignObject', 'iframe'] as $tag) {
-            $nodes = $document->getElementsByTagName($tag);
-            while ($nodes->length > 0) {
-                $nodes->item(0)?->parentNode?->removeChild($nodes->item(0));
-            }
-        }
-        foreach ($document->getElementsByTagName('*') as $node) {
-            foreach (iterator_to_array($node->attributes ?? []) as $attribute) {
-                $name = strtolower($attribute->name);
-                $unsafeLink = in_array($name, ['href', 'xlink:href'], true)
-                    && ! str_starts_with($attribute->value, 'data:image/svg+xml');
-                if (str_starts_with($name, 'on') || $unsafeLink) {
-                    $node->removeAttribute($attribute->name);
-                }
-            }
-        }
-
-        return $document->saveXML($document->documentElement) ?: null;
+        return $image;
     }
 
     private function registrationRules(?Person $person = null): array
