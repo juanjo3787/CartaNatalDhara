@@ -29,7 +29,7 @@
     .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.75; }
     .report-page p, .report-page li { orphans: 3; widows: 3; }
     .report-page h1, .report-page h2, .report-page h3, .report-block-title, .report-arrow-title { page-break-after: avoid; }
-    .report-block-body > p:nth-last-child(2) { page-break-after: avoid; }
+    .report-tail-group { page-break-inside: avoid; }
     .report-page ul, .report-page ol { max-width: 68ch; margin: 1rem auto 1.5rem; padding-left: 1.5rem; line-height: 1.7; }
     .report-page ul { list-style: disc; }
     .report-page ol { list-style: decimal; }
@@ -113,7 +113,41 @@
     <section class="report-page"><h1>Tu primera lectura</h1><div class="report-gray">@foreach ($report['shared']['intro'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div><h2>Las cuatro puertas</h2><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     <section class="report-page"><div class="report-arrow-title report-door-intro-title">UNA BREVE INTRODUCCIÓN A TUS CUATRO PUERTAS</div>@foreach ($report['door_introduction'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<table class="report-table report-doors-table"><tr><th>Puerta</th><th>Posición</th><th>Pregunta</th></tr>@foreach ($report['doors'] as $door)<tr><td>{{ str_replace(['Primera puerta el ', 'Segunda puerta la ', 'Tercera puerta el ', 'Cuarta puerta el '], '', $door['title']) }}</td><td>{{ $door['position'] }}</td><td>{{ $door['question'] }}</td></tr>@endforeach</table><div class="report-arrow-title">ESTADOS DE CADA PUERTA: Cómo reconocer armonía, defecto y exceso</div><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     <section class="report-page"><h1>Conclusiones importantes para tu lectura</h1><div class="report-gray">@foreach ($report['shared']['conclusions'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
-    @foreach ($report['doors'] as $door)@continue(!($report['sections'][$door['key']]['enabled'] ?? false))<section class="report-page report-door" data-door-key="{{ $door['key'] }}"><div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>@foreach ($door['blocks'] as $block => $paragraphs)@if ($block !== 'shared_intro')@php($solarAi = $door['key'] === 'sol' && collect((array) $paragraphs)->contains(fn ($item) => str_starts_with(trim($item), '<h3>')))<div class="report-block"><h2 class="report-block-title">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</h2><div class="report-block-body">@if (! $solarAi && $block === 'harmony')<h3>Características que puedes observar</h3><h3>Pautas y consideraciones para reconocer este equilibrio</h3><h3>Ejemplos cotidianos de estas pautas</h3>@elseif (! $solarAi && $block === 'deficit')<h3>Características que puedes observar</h3><h3>Pautas y consideraciones para empezar a armonizar</h3><h3>Ejemplos cotidianos y formas de empezar a armonizar</h3>@elseif (! $solarAi && $block === 'excess')<h3>Características que puedes observar</h3><h3>Pautas y consideraciones para recuperar una medida adecuada</h3><h3>Ejemplos cotidianos y formas de recuperar medida</h3>@elseif (! $solarAi && $block === 'harmonization')<h3>Desde el defecto</h3><h3>Desde el exceso</h3><h3>El punto de equilibrio</h3>@endif @foreach ((array) $paragraphs as $paragraph)@php($trimmedParagraph = trim($paragraph))@if (($solarAi && preg_match('/^<(?:p|h3|ol|ul)>/', $trimmedParagraph)) || str_starts_with($trimmedParagraph, '<ol') || str_starts_with($trimmedParagraph, '<ul')){!! $trimmedParagraph !!}@else<p>{!! $paragraph !!}</p>@endif @endforeach</div></div>@endif @endforeach</section>@endforeach
+    @foreach ($report['doors'] as $door)
+        @continue(!($report['sections'][$door['key']]['enabled'] ?? false))
+        <section class="report-page report-door" data-door-key="{{ $door['key'] }}">
+            <div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
+            @foreach ($door['blocks'] as $block => $paragraphs)
+                @if ($block !== 'shared_intro')
+                    @php($solarAi = $door['key'] === 'sol' && collect((array) $paragraphs)->contains(fn ($item) => str_starts_with(trim($item), '<h3>')))
+                    <div class="report-block">
+                        <h2 class="report-block-title">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</h2>
+                        <div class="report-block-body">
+                            @if (! $solarAi && $block === 'harmony')
+                                <h3>Características que puedes observar</h3><h3>Pautas y consideraciones para reconocer este equilibrio</h3><h3>Ejemplos cotidianos de estas pautas</h3>
+                            @elseif (! $solarAi && $block === 'deficit')
+                                <h3>Características que puedes observar</h3><h3>Pautas y consideraciones para empezar a armonizar</h3><h3>Ejemplos cotidianos y formas de empezar a armonizar</h3>
+                            @elseif (! $solarAi && $block === 'excess')
+                                <h3>Características que puedes observar</h3><h3>Pautas y consideraciones para recuperar una medida adecuada</h3><h3>Ejemplos cotidianos y formas de recuperar medida</h3>
+                            @elseif (! $solarAi && $block === 'harmonization')
+                                <h3>Desde el defecto</h3><h3>Desde el exceso</h3><h3>El punto de equilibrio</h3>
+                            @endif
+                            @foreach ((array) $paragraphs as $paragraph)
+                                @if ($block === 'closing' && $loop->remaining === 2)<div class="report-tail-group">@endif
+                                @php($trimmedParagraph = trim($paragraph))
+                                @if (($solarAi && preg_match('/^<(?:p|h3|ol|ul)>/', $trimmedParagraph)) || str_starts_with($trimmedParagraph, '<ol') || str_starts_with($trimmedParagraph, '<ul'))
+                                    {!! $trimmedParagraph !!}
+                                @else
+                                    <p>{!! $paragraph !!}</p>
+                                @endif
+                                @if ($block === 'closing' && $loop->last && count((array) $paragraphs) > 2)</div>@endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+        </section>
+    @endforeach
     @if ($report['sections']['integration']['enabled'])<section class="report-page report-chapter"><h1>Integración de las cuatro puertas</h1><p>{{ $report['combined']['intro'] }}</p><table class="report-table"><thead><tr><th>Puerta</th><th>Recurso</th><th>Necesidad</th></tr></thead><tbody>@foreach ($report['combined']['rows'] as $row)<tr><td>{{ $row['door'] }}</td><td>{{ $row['resource'] }}</td><td>{{ $row['need'] }}</td></tr>@endforeach</tbody></table>@foreach ($report['combined']['paragraphs'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach</section>@endif
     @if ($report['sections']['expansion']['enabled'])<section class="report-page report-chapter"><h1>Ampliación de tu mapa interior</h1>@foreach ($report['expansion'] as $item)<div class="report-block"><h2 class="report-block-title">{{ $item['title'] }}</h2><div class="report-block-body"><p>{{ $item['content'] }}</p><p>{{ $item['example'] }}</p><p>{{ $item['question'] }}</p></div></div>@endforeach</section>@endif
     @if ($report['sections']['practice']['enabled'])<section class="report-page report-chapter"><h1>Tu práctica de autoobservación</h1><p>{{ $report['practice']['intro'] }}</p><ol>@foreach ($report['practice']['weeks'] as $week)<li>{{ $week }}</li>@endforeach</ol>@foreach ($report['practice']['guidance'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach</section><section class="report-page report-chapter report-worksheet"><h1>Hoja de práctica diaria</h1><ol>@foreach ($report['practice']['sheet'] as $question)<li>{{ $question }}</li>@endforeach</ol></section>@endif
