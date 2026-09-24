@@ -114,16 +114,7 @@ class ChartController extends Controller
         }
 
         $report = $reportService->build($chart);
-        $pdf = app('dompdf.wrapper')
-            ->loadView('charts.report', [
-                'chart' => $chart,
-                'report' => $report,
-                'pdf' => true,
-                'wheelImage' => $chart->natal_wheel_image,
-            ])
-            ->setPaper('a4', 'portrait');
-
-        $output = $pdf->output();
+        $output = $this->renderReportPdf($chart, $report, $chart->natal_wheel_image);
         ReportGeneration::create([
             'chart_id' => $chart->id,
             'report_type' => 'fase-1',
@@ -174,15 +165,7 @@ class ChartController extends Controller
             $chart->forceFill(['natal_wheel_image' => $wheelImage])->save();
         }
 
-        $pdf = app('dompdf.wrapper')
-            ->loadView('charts.report', [
-                'chart' => $chart,
-                'report' => $report,
-                'pdf' => true,
-                'wheelImage' => $wheelImage,
-            ])
-            ->setPaper('a4', 'portrait')
-            ->output();
+        $pdf = $this->renderReportPdf($chart, $report, $wheelImage);
 
         $chart->forceFill([
             'phase_one_pdf' => base64_encode($pdf),
@@ -216,6 +199,64 @@ class ChartController extends Controller
             return null;
         }
         return $image;
+    }
+
+    private function renderReportPdf(Chart $chart, array $report, ?string $wheelImage): string
+    {
+        $wrapper = app('dompdf.wrapper')
+            ->loadView('charts.report', compact('chart', 'report', 'wheelImage') + ['pdf' => true])
+            ->setPaper('a4', 'portrait');
+        $dompdf = $wrapper->getDomPDF();
+        $renderedDoors = [];
+        $doorStartPages = [];
+        $dompdf->setCallbacks([[            
+            'event' => 'begin_frame',
+            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages): void {
+                $node = $frame->get_node();
+                if (! $node instanceof \DOMElement || ! $node->hasAttribute('data-door-key')) {
+                    return;
+                }
+
+                $door = $node->getAttribute('data-door-key');
+                if (isset($renderedDoors[$door])) {
+                    return;
+                }
+                $renderedDoors[$door] = true;
+
+                $page = $canvas->get_page_number();
+                if ($page % 2 === 0) {
+                    $canvas->new_page();
+                }
+                $doorStartPages[$door] = $canvas->get_page_number();
+            },
+        ]]);
+        $dompdf->render();
+        foreach ($doorStartPages as $door => $page) {
+            if ($page % 2 === 0) {
+                throw new \RuntimeException("La puerta {$door} no comienza en una página impar.");
+            }
+        }
+        $canvas = $dompdf->getCanvas();
+        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
+        $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
+        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header): void {
+            if ($pageNumber === 1) {
+                return;
+            }
+            $width = $pageCanvas->get_width();
+            $height = $pageCanvas->get_height();
+            $size = 7.5;
+            $color = [0.54, 0.47, 0.41];
+            $headerWidth = $pageCanvas->get_text_width($header, $font, $size);
+            $pageCanvas->text(($width - $headerWidth) / 2, 20, $header, $font, $size, $color);
+            $pageCanvas->line(51, 32, $width - 51, 32, [0.85, 0.79, 0.74], 0.4);
+            $footer = 'CARTA NATAL · FASE 1   /   '.$pageNumber;
+            $footerWidth = $pageCanvas->get_text_width($footer, $font, $size);
+            $pageCanvas->line(51, $height - 33, $width - 51, $height - 33, [0.85, 0.79, 0.74], 0.4);
+            $pageCanvas->text(($width - $footerWidth) / 2, $height - 24, $footer, $font, $size, $color);
+        });
+
+        return $dompdf->output();
     }
 
     private function registrationRules(?Person $person = null): array

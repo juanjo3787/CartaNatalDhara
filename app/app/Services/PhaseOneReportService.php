@@ -79,17 +79,31 @@ final class PhaseOneReportService
         }
         unset($doorReport, $paragraphs);
 
+        $expansion = $this->buildExpansion($snapshot);
+        $sections = [
+            'sol' => ['title' => 'El Sol', 'summary' => 'Identidad, cooperación y criterio propio', 'enabled' => true],
+            'luna' => ['title' => 'La Luna', 'summary' => 'Calidez, expresión y pertenencia', 'enabled' => true],
+            'ascendente' => ['title' => 'El Ascendente', 'summary' => 'Ritmo, estabilidad y continuidad', 'enabled' => true],
+            'descendente' => ['title' => 'El Descendente', 'summary' => 'Confianza, compromiso y autonomía', 'enabled' => true],
+            'integration' => ['title' => 'Integración de las cuatro puertas', 'summary' => 'Cómo conviven tus necesidades', 'enabled' => true],
+            'expansion' => ['title' => 'Ampliación de tu mapa interior', 'summary' => 'Otros recursos y funciones de la carta', 'enabled' => $expansion !== []],
+            'practice' => ['title' => 'Práctica personal', 'summary' => 'Autoobservación y registro cotidiano', 'enabled' => true],
+            'technical' => ['title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado', 'enabled' => true],
+        ];
+        $index = [];
+        foreach (array_filter($sections, fn (array $section): bool => $section['enabled']) as $section) {
+            $index[] = [
+                'number' => str_pad((string) (count($index) + 1), 2, '0', STR_PAD_LEFT),
+                'title' => $section['title'],
+                'summary' => $section['summary'],
+            ];
+        }
+
         return [
             'name' => $name,
             'shared' => $fixed,
-            'index' => [
-                ['number' => '01', 'title' => 'El Sol', 'summary' => 'Identidad, cooperación y criterio propio'],
-                ['number' => '02', 'title' => 'La Luna', 'summary' => 'Calidez, expresión y pertenencia'],
-                ['number' => '03', 'title' => 'El Ascendente', 'summary' => 'Ritmo, estabilidad y continuidad'],
-                ['number' => '04', 'title' => 'El Descendente', 'summary' => 'Confianza, compromiso y autonomía'],
-                ['number' => '05', 'title' => 'Integración de las cuatro puertas', 'summary' => 'Cómo conviven tus necesidades'],
-                ['number' => '06', 'title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado'],
-            ],
+            'sections' => $sections,
+            'index' => $index,
             'doors' => $doorReports,
             'door_introduction' => $this->buildDoorIntroduction($readerName, $snapshot),
             'combined' => $this->buildCombined($snapshot),
@@ -115,7 +129,7 @@ final class PhaseOneReportService
                     '¿Qué cambio pequeño quiero probar?',
                 ],
             ],
-            'expansion' => $this->buildExpansion($snapshot),
+            'expansion' => $expansion,
             'closing' => [
                 'paragraphs' => [
                     'Este recorrido permite distinguir necesidades que pueden aparecer juntas sin ser iguales. Tu voluntad puede buscar un acuerdo justo; tu emoción, calidez; tu manera de comenzar, una base concreta; tus vínculos, profundidad y coherencia. Escucharlas por separado ayuda a reunirlas con más libertad.',
