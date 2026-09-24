@@ -347,6 +347,13 @@
 
         .p-dialog-close:hover { transform: none; opacity: .7; }
 
+        .p-dialog-ai-error { max-width: 34rem; }
+
+        .p-dialog-detail-list { margin: 1rem 0 0; padding: .75rem .9rem; background: #f7f4f0; border-radius: 8px; border: 1px solid #eadfd5; }
+        .p-dialog-detail-list > div { display: flex; gap: .5rem; padding: .25rem 0; }
+        .p-dialog-detail-list dt { min-width: 5rem; margin: 0; font-weight: 700; color: #674b39; }
+        .p-dialog-detail-list dd { margin: 0; word-break: break-word; }
+
         @keyframes p-dialog-in {
             from { opacity: 0; transform: translateY(-.4rem) scale(.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }

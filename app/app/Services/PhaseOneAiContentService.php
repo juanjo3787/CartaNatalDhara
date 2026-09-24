@@ -152,7 +152,7 @@ final class PhaseOneAiContentService
 
         foreach (AbstractDoorPipeline::STAGES as $stage) {
             $valid = $this->generateSunStage($stage, $context, $completed);
-            $completed = array_merge($completed, $valid);
+            $completed = $this->mergeStageResult($completed, $valid);
             foreach (array_keys($usage) as $key) {
                 $usage[$key] += $this->lastUsage[$key];
             }
@@ -166,6 +166,28 @@ final class PhaseOneAiContentService
         ];
 
         return DoorPipelineFactory::for($door)->render($completed);
+    }
+
+    private function mergeStageResult(array $completed, array $result): array
+    {
+        foreach ($result as $key => $value) {
+            if ($key === '_usage') {
+                continue;
+            }
+            if ($key === 'examples' && isset($completed[$key]) && is_array($completed[$key]) && is_array($value)) {
+                $byId = [];
+                foreach ([...$completed[$key], ...$value] as $item) {
+                    $byId[(int) ($item['id'] ?? count($byId) + 1)] = $item;
+                }
+                ksort($byId);
+                $completed[$key] = array_values($byId);
+            } elseif (is_array($value) && isset($completed[$key]) && is_array($completed[$key])) {
+                $completed[$key] = $this->mergeStageResult($completed[$key], $value);
+            } else {
+                $completed[$key] = $value;
+            }
+        }
+        return $completed;
     }
 
     public function generateSunStage(string $stage, array $context, array $completed = []): array

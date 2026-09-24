@@ -10,6 +10,7 @@ return [
     'timeout' => (int) env('AI_TIMEOUT', 90),
     'door_max_completion_tokens' => (int) env('AI_DOOR_MAX_COMPLETION_TOKENS', 4000),
     'sun_timeout' => (int) env('AI_SUN_TIMEOUT', 180),
+    'stage_timeout' => (int) env('AI_STAGE_TIMEOUT', 95),
     'sun_max_completion_tokens' => (int) env('AI_SUN_MAX_COMPLETION_TOKENS', 6000),
     'connect_timeout' => (int) env('AI_CONNECT_TIMEOUT', 10),
     'verify_ssl' => (bool) env('AI_VERIFY_SSL', true),

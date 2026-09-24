@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Contracts\StructuredAiTextGenerator;
 use App\Services\Doors\DoorPipelineFactory;
+use App\Services\Doors\AbstractDoorPipeline;
 use App\Services\Doors\SolPipeline;
 use App\Services\PhaseOneAiContentService;
 use App\Services\PhaseOnePromptBuilder;
@@ -15,7 +16,7 @@ use Tests\TestCase;
 
 final class SunGenerationPipelineTest extends TestCase
 {
-    public function test_solar_generation_uses_nine_structured_calls_and_places_content_under_each_heading(): void
+    public function test_solar_generation_uses_small_structured_calls_and_places_content_under_each_heading(): void
     {
         config(['ai.enabled' => true]);
         $generator = new class implements StructuredAiTextGenerator {
@@ -45,8 +46,8 @@ final class SunGenerationPipelineTest extends TestCase
         $service = new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder());
         $blocks = $service->generate('sol', self::context());
 
-        $this->assertSame(['function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'final'], $generator->stages);
-        $this->assertSame(270, $service->usage()['total_tokens']);
+        $this->assertSame(AbstractDoorPipeline::STAGES, $generator->stages);
+        $this->assertSame(count(AbstractDoorPipeline::STAGES) * 30, $service->usage()['total_tokens']);
         $this->assertCount(11, $blocks);
         $harmony = implode('', $blocks['harmony']);
         $this->assertLessThan(strpos($harmony, '<h3>Características'), strpos($harmony, '<p>'));
@@ -69,21 +70,21 @@ final class SunGenerationPipelineTest extends TestCase
 
     public function test_it_rejects_a_state_without_matching_guidelines_and_examples(): void
     {
-        $state = self::sample('harmony');
+        $state = self::sample('harmony_examples_2');
         array_pop($state['harmony']['examples']);
         $this->expectException(RuntimeException::class);
-        (new SolPipeline())->validate('harmony', $state, self::context());
+        (new SolPipeline())->validate('harmony_examples_2', $state, self::context());
     }
 
     public function test_it_rejects_a_verbatim_generic_phrase_reused_across_doors(): void
     {
-        $harmonization = self::sample('final')['harmonization'];
+        $harmonization = self::sample('harmonization')['harmonization'];
         $harmonization['equilibrium']['paragraphs'][0] .= ' El punto de equilibrio permite elegir cuándo utilizar el recurso y cuándo detenerlo.';
-        $result = ['harmonization' => $harmonization, 'closing' => self::sample('final')['closing']];
+        $result = ['harmonization' => $harmonization];
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/frase genérica/');
-        (new \App\Services\Doors\LunaPipeline())->validate('final', $result, self::context('luna'));
+        (new \App\Services\Doors\LunaPipeline())->validate('harmonization', $result, self::context('luna'));
     }
 
     /** @return list<array{0: string}> */
@@ -122,7 +123,7 @@ final class SunGenerationPipelineTest extends TestCase
             'usage' => ['prompt_tokens' => 2, 'completion_tokens' => 3, 'total_tokens' => 5],
         ])]);
 
-        $result = (new OpenAiTextGenerator())->generateStructured('system', 'user', (new SolPipeline())->schemaForStage('harmony'));
+        $result = (new OpenAiTextGenerator())->generateStructured('system', 'user', (new SolPipeline())->schemaForStage('harmony_development'));
 
         $this->assertSame(5, $result['_usage']['total_tokens']);
         Http::assertSent(static fn ($request): bool =>
@@ -149,7 +150,7 @@ final class SunGenerationPipelineTest extends TestCase
                 $this->calls++;
                 $stage = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR)['stage'];
                 $result = SunGenerationPipelineTest::sample($stage);
-                if ($stage === 'harmony' && ! $this->failedHarmony) {
+                if ($stage === 'harmony_examples_2' && ! $this->failedHarmony) {
                     $this->failedHarmony = true;
                     array_pop($result['harmony']['examples']);
                 }
@@ -158,7 +159,7 @@ final class SunGenerationPipelineTest extends TestCase
         };
 
         $blocks = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate('sol', self::context());
-        $this->assertSame(10, $generator->calls);
+        $this->assertSame(count(AbstractDoorPipeline::STAGES) + 1, $generator->calls);
         $this->assertCount(11, $blocks);
     }
 
@@ -184,15 +185,19 @@ final class SunGenerationPipelineTest extends TestCase
             'function' => ['shared_intro' => ['paragraphs' => array_fill(0, 3, $paragraph)], 'function' => ['paragraphs' => array_fill(0, 3, $paragraph)]],
             'sign', 'house', 'integration' => [$stage => ['paragraphs' => array_fill(0, ['sign' => 4, 'house' => 6, 'integration' => 4][$stage], $paragraph)]],
             'ruler' => ['ruler' => ['paragraphs' => array_fill(0, $rulerCounts[$door] ?? 6, $paragraph)]],
-            'harmony', 'deficit', 'excess' => [$stage => $state],
-            'final' => [
+            'harmony_development', 'deficit_development', 'excess_development' => [strtok($stage, '_') => ['development' => $state['development']]],
+            'harmony_characteristics', 'deficit_characteristics', 'excess_characteristics' => [strtok($stage, '_') => ['characteristics' => $state['characteristics']]],
+            'harmony_guidelines', 'deficit_guidelines', 'excess_guidelines' => [strtok($stage, '_') => ['guidelines' => $state['guidelines']]],
+            'harmony_examples_1', 'deficit_examples_1', 'excess_examples_1' => [strtok($stage, '_') => ['examples' => array_slice($state['examples'], 0, 3)]],
+            'harmony_examples_2', 'deficit_examples_2', 'excess_examples_2' => [strtok($stage, '_') => ['examples' => array_slice($state['examples'], 3)]],
+            'harmonization' => [
                 'harmonization' => [
                     'from_deficit' => ['paragraphs' => [$paragraph, $paragraph], 'points' => array_fill(0, 3, 'Observa una decisión propia y comprueba qué cambia después.')],
                     'from_excess' => ['paragraphs' => [$paragraph, $paragraph], 'points' => array_fill(0, 3, 'Observa una decisión propia y comprueba qué cambia después.')],
                     'equilibrium' => ['paragraphs' => [$paragraph, $paragraph], 'references' => array_fill(0, 4, 'Una preferencia expresada y revisada con claridad.')],
                 ],
-                'closing' => $closing,
             ],
+            'closing' => ['closing' => $closing],
         };
     }
 
@@ -237,8 +242,8 @@ final class SunGenerationPipelineTest extends TestCase
 
         $blocks = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate($door, self::context($door));
 
-        $this->assertSame(['function', 'sign', 'house', 'ruler', 'integration', 'harmony', 'deficit', 'excess', 'final'], $generator->stages);
-        $this->assertSame(array_fill(0, 9, $door), $generator->doors);
+        $this->assertSame(AbstractDoorPipeline::STAGES, $generator->stages);
+        $this->assertSame(array_fill(0, count(AbstractDoorPipeline::STAGES), $door), $generator->doors);
         $this->assertCount(11, $blocks);
         $this->assertArrayHasKey('harmonization', $blocks);
         $this->assertStringContainsString('<h3>Preguntas de autoobservación</h3>', implode('', $blocks['closing']));

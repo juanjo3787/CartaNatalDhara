@@ -47,7 +47,10 @@ final class PhaseOneAiGenerationService
         }
 
         $key = 'phase1_ai_draft_'.$door.'_'.$chart->id.'_'.hash('sha256', $sessionId);
-        $draft = $stageIndex === 0 ? null : Cache::get($key);
+        $draft = Cache::get($key);
+        if (is_array($draft) && $stageIndex < ($draft['next'] ?? 0)) {
+            return ['stage' => $stage, 'complete' => false, 'blocks' => 0, 'already_completed' => true];
+        }
         if ($stageIndex > 0 && (! is_array($draft) || ($draft['next'] ?? null) !== $stageIndex)) {
             throw new RuntimeException('La generación por etapas debe comenzar por la primera etapa y seguir el orden.');
         }
@@ -60,7 +63,7 @@ final class PhaseOneAiGenerationService
 
         $context = $this->reportService->contextForDoor($chart, $door);
         $result = $this->contentService->generateSunStage($stage, $context, $draft['completed']);
-        $draft['completed'] = array_merge($draft['completed'], $result);
+        $draft['completed'] = $this->mergeStageResult($draft['completed'], $result);
         foreach (array_keys($draft['usage']) as $tokenKey) {
             $draft['usage'][$tokenKey] += $this->contentService->usage()[$tokenKey];
         }
@@ -91,6 +94,30 @@ final class PhaseOneAiGenerationService
     public function generateSunStage(Chart $chart, string $stage, string $sessionId): array
     {
         return $this->generateDoorStage($chart, 'sol', $stage, $sessionId);
+    }
+
+    private function mergeStageResult(array $completed, array $result): array
+    {
+        foreach ($result as $key => $value) {
+            if ($key === '_usage') {
+                continue;
+            }
+            if ($key === 'examples' && isset($completed[$key]) && is_array($completed[$key]) && is_array($value)) {
+                $byId = [];
+                foreach ([...$completed[$key], ...$value] as $item) {
+                    $byId[(int) ($item['id'] ?? count($byId) + 1)] = $item;
+                }
+                ksort($byId);
+                $completed[$key] = array_values($byId);
+                continue;
+            }
+            if (is_array($value) && isset($completed[$key]) && is_array($completed[$key])) {
+                $completed[$key] = $this->mergeStageResult($completed[$key], $value);
+                continue;
+            }
+            $completed[$key] = $value;
+        }
+        return $completed;
     }
 
     private function persistBlocks(Chart $chart, string $door, array $blocks, array $context): int

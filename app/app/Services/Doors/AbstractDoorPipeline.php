@@ -18,7 +18,13 @@ abstract class AbstractDoorPipeline
 {
     public const STAGES = [
         'function', 'sign', 'house', 'ruler', 'integration',
-        'harmony', 'deficit', 'excess', 'final',
+        'harmony_development', 'harmony_characteristics', 'harmony_guidelines',
+        'harmony_examples_1', 'harmony_examples_2',
+        'deficit_development', 'deficit_characteristics', 'deficit_guidelines',
+        'deficit_examples_1', 'deficit_examples_2',
+        'excess_development', 'excess_characteristics', 'excess_guidelines',
+        'excess_examples_1', 'excess_examples_2',
+        'harmonization', 'closing',
     ];
 
     private const STATE_HEADINGS = [
@@ -115,13 +121,9 @@ abstract class AbstractDoorPipeline
             'house' => ['house' => $this->houseRequirement()],
             'ruler' => ['ruler' => $this->rulerRequirement()],
             'integration' => ['integration' => $this->integrationRequirement()],
-            'harmony' => $this->stateRequirements('harmony', $context),
-            'deficit' => $this->stateRequirements('deficit', $context),
-            'excess' => $this->stateRequirements('excess', $context),
-            'final' => [
-                'harmonization' => $this->harmonizationRequirement(),
-                'closing' => $this->closingRequirement(),
-            ],
+            'harmonization' => ['harmonization' => $this->harmonizationRequirement()],
+            'closing' => ['closing' => $this->closingRequirement()],
+            default => $this->statePartRequirements($stage, $context),
         };
 
         $closingShape = [
@@ -143,31 +145,63 @@ abstract class AbstractDoorPipeline
                     'function' => ['paragraphs' => ['texto']],
                 ],
                 'sign', 'house', 'ruler', 'integration' => [$stage => ['paragraphs' => ['texto']]],
-                'final' => [
+                'harmonization' => [
                     'harmonization' => [
                         'from_deficit' => ['paragraphs' => ['texto'], 'points' => ['texto']],
                         'from_excess' => ['paragraphs' => ['texto'], 'points' => ['texto']],
                         'equilibrium' => ['paragraphs' => ['texto'], 'references' => ['texto']],
                     ],
-                    'closing' => $closingShape,
                 ],
-                default => [$stage => [
-                    'development' => ['texto'],
-                    'characteristics' => [['id' => 1, 'text' => 'texto']],
-                    'guidelines' => [['id' => 1, 'text' => 'texto']],
-                    'examples' => [['id' => 1, 'text' => 'texto']],
-                ]],
+                'closing' => ['closing' => $closingShape],
+                default => $this->statePartOutputShape($stage),
             },
         ];
 
         if ($stage !== 'function') {
             $user['foundation'] = array_intersect_key($completed, array_flip(['function', 'sign', 'house', 'ruler', 'integration']));
         }
-        if ($stage === 'final') {
+        if ($stage === 'harmonization') {
             $user['states'] = array_intersect_key($completed, array_flip(['harmony', 'deficit', 'excess']));
         }
 
+        [$state, $part] = $this->statePart($stage);
+        if ($state !== null && in_array($part, ['guidelines', 'examples_1', 'examples_2'], true)) {
+            $user['state_content'] = $completed[$state] ?? [];
+        }
+
         return ['system' => $system, 'user' => json_encode($user, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)];
+    }
+
+    private function statePartRequirements(string $stage, array $context): array
+    {
+        [$state, $part] = $this->statePart($stage);
+        if ($state === null || $part === null) {
+            throw new InvalidArgumentException("Etapa no válida: {$stage}");
+        }
+        $all = $this->stateRequirements($state, $context);
+        return match ($part) {
+            'development' => ['state' => $state, 'development' => $all['development'], 'special_rule' => $all['special_rule']],
+            'characteristics' => ['state' => $state, 'characteristics' => $all['characteristics'], 'characteristic_seeds' => $all['characteristic_seeds']],
+            'guidelines' => ['state' => $state, 'guidelines' => $all['guidelines'], 'correspondence' => $all['correspondence']],
+            'examples_1' => ['state' => $state, 'examples' => 'Genera únicamente las escenas con ID 1, 2 y 3. '.$all['examples'], 'correspondence' => $all['correspondence']],
+            'examples_2' => ['state' => $state, 'examples' => 'Genera únicamente las escenas con ID 4, 5, 6 y 7. '.$all['examples'], 'correspondence' => $all['correspondence']],
+        };
+    }
+
+    private function statePartOutputShape(string $stage): array
+    {
+        [$state, $part] = $this->statePart($stage);
+        $key = str_starts_with((string) $part, 'examples_') ? 'examples' : $part;
+        return [$state => [$key => $key === 'development' ? ['texto'] : [['id' => 1, 'text' => 'texto']]]];
+    }
+
+    /** @return array{0: ?string, 1: ?string} */
+    private function statePart(string $stage): array
+    {
+        if (preg_match('/^(harmony|deficit|excess)_(development|characteristics|guidelines|examples_[12])$/', $stage, $matches)) {
+            return [$matches[1], $matches[2]];
+        }
+        return [null, null];
     }
 
     private function stateRequirements(string $stage, array $context): array
@@ -199,12 +233,6 @@ abstract class AbstractDoorPipeline
     {
         $paragraphs = $this->schemaObject(['paragraphs' => $this->schemaStrings()]);
         $item = $this->schemaObject(['id' => ['type' => 'integer'], 'text' => ['type' => 'string']]);
-        $state = $this->schemaObject([
-            'development' => $this->schemaStrings(),
-            'characteristics' => ['type' => 'array', 'items' => $item],
-            'guidelines' => ['type' => 'array', 'items' => $item],
-            'examples' => ['type' => 'array', 'items' => $item],
-        ]);
         $closing = $this->schemaObject([
             'question_intro' => $this->schemaStrings(), 'questions' => $this->schemaStrings(),
             'central_phrase' => ['type' => 'string'],
@@ -216,17 +244,27 @@ abstract class AbstractDoorPipeline
         return match ($stage) {
             'function' => $this->schemaObject(['shared_intro' => $paragraphs, 'function' => $paragraphs]),
             'sign', 'house', 'ruler', 'integration' => $this->schemaObject([$stage => $paragraphs]),
-            'harmony', 'deficit', 'excess' => $this->schemaObject([$stage => $state]),
-            'final' => $this->schemaObject([
+            'harmonization' => $this->schemaObject([
                 'harmonization' => $this->schemaObject([
                     'from_deficit' => $this->schemaObject(['paragraphs' => $this->schemaStrings(), 'points' => $this->schemaStrings()]),
                     'from_excess' => $this->schemaObject(['paragraphs' => $this->schemaStrings(), 'points' => $this->schemaStrings()]),
                     'equilibrium' => $this->schemaObject(['paragraphs' => $this->schemaStrings(), 'references' => $this->schemaStrings()]),
                 ]),
-                'closing' => $closing,
             ]),
-            default => throw new InvalidArgumentException("Etapa no válida: {$stage}"),
+            'closing' => $this->schemaObject(['closing' => $closing]),
+            default => $this->statePartSchema($stage, $item),
         };
+    }
+
+    private function statePartSchema(string $stage, array $item): array
+    {
+        [$state, $part] = $this->statePart($stage);
+        if ($state === null || $part === null) {
+            throw new InvalidArgumentException("Etapa no válida: {$stage}");
+        }
+        $key = str_starts_with($part, 'examples_') ? 'examples' : $part;
+        $value = $key === 'development' ? $this->schemaStrings() : ['type' => 'array', 'items' => $item];
+        return $this->schemaObject([$state => $this->schemaObject([$key => $value])]);
     }
 
     private function schemaStrings(): array
@@ -262,29 +300,9 @@ abstract class AbstractDoorPipeline
                 };
                 $this->validateParagraphs($result[$key]['paragraphs'] ?? null, $count, $count, $minimumWords, $key);
             }
-        } elseif (in_array($stage, ['harmony', 'deficit', 'excess'], true)) {
-            $state = $result[$stage] ?? null;
-            if (! is_array($state)) {
-                throw new RuntimeException("Falta el estado {$stage}.");
-            }
-            $this->validateParagraphs($state['development'] ?? null, 4, 6, 50, "{$stage}.development");
-            $count = 7;
-            foreach (['characteristics' => 3, 'guidelines' => 40, 'examples' => 80] as $key => $minimumWords) {
-                $items = $state[$key] ?? null;
-                if (! is_array($items) || count($items) !== $count) {
-                    throw new RuntimeException("{$stage}.{$key} debe contener {$count} elementos.");
-                }
-                foreach (array_values($items) as $index => $item) {
-                    if (! is_array($item) || ($item['id'] ?? null) !== $index + 1) {
-                        throw new RuntimeException("ID incorrecto en {$stage}.{$key}.");
-                    }
-                    $this->validatePlainText($item['text'] ?? null, $minimumWords, "{$stage}.{$key}.".($index + 1));
-                    if ($key === 'characteristics' && $this->wordCount($item['text']) > 30) {
-                        throw new RuntimeException("La característica {$index} de {$stage} debe ser breve.");
-                    }
-                }
-            }
-        } elseif ($stage === 'final') {
+        } elseif ($this->statePart($stage)[0] !== null) {
+            $this->validateStatePart($stage, $result);
+        } elseif ($stage === 'harmonization') {
             $harmonization = $result['harmonization'] ?? [];
             foreach (['from_deficit', 'from_excess'] as $key) {
                 $this->validateParagraphs($harmonization[$key]['paragraphs'] ?? null, 2, 4, 45, $key);
@@ -292,6 +310,7 @@ abstract class AbstractDoorPipeline
             }
             $this->validateParagraphs($harmonization['equilibrium']['paragraphs'] ?? null, 2, 4, 45, 'equilibrium');
             $this->validateParagraphs($harmonization['equilibrium']['references'] ?? null, 4, 4, 6, 'references');
+        } elseif ($stage === 'closing') {
             $closing = $result['closing'] ?? [];
             $this->validateParagraphs($closing['question_intro'] ?? null, 1, 2, 25, 'question_intro');
             $this->validateParagraphs($closing['questions'] ?? null, 5, 5, 7, 'questions');
@@ -312,6 +331,40 @@ abstract class AbstractDoorPipeline
         $this->assertNoGenericPhrases($result);
 
         return $result;
+    }
+
+    private function validateStatePart(string $stage, array $result): void
+    {
+        [$stateName, $part] = $this->statePart($stage);
+        $state = $result[$stateName] ?? null;
+        if (! is_array($state)) {
+            throw new RuntimeException("Falta el estado {$stateName}.");
+        }
+        if ($part === 'development') {
+            $this->validateParagraphs($state['development'] ?? null, 4, 6, 50, "{$stateName}.development");
+            return;
+        }
+        $key = str_starts_with($part, 'examples_') ? 'examples' : $part;
+        $expectedIds = match ($part) {
+            'examples_1' => range(1, 3),
+            'examples_2' => range(4, 7),
+            default => range(1, 7),
+        };
+        $items = $state[$key] ?? null;
+        if (! is_array($items) || count($items) !== count($expectedIds)) {
+            throw new RuntimeException("{$stateName}.{$key} debe contener ".count($expectedIds).' elementos.');
+        }
+        $minimumWords = ['characteristics' => 3, 'guidelines' => 40, 'examples' => 80][$key];
+        foreach (array_values($items) as $index => $item) {
+            $id = $expectedIds[$index];
+            if (! is_array($item) || ($item['id'] ?? null) !== $id) {
+                throw new RuntimeException("ID incorrecto en {$stateName}.{$key}; se esperaba {$id}.");
+            }
+            $this->validatePlainText($item['text'] ?? null, $minimumWords, "{$stateName}.{$key}.{$id}");
+            if ($key === 'characteristics' && $this->wordCount($item['text']) > 30) {
+                throw new RuntimeException("La característica {$id} de {$stateName} debe ser breve.");
+            }
+        }
     }
 
     /**
