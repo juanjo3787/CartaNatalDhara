@@ -203,6 +203,15 @@ class ChartController extends Controller
 
     private function renderReportPdf(Chart $chart, array $report, ?string $wheelImage): string
     {
+        $renderStartedAt = hrtime(true);
+        $renderTimeout = max(30, min(115, (int) config('reports.pdf_render_timeout', 110)));
+        if (function_exists('set_time_limit') && ! set_time_limit($renderTimeout)) {
+            Log::warning('The PHP execution limit could not be extended for PDF rendering.', [
+                'chart_id' => $chart->id,
+                'requested_timeout' => $renderTimeout,
+            ]);
+        }
+
         $wrapper = app('dompdf.wrapper')
             ->loadView('charts.report', compact('chart', 'report', 'wheelImage') + ['pdf' => true])
             ->setPaper('a4', 'portrait');
@@ -262,6 +271,12 @@ class ChartController extends Controller
             $pageCanvas->line(51, $height - 33, $width - 51, $height - 33, [0.85, 0.79, 0.74], 0.4);
             $pageCanvas->text(($width - $footerWidth) / 2, $height - 24, $footer, $font, $size, $color);
         });
+
+        Log::info('Phase 1 PDF rendered.', [
+            'chart_id' => $chart->id,
+            'pages' => $canvas->get_page_count(),
+            'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
+        ]);
 
         return $dompdf->output();
     }
