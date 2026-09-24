@@ -216,7 +216,7 @@ abstract class AbstractDoorPipeline
         return [
             'state' => $stage,
             'development' => $development,
-            'characteristics' => "{$count} características breves, numeradas con IDs del 1 al {$count}.",
+            'characteristics' => "{$count} características breves de entre 5 y 40 palabras, numeradas con IDs del 1 al {$count}.",
             'guidelines' => "{$count} pautas de 40-90 palabras cada una. Cada pauta observa, distingue, comprueba y explica qué señala equilibrio o recuperación de medida. Usa los mismos IDs.",
             'examples' => "{$count} escenas narrativas de 80-150 palabras: contexto, situación, reacción, experiencia interna, respuesta y aprendizaje. Usa los mismos IDs.",
             'correspondence' => 'Cada pauta debe desarrollar exclusivamente la característica con el mismo ID; cada ejemplo debe escenificar la pauta con ese mismo ID. Mantén el orden 1 a 7 en las tres listas.',
@@ -361,8 +361,8 @@ abstract class AbstractDoorPipeline
                 throw new RuntimeException("ID incorrecto en {$stateName}.{$key}; se esperaba {$id}.");
             }
             $this->validatePlainText($item['text'] ?? null, $minimumWords, "{$stateName}.{$key}.{$id}");
-            if ($key === 'characteristics' && $this->wordCount($item['text']) > 30) {
-                throw new RuntimeException("La característica {$id} de {$stateName} debe ser breve.");
+            if ($key === 'characteristics' && $this->wordCount($item['text']) > 45) {
+                throw new RuntimeException("La característica {$id} de {$stateName} debe tener como máximo 45 palabras.");
             }
         }
     }

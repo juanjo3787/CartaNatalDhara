@@ -206,7 +206,7 @@ final class PhaseOneAiContentService
             $userPrompt = $prompts['user'];
             if ($lastError !== null) {
                 $repair = json_decode($userPrompt, true, 512, JSON_THROW_ON_ERROR);
-                $repair['validation_feedback'] = "La respuesta anterior no pasó la validación: {$lastError}. Corrige exclusivamente ese requisito, cumple el mínimo de palabras o elementos indicado y devuelve de nuevo el bloque completo con la estructura y profundidad solicitadas.";
+                $repair['validation_feedback'] = "La respuesta anterior no pasó la validación: {$lastError}. Corrige exclusivamente ese requisito, respeta todos los límites mínimos y máximos de palabras o elementos indicados y devuelve de nuevo el bloque completo con la estructura y profundidad solicitadas.";
                 $userPrompt = json_encode($repair, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
             }
             $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
