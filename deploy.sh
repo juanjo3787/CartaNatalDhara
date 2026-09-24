@@ -34,6 +34,7 @@ git -C "$PROJECT_PATH" reset --hard "@{u}"
 
 mkdir -p \
     "$DEPLOY_PATH/storage/app" \
+    "$DEPLOY_PATH/storage/app/private/pdfs" \
     "$DEPLOY_PATH/storage/framework/cache" \
     "$DEPLOY_PATH/storage/framework/sessions" \
     "$DEPLOY_PATH/storage/framework/views" \

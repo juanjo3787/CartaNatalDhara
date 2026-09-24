@@ -15,6 +15,7 @@ use App\Services\PhaseOneReportService;
 use App\Services\PhaseOneAiGenerationService;
 use App\Services\PhaseOneManualSaveService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -106,10 +107,11 @@ class ChartController extends Controller
 
     public function downloadReport(Chart $chart, PhaseOneReportService $reportService)
     {
-        if ($chart->phase_one_pdf) {
-            return response(base64_decode($chart->phase_one_pdf, true), 200, [
+        if ($chart->phase_one_pdf && Storage::disk('local')->exists($chart->phase_one_pdf)) {
+            return response()->streamDownload(function () use ($chart) {
+                echo Storage::disk('local')->get($chart->phase_one_pdf);
+            }, 'carta-natal-fase-1-' . $chart->id . '.pdf', [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="carta-natal-fase-1-' . $chart->id . '.pdf"',
             ]);
         }
 
@@ -141,6 +143,11 @@ class ChartController extends Controller
                 ->delete();
         }
 
+        // Eliminar archivo PDF anterior si existe
+        if ($chart->phase_one_pdf && Storage::disk('local')->exists($chart->phase_one_pdf)) {
+            Storage::disk('local')->delete($chart->phase_one_pdf);
+        }
+
         $chart->forceFill([
             'phase_one_pdf' => null,
             'phase_one_pdf_generated_at' => null,
@@ -167,8 +174,12 @@ class ChartController extends Controller
 
         $pdf = $this->renderReportPdf($chart, $report, $wheelImage);
 
+        // Guardar PDF en sistema de archivos
+        $pdfPath = 'pdfs/' . $chart->id . '/carta-natal-fase-1-' . $chart->id . '.pdf';
+        Storage::disk('local')->put($pdfPath, $pdf);
+
         $chart->forceFill([
-            'phase_one_pdf' => base64_encode($pdf),
+            'phase_one_pdf' => $pdfPath,
             'phase_one_pdf_generated_at' => now(),
         ])->save();
 
