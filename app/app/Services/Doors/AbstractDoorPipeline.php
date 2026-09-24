@@ -432,15 +432,7 @@ abstract class AbstractDoorPipeline
         foreach (self::STATE_HEADINGS as $key => [$guidelineHeading, $exampleHeading]) {
             $state = $content[$key];
             ReportState::validate($state, $this->door().'.'.$key);
-            $blocks[$key] = [
-                ...$this->renderParagraphs($state['development']),
-                '<h3>Características que puedes observar</h3>',
-                $this->orderedList(array_column($state['characteristics'], 'text')),
-                '<h3>'.e($guidelineHeading).'</h3>',
-                $this->orderedList(array_column($state['guidelines'], 'text')),
-                '<h3>'.e($exampleHeading).'</h3>',
-                $this->orderedList(array_column($state['examples'], 'text')),
-            ];
+            $blocks[$key] = ReportState::render($state, $key);
         }
 
         $harmonization = $content['harmonization'];

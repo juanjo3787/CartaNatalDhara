@@ -139,6 +139,10 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
         }
 
         Log::info('OpenAI chat completion succeeded', $logPayload);
+        $stateName = strtok($meta['stage'] ?? '', '_');
+        if (isset(ReportState::HEADINGS[$stateName])) {
+            ReportTrace::record('raw_response_decoded', $decoded[$stateName] ?? [], $meta + ['section_id' => ($meta['door'] ?? '').'.'.$stateName]);
+        }
 
         $decoded['_usage'] = $usage;
 

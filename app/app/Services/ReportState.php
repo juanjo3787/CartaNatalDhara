@@ -20,12 +20,27 @@ final class ReportState
             throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: falta development.");
         }
         foreach ($development as $paragraph) {
+            if (! is_string($paragraph) || trim($paragraph) === '' || preg_match('/<[^>]+>|^\s*#{1,6}\s/mu', $paragraph)) {
+                throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: desarrollo no narrativo.");
+            }
             foreach (array_unique(array_merge(...array_values(self::HEADINGS))) as $heading) {
                 if (mb_stripos(html_entity_decode(strip_tags($paragraph), ENT_QUOTES, 'UTF-8'), $heading) !== false) {
                     throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: {$heading} dentro de development.");
                 }
             }
         }
+    }
+
+    public static function render(array $state, string $stateName): array
+    {
+        self::validate($state, $state['id'] ?? $stateName);
+        $blocks = array_map(static fn (string $text): string => '<p>'.e($text).'</p>', $state['development']);
+        foreach (['characteristics', 'guidelines', 'examples'] as $index => $key) {
+            $blocks[] = '<h3>'.e(self::HEADINGS[$stateName][$index]).'</h3>';
+            $blocks[] = '<ol>'.implode('', array_map(static fn (array $item): string => '<li>'.e($item['text']).'</li>', $state[$key])).'</ol>';
+        }
+
+        return $blocks;
     }
 
     public static function validate(array $state, string $id): void
@@ -41,6 +56,8 @@ final class ReportState
                     throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}.{$key}: contenido vacío.");
                 }
             }
+        }
+    }
 
     /** Explicit, lossless structural migration of the previously persisted renderer HTML. */
     public static function fromRendered(array $blocks, string $id, string $stateName): array
@@ -89,8 +106,5 @@ final class ReportState
         self::validate($state, $id);
 
         return $state;
-    }
-        }
-    }
     }
 }

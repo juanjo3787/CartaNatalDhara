@@ -24,6 +24,7 @@ final class PhaseOneAiGenerationService
     public function generateDoor(Chart $chart, string $door): int
     {
         $context = $this->reportService->contextForDoor($chart, $door);
+        $context['trace_id'] = (string) \Illuminate\Support\Str::uuid();
         $context['previous_doors'] = $this->previousDoorContent($chart, $door);
         $context['introduced_rulers'] = (new RulerUsageRegistry())->alreadyIntroduced($chart, $door);
         $blocks = $this->contentService->generate($door, $context);
@@ -64,8 +65,13 @@ final class PhaseOneAiGenerationService
         ];
 
         $context = $this->reportService->contextForDoor($chart, $door);
+        $context['trace_id'] = hash('sha256', $sessionId);
         $result = $this->contentService->generateSunStage($stage, $context, $draft['completed']);
         $draft['completed'] = $this->mergeStageResult($draft['completed'], $result);
+        $stateName = strtok($stage, '_');
+        if (isset(ReportState::HEADINGS[$stateName])) {
+            ReportTrace::record('draft', $draft['completed'][$stateName], ['chart_id' => $chart->id, 'trace_id' => $context['trace_id'], 'section_id' => $door.'.'.$stateName, 'stage' => $stage]);
+        }
         foreach (array_keys($draft['usage']) as $tokenKey) {
             $draft['usage'][$tokenKey] += $this->contentService->usage()[$tokenKey];
         }
@@ -108,10 +114,15 @@ final class PhaseOneAiGenerationService
         $saved = 0;
         $chart->interpretations()
                 ->where('door', $door)
+                ->where('phase', 'fase-1')
                 ->where('ai_assisted', true)
                 ->delete();
 
             foreach ($blocks as $block => $paragraphs) {
+                if (isset(ReportState::HEADINGS[$block])) {
+                    $state = ReportState::fromRendered($paragraphs, $door.'.'.$block, $block);
+                    ReportTrace::record('persistence', $state, ['chart_id' => $chart->id, 'trace_id' => $context['trace_id'] ?? null, 'section_id' => $door.'.'.$block]);
+                }
                 $template = ChartTemplate::firstOrCreate(
                     [
                         'name' => "fase1_ai_{$door}_{$block}",
@@ -138,6 +149,8 @@ final class PhaseOneAiGenerationService
                 $saved++;
             }
         
+        $chart->forceFill(['phase_one_pdf' => null, 'phase_one_pdf_generated_at' => null])->save();
+
         return $saved;
     }
 

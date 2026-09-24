@@ -77,6 +77,7 @@ final class PhaseOneReportService
                     if ($stored->ai_assisted && isset(ReportState::HEADINGS[$block])) {
                         $id = $doorReport['key'].'.'.$block;
                         $doorReport['states'][$block] = ReportState::fromRendered($paragraphs, $id, $block);
+                        $paragraphs = ReportState::render($doorReport['states'][$block], $block);
                         ReportTrace::record('document_model', $doorReport['states'][$block], ['chart_id' => $chart->id, 'section_id' => $id, 'interpretation_id' => $stored->id]);
                     }
                 }

@@ -193,7 +193,7 @@ final class PhaseOneAiContentService
                 $userPrompt = json_encode($repair, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
             }
             $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
-            $meta = ['door' => $door, 'stage' => $stage, 'attempt' => $attempt, 'chart_id' => $context['chart_id'] ?? null];
+            $meta = ['door' => $door, 'stage' => $stage, 'attempt' => $attempt, 'chart_id' => $context['chart_id'] ?? null, 'trace_id' => $context['trace_id'] ?? null];
             $result = $this->generator instanceof StructuredAiTextGenerator
                 ? $this->generator->generateStructured($prompts['system'], $userPrompt, $pipeline->schemaForStage($stage), $meta)
                 : $this->generator->generate($prompts['system'], $userPrompt, $meta);
@@ -202,6 +202,10 @@ final class PhaseOneAiContentService
             }
             try {
                 $valid = $pipeline->validate($stage, $result, $context);
+                $stateName = strtok($stage, '_');
+                if (isset(ReportState::HEADINGS[$stateName])) {
+                    ReportTrace::record('validated', $valid[$stateName] ?? [], $meta + ['section_id' => $door.'.'.$stateName]);
+                }
                 $lastError = null;
                 break;
             } catch (RuntimeException $exception) {
