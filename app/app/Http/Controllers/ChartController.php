@@ -209,7 +209,11 @@ class ChartController extends Controller
         $dompdf = $wrapper->getDomPDF();
         $renderedDoors = [];
         $doorStartPages = [];
-        $dompdf->setCallbacks([[            
+        $expectedDoors = collect($report['doors'])
+            ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
+            ->pluck('key')
+            ->all();
+        $dompdf->setCallbacks([[
             'event' => 'begin_frame',
             'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages): void {
                 $node = $frame->get_node();
@@ -231,6 +235,9 @@ class ChartController extends Controller
             },
         ]]);
         $dompdf->render();
+        if (array_keys($doorStartPages) !== $expectedDoors) {
+            throw new \RuntimeException('No se han paginado todas las puertas activas del informe.');
+        }
         foreach ($doorStartPages as $door => $page) {
             if ($page % 2 === 0) {
                 throw new \RuntimeException("La puerta {$door} no comienza en una página impar.");
