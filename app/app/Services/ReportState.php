@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Exceptions\SectionSchemaException;
+
 final class ReportState
 {
     public const SCHEMA_VERSION = 2;
@@ -17,15 +19,15 @@ final class ReportState
     public static function assertNarrative(array $development, string $id): void
     {
         if ($development === []) {
-            throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: falta development.");
+            throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}: falta development.");
         }
         foreach ($development as $paragraph) {
             if (! is_string($paragraph) || trim($paragraph) === '' || preg_match('/<[^>]+>|^\s*#{1,6}\s/mu', $paragraph)) {
-                throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: desarrollo no narrativo.");
+                throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}: desarrollo no narrativo.");
             }
             foreach (array_unique(array_merge(...array_values(self::HEADINGS))) as $heading) {
                 if (mb_stripos(html_entity_decode(strip_tags($paragraph), ENT_QUOTES, 'UTF-8'), $heading) !== false) {
-                    throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: {$heading} dentro de development.");
+                    throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}: {$heading} dentro de development.");
                 }
             }
         }
@@ -49,11 +51,11 @@ final class ReportState
         foreach (['characteristics', 'guidelines', 'examples'] as $key) {
             $items = $state[$key] ?? [];
             if (count($items) !== 7 || array_column($items, 'id') !== range(1, 7)) {
-                throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}.{$key}: se requieren siete IDs únicos y ordenados.");
+                throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}.{$key}: se requieren siete IDs únicos y ordenados.");
             }
             foreach ($items as $item) {
                 if (! is_string($item['text'] ?? null) || trim($item['text']) === '') {
-                    throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}.{$key}: contenido vacío.");
+                    throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}.{$key}: contenido vacío.");
                 }
             }
         }
@@ -91,17 +93,17 @@ final class ReportState
                         continue;
                     }
                     if ($item->nodeName !== 'li') {
-                        throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: lista inválida.");
+                        throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}: lista inválida.");
                     }
                     $state[$keys[$index]][] = ['id' => count($state[$keys[$index]]) + 1, 'text' => $item->textContent];
                 }
                 $expectList = false;
             } else {
-                throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: estructura antigua incompatible; regenera esta puerta.");
+                throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}: estructura antigua incompatible; regenera esta puerta.");
             }
         }
         if ($index !== 2 || $expectList) {
-            throw new \RuntimeException("SECTION_SCHEMA_CONTAMINATION: {$id}: cabeceras incompletas.");
+            throw new SectionSchemaException("SECTION_SCHEMA_CONTAMINATION: {$id}: cabeceras incompletas.");
         }
         self::validate($state, $id);
 

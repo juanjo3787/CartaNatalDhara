@@ -25,6 +25,8 @@ final class PhaseOneManualSaveService
                 }
             }
 
+            $chart->forceFill(['phase_one_pdf' => null, 'phase_one_pdf_generated_at' => null])->save();
+
             return $saved;
         });
     }
@@ -32,7 +34,7 @@ final class PhaseOneManualSaveService
     private function storeBlock(Chart $chart, ?string $door, string $block, string $content, int &$saved): void
     {
         $content = $this->sanitize($content);
-        $name = 'fase1_' . ($door ?? 'shared') . '_' . $block . '_manual';
+        $name = 'fase1_'.($door ?? 'shared').'_'.$block.'_manual';
         $template = ChartTemplate::firstOrCreate(
             ['name' => $name, 'version' => 2],
             [
@@ -58,10 +60,10 @@ final class PhaseOneManualSaveService
 
     private function sanitize(string $content): string
     {
-        $content = strip_tags($content, '<p><strong><em><u><ul><ol><li><br><h4>');
+        $content = strip_tags($content, '<p><strong><em><u><ul><ol><li><br><h3><h4>');
 
         return preg_replace(
-            '/<((?:p|strong|em|u|ul|ol|li|br|h4))\b[^>]*>/i',
+            '/<((?:p|strong|em|u|ul|ol|li|br|h3|h4))\b[^>]*>/i',
             '<$1>',
             $content,
         ) ?? '';

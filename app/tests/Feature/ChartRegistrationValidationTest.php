@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Person;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +18,7 @@ class ChartRegistrationValidationTest extends TestCase
         }
 
         parent::setUp();
+        $this->actingAs(User::factory()->create());
     }
 
     public function test_required_registration_fields_are_reported(): void

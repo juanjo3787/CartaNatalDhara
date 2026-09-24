@@ -132,6 +132,7 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
             throw new AiGenerationException(AiGenerationException::STREAM_INTERRUPTED, 'La API de IA no devolvió contenido textual.');
         }
 
+        ReportTrace::raw($content, $meta);
         $decoded = json_decode($content, true);
         if (! is_array($decoded)) {
             Log::warning('OpenAI chat completion returned invalid JSON', $logPayload);

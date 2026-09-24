@@ -23,10 +23,10 @@ class PhaseOneDoorCatalogTest extends TestCase
             'name' => 'Pastora',
         ];
 
-        $catalog = new PhaseOneDoorCatalog();
+        $catalog = new PhaseOneDoorCatalog;
         $expectedBlocks = [
             'shared_intro', 'function', 'sign', 'house', 'ruler',
-            'integration', 'harmony', 'deficit', 'excess', 'closing',
+            'integration', 'harmony', 'deficit', 'excess', 'harmonization', 'closing',
         ];
 
         foreach (['sol', 'luna', 'ascendente', 'descendente'] as $door) {
@@ -56,7 +56,7 @@ class PhaseOneDoorCatalogTest extends TestCase
             'name' => 'Lucía',
         ];
 
-        $blocks = (new PhaseOneDoorCatalog())->blocks('sol', $context);
+        $blocks = (new PhaseOneDoorCatalog)->blocks('sol', $context);
 
         $this->assertStringNotContainsString('Pastora', implode(' ', $blocks['function']));
         $this->assertStringContainsString('Lucía', $blocks['function'][0]);

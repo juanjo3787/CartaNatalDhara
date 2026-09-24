@@ -121,6 +121,9 @@
             <div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
             @foreach ($door['blocks'] as $block => $paragraphs)
                 @if ($block !== 'shared_intro')
+                    @if (isset($door['states'][$block]))
+                        @php(\App\Services\ReportTrace::record($pdf ? 'pdf_dom' : 'web_dom', $door['states'][$block], ['chart_id' => $chart->id, 'section_id' => $door['key'].'.'.$block]))
+                    @endif
                     <div class="report-block" data-section-id="{{ $door['key'] }}.{{ $block }}">
                         <h2 class="report-block-title">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</h2>
                         <div class="report-block-body">

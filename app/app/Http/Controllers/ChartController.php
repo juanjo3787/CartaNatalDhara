@@ -3,24 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Astrology\BirthDataNormalizer;
+use App\Exceptions\AiGenerationException;
 use App\Models\BirthData;
 use App\Models\Chart;
 use App\Models\Person;
-use App\Models\Place;
 use App\Models\PersonChangeLog;
+use App\Models\Place;
 use App\Models\ReportGeneration;
-use App\Exceptions\AiGenerationException;
 use App\Services\ChartService;
-use App\Services\PhaseOneReportService;
+use App\Services\PdfPageGeometry;
 use App\Services\PhaseOneAiGenerationService;
 use App\Services\PhaseOneManualSaveService;
+use App\Services\PhaseOneReportService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class ChartController extends Controller
 {
@@ -107,10 +108,10 @@ class ChartController extends Controller
 
     public function downloadReport(Chart $chart, PhaseOneReportService $reportService)
     {
-        if ($chart->phase_one_pdf && Storage::disk('local')->exists($chart->phase_one_pdf)) {
+        if ($chart->phase_one_pdf && str_ends_with($chart->phase_one_pdf, '-v'.PdfPageGeometry::VERSION.'.pdf') && Storage::disk('local')->exists($chart->phase_one_pdf)) {
             return response()->streamDownload(function () use ($chart) {
                 echo Storage::disk('local')->get($chart->phase_one_pdf);
-            }, 'carta-natal-fase-1-' . $chart->id . '.pdf', [
+            }, 'carta-natal-fase-1-'.$chart->id.'.pdf', [
                 'Content-Type' => 'application/pdf',
             ]);
         }
@@ -120,12 +121,12 @@ class ChartController extends Controller
         ReportGeneration::create([
             'chart_id' => $chart->id,
             'report_type' => 'fase-1',
-            'filename' => 'carta-natal-fase-1-' . $chart->id . '.pdf',
+            'filename' => 'carta-natal-fase-1-'.$chart->id.'.pdf',
             'size_bytes' => strlen($output),
             'checksum' => hash('sha256', $output),
         ]);
 
-        return response()->streamDownload(fn () => print($output), 'carta-natal-fase-1-' . $chart->id . '.pdf', [
+        return response()->streamDownload(fn () => print ($output), 'carta-natal-fase-1-'.$chart->id.'.pdf', [
             'Content-Type' => 'application/pdf',
         ]);
     }
@@ -175,7 +176,7 @@ class ChartController extends Controller
         $pdf = $this->renderReportPdf($chart, $report, $wheelImage);
 
         // Guardar PDF en sistema de archivos
-        $pdfPath = 'pdfs/' . $chart->id . '/carta-natal-fase-1-' . $chart->id . '.pdf';
+        $pdfPath = 'pdfs/'.$chart->id.'/carta-natal-fase-1-'.$chart->id.'-v'.PdfPageGeometry::VERSION.'.pdf';
         Storage::disk('local')->put($pdfPath, $pdf);
 
         $chart->forceFill([
@@ -186,18 +187,18 @@ class ChartController extends Controller
         ReportGeneration::create([
             'chart_id' => $chart->id,
             'report_type' => 'fase-1',
-            'filename' => 'carta-natal-fase-1-' . $chart->id . '.pdf',
+            'filename' => 'carta-natal-fase-1-'.$chart->id.'.pdf',
             'size_bytes' => strlen($pdf),
             'checksum' => hash('sha256', $pdf),
         ]);
 
         return redirect()->route('charts.report', $chart)
             ->with('success', $successMessage);
-            if (! request()->boolean('ai_ready')) {
-                $chart->interpretations()
-                    ->where('phase', 'fase-1')
-                    ->delete();
-            }
+        if (! request()->boolean('ai_ready')) {
+            $chart->interpretations()
+                ->where('phase', 'fase-1')
+                ->delete();
+        }
     }
 
     private function validatedWheelImage(mixed $image): ?string
@@ -209,6 +210,7 @@ class ChartController extends Controller
         if ($binary === false || ! str_starts_with($binary, "\xff\xd8\xff")) {
             return null;
         }
+
         return $image;
     }
 
@@ -275,12 +277,12 @@ class ChartController extends Controller
             $size = 7.5;
             $color = [0.54, 0.47, 0.41];
             $headerWidth = $pageCanvas->get_text_width($header, $font, $size);
-            $pageCanvas->text(($width - $headerWidth) / 2, \App\Services\PdfPageGeometry::HEADER_TOP_PT, $header, $font, $size, $color);
-            $pageCanvas->line(51, \App\Services\PdfPageGeometry::HEADER_BOTTOM_PT, $width - 51, \App\Services\PdfPageGeometry::HEADER_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
+            $pageCanvas->text(($width - $headerWidth) / 2, PdfPageGeometry::HEADER_TOP_PT, $header, $font, $size, $color);
+            $pageCanvas->line(51, PdfPageGeometry::HEADER_BOTTOM_PT, $width - 51, PdfPageGeometry::HEADER_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
             $footer = 'CARTA NATAL · FASE 1   /   '.$pageNumber;
             $footerWidth = $pageCanvas->get_text_width($footer, $font, $size);
-            $pageCanvas->line(51, $height - \App\Services\PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, $width - 51, $height - \App\Services\PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
-            $pageCanvas->text(($width - $footerWidth) / 2, $height - \App\Services\PdfPageGeometry::FOOTER_TEXT_FROM_BOTTOM_PT, $footer, $font, $size, $color);
+            $pageCanvas->line(51, $height - PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, $width - 51, $height - PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
+            $pageCanvas->text(($width - $footerWidth) / 2, $height - PdfPageGeometry::FOOTER_TEXT_FROM_BOTTOM_PT, $footer, $font, $size, $color);
         });
 
         Log::info('Phase 1 PDF rendered.', [
@@ -369,7 +371,9 @@ class ChartController extends Controller
         foreach (['alias', 'full_name', 'notes'] as $field) {
             $old = (string) ($person->{$field} ?? '');
             $new = (string) ($validated[$field] ?? '');
-            if ($old !== $new) $changes[] = [$field, $old, $new];
+            if ($old !== $new) {
+                $changes[] = [$field, $old, $new];
+            }
         }
         $person->update(['alias' => $validated['alias'], 'full_name' => $validated['full_name'] ?? null, 'notes' => $validated['notes'] ?? null]);
 
@@ -377,7 +381,9 @@ class ChartController extends Controller
         foreach (['city', 'country', 'latitude', 'longitude', 'timezone_identifier'] as $field) {
             $old = (string) ($place->{$field} ?? '');
             $new = (string) $validated[$field];
-            if ($old !== $new) $changes[] = ['place.' . $field, $old, $new];
+            if ($old !== $new) {
+                $changes[] = ['place.'.$field, $old, $new];
+            }
         }
         $place->update(array_intersect_key($validated, array_flip(['city', 'country', 'latitude', 'longitude', 'timezone_identifier'])));
         $chart->birthData->update([
@@ -386,7 +392,9 @@ class ChartController extends Controller
             'utc_datetime' => $normalized->utcDatetime, 'time_source' => $normalized->timeSource, 'time_precision' => $normalized->timePrecision,
         ]);
 
-        foreach ($changes as [$field, $old, $new]) PersonChangeLog::create(['person_id' => $person->id, 'chart_id' => $chart->id, 'field' => $field, 'old_value' => $old, 'new_value' => $new]);
+        foreach ($changes as [$field, $old, $new]) {
+            PersonChangeLog::create(['person_id' => $person->id, 'chart_id' => $chart->id, 'field' => $field, 'old_value' => $old, 'new_value' => $new]);
+        }
 
         return redirect()->route('charts.index')->with('success', 'Datos de registro actualizados.');
     }
@@ -422,6 +430,7 @@ class ChartController extends Controller
     public function personHistory(Chart $chart): View
     {
         $chart->load('person');
+
         return view('charts.person-history', ['chart' => $chart, 'changes' => PersonChangeLog::where('person_id', $chart->person_id)->latest()->get()]);
     }
 

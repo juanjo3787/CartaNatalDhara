@@ -5,13 +5,14 @@ namespace Tests\Unit;
 use App\Contracts\AiTextGenerator;
 use App\Services\PhaseOneAiContentService;
 use App\Services\PhaseOnePromptBuilder;
+use App\Services\ReportState;
 use Tests\TestCase;
 
 class PhaseOneAiContentServiceTest extends TestCase
 {
     public function test_it_builds_a_dossier_prompt_with_all_required_blocks(): void
     {
-        $builder = new PhaseOnePromptBuilder();
+        $builder = new PhaseOnePromptBuilder;
         $prompts = $builder->build('descendente', [
             'question' => '¿Qué aprendo a través de mis relaciones?',
             'subject' => 'El Descendente',
@@ -36,7 +37,7 @@ class PhaseOneAiContentServiceTest extends TestCase
 
     public function test_it_builds_a_deep_solar_prompt_with_explicit_structure(): void
     {
-        $prompts = (new PhaseOnePromptBuilder())->build('sol', [
+        $prompts = (new PhaseOnePromptBuilder)->build('sol', [
             'question' => '¿Qué quiero aportar y elegir?',
             'subject' => 'El Sol',
             'sign' => 'Libra',
@@ -46,20 +47,20 @@ class PhaseOneAiContentServiceTest extends TestCase
         $this->assertStringContainsString('Añade una armonización completa', $prompts['system']);
         $this->assertStringContainsString('La profundidad es obligatoria', $prompts['system']);
         $this->assertStringContainsString('Esquema JSON obligatorio', $prompts['system']);
-        $this->assertStringContainsString('No agrupes Característica + Desarrollo + Pauta + Ejemplo', $prompts['system']);
+        $this->assertStringContainsString('Cada cabecera debe tener su propio contenido', $prompts['system']);
         $this->assertStringContainsString('Regla de no repetición endurecida', $prompts['system']);
         $this->assertStringContainsString('¿Qué quiero aportar y elegir?', $prompts['user']);
         $this->assertStringContainsString('exactamente 3 strings independientes', $prompts['user']);
         $this->assertStringContainsString('El resultado debe tener la profundidad, personalización', $prompts['system']);
         $this->assertStringContainsString('control_calidad_dossier', $prompts['user']);
         $this->assertStringContainsString('Características que puedes observar', $prompts['system']);
-        $this->assertStringContainsString('No escribas "Características que puedes observer"', $prompts['system']);
+        $this->assertStringContainsString('Cada estado debe contener 4 capas separadas', $prompts['system']);
         $this->assertStringContainsString('Pautas y consideraciones para recuperar una medida adecuada', $prompts['user']);
     }
 
     public function test_it_builds_the_lunar_user_prompt_with_ten_blocks_and_venus_continuity(): void
     {
-        $prompts = (new PhaseOnePromptBuilder())->build('luna', [
+        $prompts = (new PhaseOnePromptBuilder)->build('luna', [
             'door' => 'luna',
             'question' => '¿Qué estoy sintiendo y qué necesito en este momento?',
             'subject' => 'La Luna',
@@ -98,7 +99,7 @@ class PhaseOneAiContentServiceTest extends TestCase
             'deficit' => ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'],
             'excess' => ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7'],
         ];
-        $prompts = (new PhaseOnePromptBuilder())->build('ascendente', [
+        $prompts = (new PhaseOnePromptBuilder)->build('ascendente', [
             'door' => 'ascendente',
             'question' => '¿Cómo puedo dar este paso de una manera que pueda sostener?',
             'subject' => 'El Ascendente',
@@ -131,7 +132,7 @@ class PhaseOneAiContentServiceTest extends TestCase
             'deficit' => ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7'],
             'excess' => ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7'],
         ];
-        $prompts = (new PhaseOnePromptBuilder())->build('descendente', [
+        $prompts = (new PhaseOnePromptBuilder)->build('descendente', [
             'door' => 'descendente',
             'question' => '¿Cómo puedo compartir mi vida sin dejar de escucharme?',
             'subject' => 'El Descendente',
@@ -168,7 +169,11 @@ class PhaseOneAiContentServiceTest extends TestCase
             static fn (int $minimum): array => array_fill(0, $minimum, 'Párrafo generado'),
             $minimums,
         );
-        $generator = new class($blocks) implements AiTextGenerator {
+        foreach (ReportState::HEADINGS as $state => $headings) {
+            $blocks[$state] = [str_repeat('Desarrollo narrativo suficiente antes de las listas. ', 5), ...$headings];
+        }
+        $generator = new class($blocks) implements AiTextGenerator
+        {
             public function __construct(private array $blocks) {}
 
             public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array
@@ -177,7 +182,7 @@ class PhaseOneAiContentServiceTest extends TestCase
             }
         };
 
-        $service = new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder());
+        $service = new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder);
         $result = $service->generate('sol', ['subject' => 'El Sol']);
 
         $this->assertSame(array_keys($blocks), array_keys($result));
@@ -195,12 +200,20 @@ class PhaseOneAiContentServiceTest extends TestCase
             'deficit' => ['D1', 'D2', 'D3', 'D4'], 'excess' => ['E1', 'E2', 'E3', 'E4'],
             'closing' => ["Uno\nDos\nTres"],
         ];
-        $generator = new class($minimums) implements AiTextGenerator {
+        foreach (ReportState::HEADINGS as $state => $headings) {
+            $minimums[$state] = [str_repeat('Desarrollo narrativo suficiente antes de las listas. ', 5), ...$headings];
+        }
+        $generator = new class($minimums) implements AiTextGenerator
+        {
             public function __construct(private array $blocks) {}
-            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array { return $this->blocks; }
+
+            public function generate(string $systemPrompt, string $userPrompt, array $meta = []): array
+            {
+                return $this->blocks;
+            }
         };
 
-        $result = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder()))->generate('descendente', ['subject' => 'El Descendente']);
+        $result = (new PhaseOneAiContentService($generator, new PhaseOnePromptBuilder))->generate('descendente', ['subject' => 'El Descendente']);
 
         $this->assertCount(3, $result['shared_intro']);
         $this->assertCount(6, $result['house']);

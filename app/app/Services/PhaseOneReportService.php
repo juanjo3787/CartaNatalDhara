@@ -43,7 +43,7 @@ final class PhaseOneReportService
                 'point' => 'descendant',
             ],
         ];
-        $fixed = (new PhaseOneFixedContent())->sections($readerName);
+        $fixed = (new PhaseOneFixedContent)->sections($readerName);
         $doorReports = array_values(array_map(
             fn (array $door, string $key): array => [
                 'key' => $key,
@@ -51,7 +51,7 @@ final class PhaseOneReportService
                 'subtitle' => $door['subtitle'],
                 'question' => $door['question'],
                 'position' => $this->doorPosition($snapshot, $door['point']),
-                'blocks' => (new PhaseOneDoorCatalog())->blocks(
+                'blocks' => (new PhaseOneDoorCatalog)->blocks(
                     $key,
                     $this->doorContext($readerName, $snapshot, $door['point'], $key),
                 ),
@@ -67,11 +67,11 @@ final class PhaseOneReportService
             })
             ->orderBy('id')
             ->get()
-            ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared') . '.' . $interpretation->block);
+            ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared').'.'.$interpretation->block);
 
         foreach ($doorReports as &$doorReport) {
             foreach ($doorReport['blocks'] as $block => &$paragraphs) {
-                $stored = $storedInterpretations->get($doorReport['key'] . '.' . $block);
+                $stored = $storedInterpretations->get($doorReport['key'].'.'.$block);
                 if ($stored) {
                     $paragraphs = preg_split('/\R{2,}/', $stored->content) ?: [$stored->content];
                     if ($stored->ai_assisted && isset(ReportState::HEADINGS[$block])) {
@@ -106,6 +106,8 @@ final class PhaseOneReportService
         }
 
         return [
+            'report_schema_version' => ReportState::SCHEMA_VERSION,
+            'prompt_version' => ReportState::PROMPT_VERSION,
             'name' => $name,
             'shared' => $fixed,
             'sections' => $sections,
@@ -162,8 +164,8 @@ final class PhaseOneReportService
                 'birth_time' => $chart->birthData->local_time,
                 'timezone' => $chart->birthData->timezone_identifier,
                 'utc_datetime' => $chart->birthData->utc_datetime,
-                'place' => $chart->birthData->place->city . ', ' . $chart->birthData->place->country,
-                'coordinates' => $chart->birthData->place->latitude . ', ' . $chart->birthData->place->longitude,
+                'place' => $chart->birthData->place->city.', '.$chart->birthData->place->country,
+                'coordinates' => $chart->birthData->place->latitude.', '.$chart->birthData->place->longitude,
                 'zodiac' => $chart->configuration['zodiac'] ?? 'tropical',
                 'houses' => $chart->configuration['houses'] ?? 'placidus',
                 'engine' => $chart->engine_version,
@@ -202,7 +204,7 @@ final class PhaseOneReportService
      * una fila guardada (manual, IA o generada previamente), para que el snapshot
      * quede fijado en base de datos y no dependa de recalcularse en cada visita.
      *
-     * @param array<string, mixed> $report
+     * @param  array<string, mixed>  $report
      */
     public function persistGeneratedContent(Chart $chart, array $report): int
     {
@@ -210,20 +212,20 @@ final class PhaseOneReportService
             $stored = $chart->interpretations()
                 ->where('phase', 'fase-1')
                 ->get()
-                ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared') . '.' . $interpretation->block);
+                ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared').'.'.$interpretation->block);
 
             $saved = 0;
 
             foreach ($report['shared'] as $block => $paragraphs) {
                 $storedBlock = ['intro' => 'shared_intro', 'states' => 'shared_states', 'conclusions' => 'shared_conclusions'][$block] ?? $block;
-                if (! $stored->has('shared.' . $storedBlock)) {
+                if (! $stored->has('shared.'.$storedBlock)) {
                     $this->storeGeneratedBlock($chart, null, $storedBlock, implode("\n\n", $paragraphs), $saved);
                 }
             }
 
             foreach ($report['doors'] as $door) {
                 foreach ($door['blocks'] as $block => $paragraphs) {
-                    if (! $stored->has($door['key'] . '.' . $block)) {
+                    if (! $stored->has($door['key'].'.'.$block)) {
                         $this->storeGeneratedBlock($chart, $door['key'], $block, implode("\n\n", (array) $paragraphs), $saved);
                     }
                 }
@@ -235,7 +237,7 @@ final class PhaseOneReportService
 
     private function storeGeneratedBlock(Chart $chart, ?string $door, string $block, string $content, int &$saved): void
     {
-        $name = 'fase1_' . ($door ?? 'shared') . '_' . $block . '_generated';
+        $name = 'fase1_'.($door ?? 'shared').'_'.$block.'_generated';
         $template = ChartTemplate::firstOrCreate(
             ['name' => $name, 'version' => 2],
             [
@@ -336,7 +338,7 @@ final class PhaseOneReportService
         }
 
         $doorKey = ['sol' => 'sun', 'luna' => 'moon', 'ascendente' => 'ascendant', 'descendente' => 'descendant'][$door];
-        $rulers = (new RegencyResolver())->resolve($snapshot[$doorKey]['sign']);
+        $rulers = (new RegencyResolver)->resolve($snapshot[$doorKey]['sign']);
         $facts['rulers'] = [
             'traditional' => $rulers['traditional'],
             'modern' => $rulers['modern'],
@@ -421,7 +423,7 @@ final class PhaseOneReportService
         );
 
         return in_array($pointKey, ['sun', 'moon'], true)
-            ? $position . ' · casa ' . $this->romanHouse($house)
+            ? $position.' · casa '.$this->romanHouse($house)
             : $position;
     }
 
@@ -439,8 +441,8 @@ final class PhaseOneReportService
             'rows' => [
                 ['door' => sprintf('Sol en %s en %s', $sunSign, $sunHouse), 'resource' => 'Cooperación y criterio cotidiano.', 'need' => 'Tu voluntad y un reparto recíproco.'],
                 ['door' => sprintf('Luna en %s en %s', $moonSign, $moonHouse), 'resource' => 'Calidez y expresión íntima.', 'need' => 'Afecto, alegría y permiso para recibir.'],
-                ['door' => 'Ascendente ' . $ascSign, 'resource' => 'Base, ritmo y continuidad.', 'need' => 'Tiempo propio y capacidad de ajustar.'],
-                ['door' => 'Descendente ' . $descSign, 'resource' => 'Profundidad y compromiso.', 'need' => 'Autonomía, privacidad y acuerdos claros.'],
+                ['door' => 'Ascendente '.$ascSign, 'resource' => 'Base, ritmo y continuidad.', 'need' => 'Tiempo propio y capacidad de ajustar.'],
+                ['door' => 'Descendente '.$descSign, 'resource' => 'Profundidad y compromiso.', 'need' => 'Autonomía, privacidad y acuerdos claros.'],
             ],
             'paragraphs' => [
                 'Puedes actuar con consideración y sentir decepción. Puedes desear cercanía y necesitar un rato propio. Puedes valorar la estabilidad y reconocer que una costumbre debe cambiar. Dar nombre a esas diferencias ayuda a no tratar cada incomodidad como una contradicción que haya que eliminar.',
@@ -480,14 +482,16 @@ final class PhaseOneReportService
         $rows = [];
 
         foreach ($labels as $key => $label) {
-            if (! isset($snapshot[$key])) continue;
+            if (! isset($snapshot[$key])) {
+                continue;
+            }
             $point = $snapshot[$key];
             $house = $this->resolveHouse($point, $snapshot['houses'] ?? []);
             $rows[] = [
                 'title' => sprintf('%s en %s en casa %s', $label, $this->translateSign($point['sign'] ?? 'aries'), $this->romanHouse($house['number'])),
                 'content' => sprintf('%s En %s y en la casa %s, esta función encuentra un terreno concreto para expresarse. El recurso aparece cuando puede adaptarse a la experiencia; el defecto cuando apenas encuentra espacio y el exceso cuando intenta resolverlo todo mediante una única respuesta.', $editorial[$key]['content'], $this->translateSign($point['sign'] ?? 'aries'), $this->romanHouse($house['number'])),
                 'example' => sprintf('Ejemplo: observa una situación de la casa %s en la que participa %s y comprueba qué cambia cuando utilizas esta función con una medida que puedas sostener.', $this->romanHouse($house['number']), strtolower($label)),
-                'question' => 'Pregunta útil: ' . $editorial[$key]['question'],
+                'question' => 'Pregunta útil: '.$editorial[$key]['question'],
             ];
         }
 
@@ -505,6 +509,7 @@ final class PhaseOneReportService
             }
 
             $point = $snapshot[$key];
+
             return [
                 'name' => $labels[$key],
                 'position' => sprintf('%s %d° %02d\' %02d"', $this->translateSign($point['sign'] ?? 'aries'), $point['degrees'] ?? 0, $point['minutes'] ?? 0, (int) round($point['seconds'] ?? 0)),
@@ -517,6 +522,7 @@ final class PhaseOneReportService
     {
         return array_values(array_map(function (int $number) use ($houses): array {
             $house = $houses[$number] ?? [];
+
             return [
                 'number' => $number,
                 'position' => sprintf('%s %d° %02d\' %02d"', $this->translateSign($house['sign'] ?? 'aries'), $house['degrees'] ?? 0, $house['minutes'] ?? 0, (int) round($house['seconds'] ?? 0)),
@@ -575,7 +581,7 @@ final class PhaseOneReportService
     {
         $notes = [];
         foreach (['libra', 'taurus', 'leo', 'scorpio'] as $sign) {
-            $resolved = (new RegencyResolver())->resolve($sign);
+            $resolved = (new RegencyResolver)->resolve($sign);
             $traditional = implode(' y ', array_map(fn (string $planet): string => $this->translatePlanet($planet), $resolved['traditional']));
             $modern = implode(' y ', array_map(fn (string $planet): string => $this->translatePlanet($planet), $resolved['modern']));
             $notes[] = sprintf('%s: regencia tradicional %s; moderna %s', $this->translateSign($sign), $traditional, $modern);
@@ -593,7 +599,7 @@ final class PhaseOneReportService
     {
         $point = $snapshot[$pointKey] ?? ['sign' => 'aries', 'degrees' => 0, 'minutes' => 0, 'seconds' => 0, 'longitude' => 0];
         $house = $this->resolveHouse($point, $snapshot['houses'] ?? []);
-        $rulers = (new RegencyResolver())->resolve($point['sign'] ?? 'aries')['modern'];
+        $rulers = (new RegencyResolver)->resolve($point['sign'] ?? 'aries')['modern'];
         $rulerNames = implode(' y ', array_map(fn (string $ruler): string => $this->translatePlanet($ruler), $rulers));
         $ruler = $snapshot[$rulers[0]] ?? ['sign' => 'aries', 'degrees' => 0, 'minutes' => 0, 'seconds' => 0];
         $rulerDetails = array_map(function (string $rulerKey) use ($snapshot): array {
@@ -611,7 +617,8 @@ final class PhaseOneReportService
                 ],
             ];
         }, $rulers);
-        $stateCharacteristics = (new PhaseOneDoorCatalog())->stateCharacteristics($door, $this->translateSign($point['sign'] ?? 'aries'));
+        $stateCharacteristics = (new PhaseOneDoorCatalog)->stateCharacteristics($door, $this->translateSign($point['sign'] ?? 'aries'));
+
         return [
             'subject' => match ($door) {
                 'sol' => 'El Sol',

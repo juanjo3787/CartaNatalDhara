@@ -11,6 +11,11 @@ final class ReportStageMerger
                 continue;
             }
             if ($key === 'examples' && is_array($value)) {
+                if (array_column($value, 'id') === range(1, 7)) {
+                    $completed[$key] = $value;
+
+                    continue;
+                }
                 $byId = [];
                 foreach ([...($completed[$key] ?? []), ...$value] as $item) {
                     $byId[$item['id']] = $item;

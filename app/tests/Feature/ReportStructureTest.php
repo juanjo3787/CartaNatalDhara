@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Services\Doors\AbstractDoorPipeline;
 use App\Services\Doors\DoorPipelineFactory;
-use App\Services\ReportState;
+use App\Services\PdfPageGeometry;
 use App\Services\ReportStageMerger;
+use App\Services\ReportState;
+use Dompdf\Dompdf;
+use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 use Tests\Unit\SunGenerationPipelineTest;
@@ -20,6 +23,7 @@ final class ReportStructureTest extends TestCase
                 $cases[$door.'.'.$state] = [$door, $state];
             }
         }
+
         return $cases;
     }
 
@@ -78,5 +82,29 @@ final class ReportStructureTest extends TestCase
         $full = ReportStageMerger::merge(ReportStageMerger::merge([], $batchOne), $batchTwo);
         $this->assertSame($full, ReportStageMerger::merge($full, $batchOne));
         $this->assertCount(7, $full['excess']['examples']);
+        $stale = $full;
+        $stale['excess']['examples'][] = ['id' => 8, 'text' => 'legacy'];
+        $this->assertSame($full, ReportStageMerger::merge($stale, $full));
+    }
+
+    public function test_dompdf_reserves_the_same_content_box_on_every_page(): void
+    {
+        $html = view('layouts.app', ['pdf' => true])->render();
+        $template = file_get_contents(resource_path('views/reports/phase-one/template.blade.php'));
+        $css = Blade::render(substr($template, strpos($template, '<style>'), strpos($template, '</style>') + 8 - strpos($template, '<style>')), ['pdf' => true]);
+        $content = '<div class="report-document"><section class="report-page">'.str_repeat('<h2>Banda de sección</h2><p>'.str_repeat('Narrativa suficiente para provocar saltos automáticos. ', 50).'</p>', 8).'</section></div>';
+        $dompdf = new Dompdf;
+        $dompdf->loadHtml(str_replace('</body>', $css.$content.'</body>', $html));
+        $boxes = [];
+        $dompdf->setCallbacks([['event' => 'begin_page_reflow', 'f' => static function ($frame) use (&$boxes): void {
+            $boxes[] = $frame->get_containing_block();
+        }]]);
+        $dompdf->render();
+        $this->assertGreaterThan(2, count($boxes));
+        foreach ($boxes as $box) {
+            $this->assertEqualsWithDelta(PdfPageGeometry::MARGIN_PT, $box['y'], 0.01);
+            $this->assertGreaterThan(PdfPageGeometry::HEADER_BOTTOM_PT + 10, $box['y']);
+            $this->assertLessThan(841.89 - PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT - 10, $box['y'] + $box['h']);
+        }
     }
 }
