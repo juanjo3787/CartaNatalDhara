@@ -17,6 +17,7 @@ class Chart extends Model
         'status',
         'phase_one_pdf',
         'phase_one_pdf_generated_at',
+        'natal_wheel_image',
     ];
 
     protected $casts = [

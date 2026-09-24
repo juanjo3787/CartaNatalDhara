@@ -115,7 +115,12 @@ class ChartController extends Controller
 
         $report = $reportService->build($chart);
         $pdf = app('dompdf.wrapper')
-            ->loadView('charts.report', ['chart' => $chart, 'report' => $report, 'pdf' => true, 'wheelImage' => null])
+            ->loadView('charts.report', [
+                'chart' => $chart,
+                'report' => $report,
+                'pdf' => true,
+                'wheelImage' => $chart->natal_wheel_image,
+            ])
             ->setPaper('a4', 'portrait');
 
         $output = $pdf->output();
@@ -157,12 +162,24 @@ class ChartController extends Controller
     {
         $report = $reportService->build($chart);
         $reportService->persistGeneratedContent($chart, $report);
+        $wheelImage = $this->validatedWheelImage(request()->input('wheel_image'))
+            ?? $chart->natal_wheel_image;
+
+        if ($wheelImage === null) {
+            return redirect()->route('charts.report', $chart)
+                ->with('error', 'No se pudo capturar la rueda astrológica. Espera a que termine de dibujarse y vuelve a validar el PDF.');
+        }
+
+        if ($wheelImage !== $chart->natal_wheel_image) {
+            $chart->forceFill(['natal_wheel_image' => $wheelImage])->save();
+        }
+
         $pdf = app('dompdf.wrapper')
             ->loadView('charts.report', [
                 'chart' => $chart,
                 'report' => $report,
                 'pdf' => true,
-                'wheelImage' => $this->validatedWheelImage(request()->input('wheel_image')),
+                'wheelImage' => $wheelImage,
             ])
             ->setPaper('a4', 'portrait')
             ->output();
