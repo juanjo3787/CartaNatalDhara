@@ -94,6 +94,8 @@ class ReportJobTest extends TestCase
         $this->assertSame($snapshot, $chart->fresh()->snapshot);
         Storage::disk('local')->assertExists($chart->fresh()->phase_one_pdf);
         Http::assertSentCount(88);
+        $this->assertSame(88, DB::table('report_metrics')->where('report_job_id', $job->id)->where('kind', 'ai')->where('outcome', 'success')->count());
+        $this->assertSame(93, DB::table('report_metrics')->where('report_job_id', $job->id)->where('kind', 'step')->where('outcome', 'success')->count());
         (new ProcessReportStep($job->id, 1))->handle(app(ReportJobService::class));
         Http::assertSentCount(88);
     }

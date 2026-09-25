@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\BirthData;
+use App\Models\Chart;
+use App\Models\Person;
+use App\Models\Place;
 use App\Models\ReportJob;
 use App\Models\User;
 use App\Services\ReportMetrics;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -17,10 +21,10 @@ class ReportImprovementsTest extends TestCase
 
     private function job(string $status = 'completed'): ReportJob
     {
-        $person = \App\Models\Person::create(['alias' => 'Report owner']);
-        $place = \App\Models\Place::create(['city' => 'Madrid', 'country' => 'ES', 'latitude' => 40.4, 'longitude' => -3.7, 'timezone_identifier' => 'Europe/Madrid']);
-        $birth = \App\Models\BirthData::create(['person_id' => $person->id, 'place_id' => $place->id, 'local_date' => '1990-01-01', 'local_time' => '12:00:00', 'timezone_identifier' => 'Europe/Madrid', 'utc_offset' => '+01:00', 'utc_datetime' => '1990-01-01 11:00:00']);
-        $chart = \App\Models\Chart::create(['person_id' => $person->id, 'birth_data_id' => $birth->id, 'configuration' => [], 'snapshot' => [], 'engine_version' => 'fixture', 'status' => 'calculated']);
+        $person = Person::create(['alias' => 'Report owner']);
+        $place = Place::create(['city' => 'Madrid', 'country' => 'ES', 'latitude' => 40.4, 'longitude' => -3.7, 'timezone_identifier' => 'Europe/Madrid']);
+        $birth = BirthData::create(['person_id' => $person->id, 'place_id' => $place->id, 'local_date' => '1990-01-01', 'local_time' => '12:00:00', 'timezone_identifier' => 'Europe/Madrid', 'utc_offset' => '+01:00', 'utc_datetime' => '1990-01-01 11:00:00']);
+        $chart = Chart::create(['person_id' => $person->id, 'birth_data_id' => $birth->id, 'configuration' => [], 'snapshot' => [], 'engine_version' => 'fixture', 'status' => 'calculated']);
 
         return ReportJob::create(['chart_id' => $chart->id, 'user_id' => User::factory()->create()->id, 'status' => $status, 'doors' => ['sol']]);
     }
@@ -63,7 +67,7 @@ class ReportImprovementsTest extends TestCase
         $job = $this->job('failed');
         $this->actingAs(User::findOrFail($job->user_id))->postJson(route('reports.jobs.dismiss', $job))->assertOk();
         $this->getJson(route('reports.jobs.index'))->assertJsonCount(0);
-        $this->postJson(route('reports.jobs.retry', $job))->assertOk()->assertJsonPath('status', 'queued');
+        $this->postJson(route('reports.jobs.retry', $job))->assertAccepted()->assertJsonPath('status', 'queued');
         $this->getJson(route('reports.jobs.index'))->assertJsonCount(1);
         $this->assertNull($job->fresh()->dismissed_at);
         $this->assertDatabaseCount('jobs', 1);
@@ -144,5 +148,40 @@ class ReportImprovementsTest extends TestCase
         }
         $this->assertGuest();
         $this->post('/login', ['email' => $user->email, 'password' => 'incorrect'])->assertTooManyRequests();
+    }
+
+    public function test_password_command_rejects_mismatch_without_changing_account(): void
+    {
+        $user = User::factory()->create();
+        $hash = $user->password;
+
+        $this->artisan('users:password', ['login' => $user->email])
+            ->expectsQuestion('Nueva contraseña (mínimo 12 caracteres)', 'Changed-test-password')
+            ->expectsQuestion('Repite la contraseña', 'Different-test-password')->assertFailed();
+
+        $this->assertSame($hash, $user->fresh()->password);
+    }
+
+    public function test_password_command_creates_an_account_only_when_requested(): void
+    {
+        $this->artisan('users:password', ['login' => 'new-reader'])->assertFailed();
+        $this->assertDatabaseCount('users', 0);
+        $this->artisan('users:password', ['login' => 'new-reader', '--create' => true])
+            ->expectsQuestion('Nueva contraseña (mínimo 12 caracteres)', 'New-reader-password')
+            ->expectsQuestion('Repite la contraseña', 'New-reader-password')->assertSuccessful();
+        $this->assertTrue(Hash::check('New-reader-password', User::where('email', 'new-reader')->firstOrFail()->password));
+    }
+
+    public function test_timings_compares_known_completed_durations(): void
+    {
+        $before = $this->job();
+        $before->update(['created_at' => '2026-09-25 10:00:00', 'completed_at' => '2026-09-25 10:02:00']);
+        $after = $this->job();
+        $after->update(['created_at' => '2026-09-25 11:00:00', 'completed_at' => '2026-09-25 11:01:00']);
+
+        $this->artisan('reports:timings', ['--before' => $before->id, '--after' => $after->id])
+            ->expectsOutput('before: n=1 average_generation_time_ms=120000')
+            ->expectsOutput('after: n=1 average_generation_time_ms=60000')
+            ->expectsOutput('improvement_percent=50')->assertSuccessful();
     }
 }
