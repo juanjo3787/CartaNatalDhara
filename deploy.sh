@@ -94,6 +94,15 @@ if command -v curl >/dev/null 2>&1; then
     if [ "$HTTP_STATUS" -ge 500 ] 2>/dev/null; then
         echo "La aplicacion responde con HTTP $HTTP_STATUS. Ultimos logs del contenedor:"
         docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=80 app
+        echo "Ultimos errores Laravel (pueden incluir entradas anteriores a este despliegue):"
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app sh -c '
+            for log in storage/logs/laravel.log "storage/logs/laravel-$(date +%F).log"; do
+                if [ -f "$log" ]; then
+                    echo "$log"
+                    tail -n 60 "$log"
+                fi
+            done
+        ' || true
         exit 1
     fi
 fi

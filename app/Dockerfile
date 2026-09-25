@@ -44,6 +44,7 @@ RUN a2enmod rewrite \
     && sed -i 's/:80>/:8000>/; s#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf
 COPY docker/apache-workers.conf /etc/apache2/conf-enabled/report-workers.conf
 RUN echo 'memory_limit=512M' > /usr/local/etc/php/conf.d/report-memory.ini
+COPY docker/php-errors.ini /usr/local/etc/php/conf.d/report-errors.ini
 
 COPY composer.json composer.lock* ./
 RUN if [ -f composer.lock ]; then composer install --no-interaction --prefer-dist --no-progress --no-scripts; fi
