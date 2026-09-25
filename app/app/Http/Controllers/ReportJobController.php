@@ -40,9 +40,8 @@ class ReportJobController extends Controller
     {
         abort_unless($request->user(), 401);
         $jobs = ReportJob::where('user_id', $request->user()->id)
-            ->whereIn('id', ReportJob::selectRaw('MAX(id)')->where('user_id', $request->user()->id)->groupBy('chart_id'))
             ->where(function ($query): void {
-                $query->where('status', '!=', 'completed')->orWhere('updated_at', '>=', now()->subDay());
+                $query->whereNotIn('status', ['completed', 'failed'])->orWhereNull('dismissed_at');
             })->select(['id', 'chart_id', 'status', 'current_section', 'progress', 'error_code', 'error_message'])->latest('id')->get();
 
         return response()->json($jobs->map(fn ($job) => $this->payload($job)));
@@ -53,6 +52,16 @@ class ReportJobController extends Controller
         abort_unless($request->user()?->id === $job->user_id, 403);
 
         return response()->json($this->payload(app(ReportJobService::class)->retry($job)), 202);
+    }
+
+    public function dismiss(Request $request, ReportJob $job): JsonResponse
+    {
+        abort_unless($request->user()?->id === $job->user_id, 403);
+        $updated = ReportJob::whereKey($job->id)->whereIn('status', ['completed', 'failed'])
+            ->update(['dismissed_at' => now()]);
+        abort_unless($updated, 409, 'Solo puedes cerrar avisos terminados o fallidos.');
+
+        return response()->json(['dismissed' => true]);
     }
 
     private function payload(ReportJob $job): array

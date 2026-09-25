@@ -38,7 +38,7 @@ class ReportJobService
             abort_unless($job->status === 'failed', 409, 'El trabajo no está fallido.');
             abort_if(ReportJob::where('active_chart_id', $job->chart_id)->exists(), 409, 'Ya hay una generación activa.');
             abort_if(ReportJob::where('chart_id', $job->chart_id)->where('id', '>', $job->id)->exists(), 409, 'Existe un trabajo posterior. Usa el trabajo más reciente para esta carta.');
-            $job->update(['status' => 'queued', 'active_chart_id' => $job->chart_id, 'error_code' => null, 'error_message' => null, 'completed_at' => null]);
+            $job->update(['status' => 'queued', 'active_chart_id' => $job->chart_id, 'dismissed_at' => null, 'error_code' => null, 'error_message' => null, 'completed_at' => null]);
             ProcessReportStep::dispatch($job->id, $job->cursor)->onConnection('reports')->onQueue('reports');
 
             return $job;
@@ -62,6 +62,24 @@ class ReportJobService
     }
 
     public function process(ReportJob $job): void
+    {
+        $step = $this->steps($job)[$job->cursor];
+        $section = isset($step['door']) ? $step['door'].'.'.$step['stage'] : $step['status'];
+        $metrics = app(ReportMetrics::class);
+        $id = $metrics->begin($job->id, 'step', $section);
+        $started = hrtime(true);
+        $error = null;
+        try {
+            $this->processStep($job);
+        } catch (\Throwable $exception) {
+            $error = $exception;
+            throw $exception;
+        } finally {
+            $metrics->finish($id, $started, $error);
+        }
+    }
+
+    private function processStep(ReportJob $job): void
     {
         $steps = $this->steps($job);
         $step = $steps[$job->cursor];

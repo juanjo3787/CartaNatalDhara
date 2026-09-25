@@ -15,12 +15,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'dhara'],
-            [
-                'name' => 'Dhara',
-                'password' => 'DiosaTodoPoderosa8@',
-            ],
-        );
+        // Accounts are managed with users:password; deployments never reset credentials.
     }
 }

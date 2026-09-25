@@ -194,6 +194,7 @@ final class PhaseOneAiContentService
             }
             $promptLog[] = ['system' => $prompts['system'], 'user' => $userPrompt];
             $meta = ['door' => $door, 'stage' => $stage, 'attempt' => $attempt, 'chart_id' => $context['chart_id'] ?? null, 'trace_id' => $context['trace_id'] ?? null];
+            $meta['report_job_id'] = $context['report_job_id'] ?? null;
             $result = $this->generator instanceof StructuredAiTextGenerator
                 ? $this->generator->generateStructured($prompts['system'], $userPrompt, $pipeline->schemaForStage($stage), $meta)
                 : $this->generator->generate($prompts['system'], $userPrompt, $meta);

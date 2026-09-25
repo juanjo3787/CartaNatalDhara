@@ -22,6 +22,8 @@ services:
 
   report-worker:
     image: carta-natal-dhara:latest
+    deploy:
+      replicas: ${REPORT_CONCURRENCY:-1}
     network_mode: host
     user: www-data
     working_dir: /var/www/html

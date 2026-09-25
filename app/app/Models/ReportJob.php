@@ -13,7 +13,8 @@ class ReportJob extends Model
 
     protected $casts = [
         'user_id' => 'integer', 'chart_id' => 'integer',
-        'doors' => 'array', 'drafts' => 'array', 'cursor' => 'integer', 'progress' => 'integer',
+        'doors' => 'array', 'drafts' => \App\Casts\CompressedReportDraft::class, 'cursor' => 'integer', 'progress' => 'integer',
+        'dismissed_at' => 'datetime',
         'started_at' => 'datetime', 'completed_at' => 'datetime',
     ];
 

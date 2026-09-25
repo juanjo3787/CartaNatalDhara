@@ -22,6 +22,14 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->report(function (\Illuminate\Database\QueryException $error): bool {
+            \Illuminate\Support\Facades\Log::error('Database operation failed', [
+                'sqlstate' => $error->errorInfo[0] ?? null,
+                'driver_code' => $error->errorInfo[1] ?? null,
+            ]);
+
+            return false;
+        });
         $exceptions->shouldRenderJsonWhen(
             fn(Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

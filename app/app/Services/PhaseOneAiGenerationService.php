@@ -69,6 +69,7 @@ final class PhaseOneAiGenerationService
 
         $context = $this->reportService->contextForDoor($chart, $door);
         $context['trace_id'] = hash('sha256', $sessionId);
+        $context['report_job_id'] = $job?->id;
         $result = $this->contentService->generateSunStage($stage, $context, $draft['completed']);
         $draft['completed'] = $this->mergeStageResult($draft['completed'], $result);
         $stateName = strtok($stage, '_');

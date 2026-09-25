@@ -26,6 +26,23 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
     /** @param array<string, mixed> $meta */
     private function generateWithFormat(string $systemPrompt, string $userPrompt, array $responseFormat, array $meta = []): array
     {
+        $metrics = app(ReportMetrics::class);
+        $id = $metrics->begin($meta['report_job_id'] ?? null, 'ai', ($meta['door'] ?? 'unknown').'.'.($meta['stage'] ?? 'generation'), (string) config('ai.model'));
+        $started = hrtime(true);
+        $usage = [];
+        $error = null;
+        try {
+            return $this->performRequest($systemPrompt, $userPrompt, $responseFormat, $meta, $usage);
+        } catch (\Throwable $exception) {
+            $error = $exception;
+            throw $exception;
+        } finally {
+            $metrics->finish($id, $started, $error, $usage);
+        }
+    }
+
+    private function performRequest(string $systemPrompt, string $userPrompt, array $responseFormat, array $meta, array &$usage): array
+    {
         $apiKey = (string) config('ai.api_key');
 
         if ($apiKey === '') {
@@ -77,7 +94,7 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
             Log::warning('OpenAI chat completion connection failure', [
                 ...$logContext,
                 'duration_ms' => $this->durationMs($startedAt),
-                'message' => $exception->getMessage(),
+                'error_code' => 'CONNECTION_FAILURE',
             ]);
             throw new AiGenerationException(AiGenerationException::TIMEOUT, 'La llamada a la IA superó el tiempo de espera configurado.', $exception);
         }
@@ -100,16 +117,15 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
         ];
 
         if ($response->failed()) {
-            Log::warning('OpenAI chat completion HTTP error', [...$logPayload, 'message' => (string) $response->json('error.message', 'Error sin detalle')]);
+            Log::warning('OpenAI chat completion HTTP error', $logPayload);
             $errorCode = match (true) {
                 $response->status() === 429 => AiGenerationException::RATE_LIMIT,
                 $response->status() >= 500 => AiGenerationException::CONNECTION_ERROR,
                 default => AiGenerationException::UNKNOWN_ERROR,
             };
             throw new AiGenerationException($errorCode, sprintf(
-                'ChatGPT respondió con HTTP %d: %s',
+                'ChatGPT respondió con HTTP %d.',
                 $response->status(),
-                (string) $response->json('error.message', 'Error sin detalle'),
             ));
         }
 
