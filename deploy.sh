@@ -84,15 +84,33 @@ $driver = $connection->getConfig('driver');
 $host = $connection->getConfig('host');
 $port = $connection->getConfig('port');
 echo 'Conexion efectiva: driver='.$driver.' host='.json_encode($host).' port='.$port.PHP_EOL;
-if (in_array($driver, ['mysql', 'mariadb'], true) && in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
-    fwrite(STDERR, "DB_HOST apunta al propio contenedor. Configura la direccion del servidor MySQL en el .env externo; revisa tambien DB_URL si esta definido.\n");
-    exit(1);
-}
+// In host networking, 127.0.0.1 reaches the NAS MySQL service.
 try {
     $connection->select('SELECT 1');
     echo "Conexion a la base de datos correcta.\n";
 } catch (Throwable $error) {
-    fwrite(STDERR, 'No se pudo conectar a la base de datos (codigo '.$error->getCode()."). Revisa host, puerto, credenciales y acceso desde Docker.\n");
+    $cause = $error;
+    while ($cause->getPrevious()) {
+        $cause = $cause->getPrevious();
+    }
+    $detail = $cause->getMessage();
+    foreach (['password', 'username', 'url'] as $field) {
+        $secret = $connection->getConfig($field);
+        if (is_string($secret) && $secret !== '') {
+            $detail = str_replace($secret, '[redacted]', $detail);
+        }
+    }
+    fwrite(STDERR, 'Fallo MySQL: '.$detail.PHP_EOL);
+    if (is_string($host) && in_array($driver, ['mysql', 'mariadb'], true)) {
+        $address = str_contains($host, ':') ? '['.$host.']' : $host;
+        $socket = @stream_socket_client('tcp://'.$address.':'.$port, $errno, $errstr, 5);
+        if ($socket === false) {
+            fwrite(STDERR, "Prueba TCP desde Docker: fallo $errno ($errstr). Revisa que MySQL este iniciado, el puerto publicado, la interfaz de escucha y el firewall del servidor.\n");
+        } else {
+            fclose($socket);
+            fwrite(STDERR, "Prueba TCP desde Docker: puerto accesible. Revisa el error MySQL anterior (servicio, TLS, socket o autenticacion).\n");
+        }
+    }
     exit(1);
 }
 PHP
@@ -126,8 +144,9 @@ docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app
 '
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build report-worker
 
-APP_PORT_VALUE="$(grep -E '^APP_PORT=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- | tr -d '"' || true)"
-APP_PORT_VALUE="${APP_PORT_VALUE:-8080}"
+# Apache listens on 8000 directly on the NAS with network_mode: host.
+# There is no Docker port mapping; APP_PORT does not change Apache's listener.
+APP_PORT_VALUE=8000
 
 if command -v curl >/dev/null 2>&1; then
     HEALTH_STATUS="$(curl --connect-timeout 5 --max-time 20 -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT_VALUE/up" || true)"
