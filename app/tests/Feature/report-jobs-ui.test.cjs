@@ -17,6 +17,7 @@ test('dismiss hides immediately, rejects stale polls and restores a failed dismi
     let resolveDismiss;
     let fail = false;
     const job = {job_id: 3, report_id: 4, status: 'completed', message: 'Informe disponible', progress: 100, status_url: '/reports/jobs/3', report_url: '/charts/4/report', pdf_url: '/pdf'};
+    const jobs = [4, 4, 5, 6].map((report_id, index) => ({...job, job_id: index + 3, report_id, status_url: `/reports/jobs/${index + 3}`}));
     const source = fs.readFileSync(require('node:path').join(__dirname, '../../resources/views/reports/jobs-progress.blade.php'), 'utf8')
         .split('<script>')[1].split('</script>')[0]
         .replace("@json(route('reports.jobs.index'))", "'/reports/jobs'");
@@ -36,14 +37,21 @@ test('dismiss hides immediately, rejects stale polls and restores a failed dismi
                 assert.equal(options.headers['X-CSRF-TOKEN'], 'csrf-fixture');
                 return new Promise(resolve => resolveDismiss = () => resolve({ok: !fail}));
             }
-            return {ok: true, json: async () => [job]};
+            return {ok: true, json: async () => jobs};
         },
     };
     vm.runInNewContext(source, context);
     ready();
     await new Promise(setImmediate);
     let row = panel.children[0];
-    let close = row.children.find(child => child.tag === 'button');
+    assert.equal(panel.children.length, 4);
+    for (const reportRow of panel.children) {
+        assert.equal(reportRow.className, 'report-row');
+        const actions = reportRow.children.find(child => child.className === 'report-actions');
+        assert.deepEqual(actions.children.map(child => child.textContent), ['Abrir informe', 'Descargar PDF', '×']);
+        assert.equal(actions.children.filter(child => child.tag === 'button').length, 1);
+    }
+    let close = row.children.find(child => child.className === 'report-actions').children[2];
     assert.equal(close.attributes['aria-label'], 'Cerrar aviso de Carta 4');
     assert.equal(close.type, 'button');
     fail = true;
@@ -59,5 +67,5 @@ test('dismiss hides immediately, rejects stale polls and restores a failed dismi
     assert.equal(panel.children.includes(row), false);
     await timer();
     assert.equal(panel.children.includes(row), false);
-    assert.equal(panel.children.some(child => child.children.some(item => item.textContent === 'Abrir informe')), false);
+    assert.equal(panel.children.filter(child => child.className === 'report-row').length, 3);
 });

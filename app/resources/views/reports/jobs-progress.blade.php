@@ -1,4 +1,20 @@
 @auth
+<style>
+    #report-jobs .report-row { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .75rem; margin-block: .25rem; }
+    #report-jobs .report-row[hidden] { display: none; }
+    #report-jobs .report-actions { display: inline-flex; align-items: center; gap: .75rem; }
+    #report-jobs .report-actions a { white-space: nowrap; }
+    #report-jobs .dismiss-report-button {
+        display: inline-flex; align-items: center; justify-content: center;
+        flex: 0 0 24px; width: 24px; height: 24px; min-width: 0; min-height: 0;
+        padding: 0; margin: 0; border: 0; border-radius: 50%;
+        background: transparent; color: #795c48; box-shadow: none;
+        font: 20px/1 Arial, sans-serif; cursor: pointer; transform: none;
+        transition: background-color .15s ease, color .15s ease;
+    }
+    #report-jobs .dismiss-report-button:hover { background: #f1e9e1; color: #513b2b; box-shadow: none; transform: none; }
+    #report-jobs .dismiss-report-button:focus-visible { outline: 2px solid #795c48; outline-offset: 2px; }
+</style>
 <aside id="report-jobs" aria-live="polite" style="margin:1rem 0"></aside>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let row = labels.get(job.job_id);
         if (!row) {
             row = document.createElement('div');
+            row.className = 'report-row';
             panel.append(row);
             labels.set(job.job_id, row);
         }
@@ -20,12 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = document.createElement('span');
         text.textContent = `Carta ${job.report_id}: ${job.message} — ${job.progress} %. `;
         row.append(text);
+        const actions = document.createElement('span');
+        actions.className = 'report-actions';
+        let close;
         if (['completed', 'failed'].includes(job.status)) {
-            const close = document.createElement('button');
+            close = document.createElement('button');
             close.type = 'button';
             close.textContent = '×';
             close.setAttribute('aria-label', `Cerrar aviso de Carta ${job.report_id}`);
-            close.style.cssText = 'float:right;min-width:44px;min-height:44px;margin-left:1rem';
+            close.className = 'dismiss-report-button';
             close.onclick = async () => {
                 revision++;
                 dismissing.add(job.job_id);
@@ -46,19 +66,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     revision++;
                 }
             };
-            row.append(close);
         }
         if (job.status === 'completed') {
             for (const [label, url] of [['Abrir informe', job.report_url], ['Descargar PDF', job.pdf_url]]) {
-                const link = document.createElement('a'); link.href = url; link.textContent = label; link.style.marginRight = '1rem'; row.append(link);
+                const link = document.createElement('a'); link.href = url; link.textContent = label; actions.append(link);
             }
         } else if (job.status === 'failed') {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Reintentar etapa pendiente';
-            button.onclick = () => send(job.retry_url, {}).catch(showError); row.append(button);
+            button.onclick = () => send(job.retry_url, {}).catch(showError); actions.append(button);
             const error = document.createElement('span'); error.textContent = job.error_message; row.append(error);
         } else {
             const hint = document.createElement('span'); hint.textContent = 'Puedes navegar o cerrar esta página.'; row.append(hint);
         }
+        if (close) actions.append(close);
+        if (actions.children.length) row.append(actions);
     }
     function showError(error) { const text = document.createElement('p'); text.textContent = error.message; panel.append(text); }
     async function send(url, data) {
