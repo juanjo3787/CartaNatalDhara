@@ -72,6 +72,35 @@ fi
 
 cd "$DEPLOY_PATH"
 
+echo "Verificando MySQL con la configuracion de $ENV_FILE (sin usar la cache anterior)..."
+if ! docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" run --rm --no-deps -T \
+    -e APP_CONFIG_CACHE=/tmp/report-deploy-preflight-config.php app php <<'PHP'
+<?php
+require 'vendor/autoload.php';
+$app = require 'bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$connection = Illuminate\Support\Facades\DB::connection();
+$driver = $connection->getConfig('driver');
+$host = $connection->getConfig('host');
+$port = $connection->getConfig('port');
+echo 'Conexion efectiva: driver='.$driver.' host='.json_encode($host).' port='.$port.PHP_EOL;
+if (in_array($driver, ['mysql', 'mariadb'], true) && in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
+    fwrite(STDERR, "DB_HOST apunta al propio contenedor. Configura la direccion del servidor MySQL en el .env externo; revisa tambien DB_URL si esta definido.\n");
+    exit(1);
+}
+try {
+    $connection->select('SELECT 1');
+    echo "Conexion a la base de datos correcta.\n";
+} catch (Throwable $error) {
+    fwrite(STDERR, 'No se pudo conectar a la base de datos (codigo '.$error->getCode()."). Revisa host, puerto, credenciales y acceso desde Docker.\n");
+    exit(1);
+}
+PHP
+then
+    echo "Despliegue detenido antes de parar servicios o modificar la base de datos. Corrige $ENV_FILE y vuelve a ejecutar."
+    exit 1
+fi
+
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down --remove-orphans || true
 
 if docker ps -a --format '{{.Names}}' | grep -Fxq 'cartaNatal-app'; then
