@@ -52,6 +52,7 @@ RUN if [ -f composer.lock ]; then composer install --no-interaction --prefer-dis
 COPY . .
 COPY --from=assets /app/public/build /var/www/html/public/build
 RUN composer dump-autoload --optimize
+RUN chmod -R a+rX /var/www/html
 RUN chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000

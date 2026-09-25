@@ -43,6 +43,7 @@ mkdir -p \
 
 export ENV_FILE
 export COMPOSE_ENV_FILE="$ENV_FILE"
+export PROJECT_PATH DEPLOY_PATH
 
 echo "Construyendo imagen Docker desde $APP_PATH..."
 cd "$APP_PATH"
@@ -80,18 +81,30 @@ fi
 
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build app
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app chown -R www-data:www-data storage bootstrap/cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app chmod -R u+rwX storage bootstrap/cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app apache2ctl -t
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan optimize:clear
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan migrate --force
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan db:seed --force
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan optimize:clear
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan config:cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan view:cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app sh -c '
+    for view in storage/framework/views/*.php; do
+        [ -f "$view" ] || continue
+        php -l "$view" > /dev/null || exit 1
+    done
+'
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build report-worker
 
 APP_PORT_VALUE="$(grep -E '^APP_PORT=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- | tr -d '"' || true)"
 APP_PORT_VALUE="${APP_PORT_VALUE:-8080}"
 
 if command -v curl >/dev/null 2>&1; then
-    HTTP_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT_VALUE/charts" || true)"
-    if [ "$HTTP_STATUS" -ge 500 ] 2>/dev/null; then
+    HEALTH_STATUS="$(curl --connect-timeout 5 --max-time 20 -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT_VALUE/up" || true)"
+    HTTP_STATUS="$(curl --connect-timeout 5 --max-time 20 -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT_VALUE/charts" || true)"
+    if [ "$HEALTH_STATUS" != "200" ] || { [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "302" ]; }; then
+        echo "Comprobacion HTTP: /up=$HEALTH_STATUS /charts=$HTTP_STATUS"
         echo "La aplicacion responde con HTTP $HTTP_STATUS. Ultimos logs del contenedor:"
         docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=80 app
         echo "Ultimos errores Laravel (pueden incluir entradas anteriores a este despliegue):"
