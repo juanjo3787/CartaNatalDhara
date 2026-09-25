@@ -3,22 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Astrology\BirthDataNormalizer;
-use App\Exceptions\AiGenerationException;
 use App\Models\BirthData;
 use App\Models\Chart;
 use App\Models\Person;
 use App\Models\PersonChangeLog;
 use App\Models\Place;
 use App\Models\ReportGeneration;
+use App\Models\ReportJob;
 use App\Services\ChartService;
 use App\Services\PdfPageGeometry;
-use App\Services\PhaseOneAiGenerationService;
 use App\Services\PhaseOneManualSaveService;
 use App\Services\PhaseOneReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -116,182 +114,19 @@ class ChartController extends Controller
             ]);
         }
 
-        $report = $reportService->build($chart);
-        $output = $this->renderReportPdf($chart, $report, $chart->natal_wheel_image);
-        ReportGeneration::create([
-            'chart_id' => $chart->id,
-            'report_type' => 'fase-1',
-            'filename' => 'carta-natal-fase-1-'.$chart->id.'.pdf',
-            'size_bytes' => strlen($output),
-            'checksum' => hash('sha256', $output),
-        ]);
+        $response = app(ReportJobController::class)->store(request(), $chart, []);
 
-        return response()->streamDownload(fn () => print ($output), 'carta-natal-fase-1-'.$chart->id.'.pdf', [
-            'Content-Type' => 'application/pdf',
-        ]);
+        return request()->expectsJson() ? $response : redirect()->route('charts.show', $chart)->with('success', 'El PDF se está preparando en segundo plano.');
     }
 
-    public function validateAndStoreReport(Chart $chart, PhaseOneReportService $reportService): RedirectResponse
+    public function validateAndStoreReport(Chart $chart): JsonResponse
     {
-        return $this->storeReportPdf($chart, $reportService, 'Informe validado y PDF guardado correctamente.');
+        return app(ReportJobController::class)->store(request(), $chart, []);
     }
 
-    public function regenerateReport(Chart $chart, PhaseOneReportService $reportService): RedirectResponse
+    public function regenerateReport(Chart $chart): JsonResponse
     {
-        if (! request()->boolean('ai_ready')) {
-            $chart->interpretations()
-                ->where('phase', 'fase-1')
-                ->delete();
-        }
-
-        // Eliminar archivo PDF anterior si existe
-        if ($chart->phase_one_pdf && Storage::disk('local')->exists($chart->phase_one_pdf)) {
-            Storage::disk('local')->delete($chart->phase_one_pdf);
-        }
-
-        $chart->forceFill([
-            'phase_one_pdf' => null,
-            'phase_one_pdf_generated_at' => null,
-        ])->save();
-
-        return $this->storeReportPdf($chart, $reportService, 'Informe regenerado y PDF actualizado correctamente.');
-    }
-
-    private function storeReportPdf(Chart $chart, PhaseOneReportService $reportService, string $successMessage): RedirectResponse
-    {
-        $report = $reportService->build($chart);
-        $reportService->persistGeneratedContent($chart, $report);
-        $wheelImage = $this->validatedWheelImage(request()->input('wheel_image'))
-            ?? $chart->natal_wheel_image;
-
-        if ($wheelImage === null) {
-            return redirect()->route('charts.report', $chart)
-                ->with('error', 'No se pudo capturar la rueda astrológica. Espera a que termine de dibujarse y vuelve a validar el PDF.');
-        }
-
-        if ($wheelImage !== $chart->natal_wheel_image) {
-            $chart->forceFill(['natal_wheel_image' => $wheelImage])->save();
-        }
-
-        $pdf = $this->renderReportPdf($chart, $report, $wheelImage);
-
-        // Guardar PDF en sistema de archivos
-        $pdfPath = 'pdfs/'.$chart->id.'/carta-natal-fase-1-'.$chart->id.'-v'.PdfPageGeometry::VERSION.'.pdf';
-        Storage::disk('local')->put($pdfPath, $pdf);
-
-        $chart->forceFill([
-            'phase_one_pdf' => $pdfPath,
-            'phase_one_pdf_generated_at' => now(),
-        ])->save();
-
-        ReportGeneration::create([
-            'chart_id' => $chart->id,
-            'report_type' => 'fase-1',
-            'filename' => 'carta-natal-fase-1-'.$chart->id.'.pdf',
-            'size_bytes' => strlen($pdf),
-            'checksum' => hash('sha256', $pdf),
-        ]);
-
-        return redirect()->route('charts.report', $chart)
-            ->with('success', $successMessage);
-        if (! request()->boolean('ai_ready')) {
-            $chart->interpretations()
-                ->where('phase', 'fase-1')
-                ->delete();
-        }
-    }
-
-    private function validatedWheelImage(mixed $image): ?string
-    {
-        if (! is_string($image) || strlen($image) > 5_000_000 || ! str_starts_with($image, 'data:image/jpeg;base64,')) {
-            return null;
-        }
-        $binary = base64_decode(substr($image, strlen('data:image/jpeg;base64,')), true);
-        if ($binary === false || ! str_starts_with($binary, "\xff\xd8\xff")) {
-            return null;
-        }
-
-        return $image;
-    }
-
-    private function renderReportPdf(Chart $chart, array $report, ?string $wheelImage): string
-    {
-        $renderStartedAt = hrtime(true);
-        $renderTimeout = max(30, min(115, (int) config('reports.pdf_render_timeout', 110)));
-        if (function_exists('set_time_limit') && ! set_time_limit($renderTimeout)) {
-            Log::warning('The PHP execution limit could not be extended for PDF rendering.', [
-                'chart_id' => $chart->id,
-                'requested_timeout' => $renderTimeout,
-            ]);
-        }
-
-        $wrapper = app('dompdf.wrapper')
-            ->loadView('charts.report', compact('chart', 'report', 'wheelImage') + ['pdf' => true])
-            ->setPaper('a4', 'portrait');
-        $dompdf = $wrapper->getDomPDF();
-        $renderedDoors = [];
-        $doorStartPages = [];
-        $expectedDoors = collect($report['doors'])
-            ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
-            ->pluck('key')
-            ->all();
-        $dompdf->setCallbacks([[
-            'event' => 'begin_frame',
-            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages): void {
-                $node = $frame->get_node();
-                if (! $node instanceof \DOMElement || ! $node->hasAttribute('data-door-key')) {
-                    return;
-                }
-
-                $door = $node->getAttribute('data-door-key');
-                if (isset($renderedDoors[$door])) {
-                    return;
-                }
-                $renderedDoors[$door] = true;
-
-                $page = $canvas->get_page_number();
-                if ($page % 2 === 0) {
-                    $canvas->new_page();
-                }
-                $doorStartPages[$door] = $canvas->get_page_number();
-            },
-        ]]);
-        $dompdf->render();
-        if (array_keys($doorStartPages) !== $expectedDoors) {
-            throw new \RuntimeException('No se han paginado todas las puertas activas del informe.');
-        }
-        foreach ($doorStartPages as $door => $page) {
-            if ($page % 2 === 0) {
-                throw new \RuntimeException("La puerta {$door} no comienza en una página impar.");
-            }
-        }
-        $canvas = $dompdf->getCanvas();
-        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
-        $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
-        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header): void {
-            if ($pageNumber === 1) {
-                return;
-            }
-            $width = $pageCanvas->get_width();
-            $height = $pageCanvas->get_height();
-            $size = 7.5;
-            $color = [0.54, 0.47, 0.41];
-            $headerWidth = $pageCanvas->get_text_width($header, $font, $size);
-            $pageCanvas->text(($width - $headerWidth) / 2, PdfPageGeometry::HEADER_TOP_PT, $header, $font, $size, $color);
-            $pageCanvas->line(51, PdfPageGeometry::HEADER_BOTTOM_PT, $width - 51, PdfPageGeometry::HEADER_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
-            $footer = 'CARTA NATAL · FASE 1   /   '.$pageNumber;
-            $footerWidth = $pageCanvas->get_text_width($footer, $font, $size);
-            $pageCanvas->line(51, $height - PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, $width - 51, $height - PdfPageGeometry::FOOTER_TOP_FROM_BOTTOM_PT, [0.85, 0.79, 0.74], 0.4);
-            $pageCanvas->text(($width - $footerWidth) / 2, $height - PdfPageGeometry::FOOTER_TEXT_FROM_BOTTOM_PT, $footer, $font, $size, $color);
-        });
-
-        Log::info('Phase 1 PDF rendered.', [
-            'chart_id' => $chart->id,
-            'pages' => $canvas->get_page_count(),
-            'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
-        ]);
-
-        return $dompdf->output();
+        return app(ReportJobController::class)->store(request(), $chart);
     }
 
     private function registrationRules(?Person $person = null): array
@@ -358,6 +193,7 @@ class ChartController extends Controller
 
     public function updateRegistration(Request $request, Chart $chart, BirthDataNormalizer $normalizer): RedirectResponse
     {
+        abort_if(ReportJob::where('active_chart_id', $chart->id)->exists(), 409, 'Espera a que termine la generación antes de modificar esta carta.');
         $chart->load('person', 'birthData.place');
         $validated = $request->validate(
             $this->registrationRules($chart->person),
@@ -459,85 +295,24 @@ class ChartController extends Controller
             ->with('success', "Informe guardado correctamente ({$saved} bloques).");
     }
 
-    public function generateAiReport(Request $request, Chart $chart, string $door, PhaseOneAiGenerationService $generationService): RedirectResponse|JsonResponse
+    public function generateAiReport(Request $request, Chart $chart, string $door): JsonResponse
     {
-        try {
-            $blocks = $generationService->generateDoor($chart, $door);
-
-            if ($request->ajax() || $request->expectsJson()) {
-                return response()->json([
-                    'message' => "Se han generado {$blocks} bloques con IA para la puerta {$door}.",
-                    'door' => $door,
-                    'blocks' => $blocks,
-                ]);
-            }
-
-            return redirect()->route('charts.report', $chart)
-                ->with('success', "Se han generado {$blocks} bloques con IA para la puerta {$door}.");
-        } catch (\Throwable $exception) {
-            $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
-            Log::error('Phase 1 AI generation failed', [
-                'exception' => $exception::class,
-                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : null,
-                'message' => mb_substr($message, 0, 500),
-                'door' => $door,
-            ]);
-
-            if ($request->ajax() || $request->expectsJson()) {
-                return response()->json(['message' => 'Error de IA: '.$message], 422);
-            }
-
-            return redirect()->route('charts.report', $chart)
-                ->with('error', 'Error de IA: '.$message);
-        }
+        return app(ReportJobController::class)->store($request, $chart, [$door]);
     }
 
-    public function generateDoorAiStage(Request $request, Chart $chart, string $door, string $stage, PhaseOneAiGenerationService $generationService): JsonResponse
+    public function generateDoorAiStage(Request $request, Chart $chart, string $door, string $stage): JsonResponse
     {
-        try {
-            return response()->json($generationService->generateDoorStage($chart, $door, $stage, $request->session()->getId()));
-        } catch (\Throwable $exception) {
-            $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
-            Log::error('Phase 1 AI stage failed', [
-                'exception' => $exception::class,
-                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : null,
-                'message' => mb_substr($message, 0, 500),
-                'chart' => $chart->id,
-                'door' => $door,
-                'stage' => $stage,
-            ]);
-
-            return response()->json(['message' => 'Error de IA: '.$message], 422);
-        }
+        return response()->json(['message' => 'Use the asynchronous report generation endpoint.'], 410);
     }
 
-    public function generateAllAiReport(Request $request, Chart $chart, PhaseOneAiGenerationService $generationService): RedirectResponse|JsonResponse
+    public function generateAllAiReport(Request $request, Chart $chart): JsonResponse
     {
-        try {
-            $blocks = $generationService->generateAll($chart);
-
-            return redirect()->route('charts.report.edit', $chart)
-                ->with('success', "Se han generado {$blocks} bloques con IA para las cuatro puertas.");
-        } catch (\Throwable $exception) {
-            $message = str_replace((string) config('ai.api_key'), '[redacted]', $exception->getMessage());
-            Log::error('Phase 1 AI full generation failed', [
-                'exception' => $exception::class,
-                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : null,
-                'message' => mb_substr($message, 0, 500),
-                'chart' => $chart->id,
-            ]);
-
-            if ($request->ajax() || $request->expectsJson()) {
-                return response()->json(['message' => 'Error de IA: '.$message], 422);
-            }
-
-            return redirect()->route('charts.report.edit', $chart)
-                ->with('error', 'Error de IA: '.$message);
-        }
+        return app(ReportJobController::class)->store($request, $chart);
     }
 
     public function destroy(Chart $chart): RedirectResponse
     {
+        abort_if(ReportJob::where('active_chart_id', $chart->id)->exists(), 409, 'Espera a que termine la generación antes de eliminar esta carta.');
         $chart->delete();
 
         return redirect()->route('charts.index')->with('success', 'La carta natal ha sido eliminada.');

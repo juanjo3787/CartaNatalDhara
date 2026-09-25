@@ -20,3 +20,23 @@ services:
       ASTROLOGY_EPHEMERIS_PATH: /opt/ephemeris
       ASTROLOGY_SWETEST_BIN: /usr/local/bin/swetest
     restart: unless-stopped
+
+  report-worker:
+    image: carta-natal-dhara:latest
+    user: www-data
+    working_dir: /var/www/html
+    command: ["php", "artisan", "queue:work", "reports", "--queue=reports", "--sleep=2", "--timeout=360", "--tries=4", "--memory=512", "--max-time=3600"]
+    volumes:
+      - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/storage:/var/www/html/storage
+      - ${DEPLOY_PATH:-/volume1/docker/configCNDhara}/bootstrap-cache:/var/www/html/bootstrap/cache
+    env_file:
+      - ${COMPOSE_ENV_FILE:-./.env}
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      ASTROLOGY_EPHEMERIS_PATH: /opt/ephemeris
+      ASTROLOGY_SWETEST_BIN: /usr/local/bin/swetest
+    restart: unless-stopped
+    stop_grace_period: 400s
+    mem_limit: 768m
+    cpus: 1

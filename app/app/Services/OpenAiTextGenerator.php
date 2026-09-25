@@ -33,7 +33,7 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
         }
 
         $isStructured = $responseFormat['type'] === 'json_schema';
-        // A stage must fail cleanly before Cloudflare closes the request at 120 seconds.
+        // Each call has its own deadline; report orchestration runs in the queue worker.
         $timeout = (int) ($isStructured ? config('ai.stage_timeout', 95) : config('ai.timeout', 90));
         $maxTokens = (int) ($isStructured ? config('ai.sun_max_completion_tokens', 6000) : config('ai.door_max_completion_tokens', 4000));
         $model = (string) config('ai.model');

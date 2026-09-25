@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\ChartController;
 use App\Models\Chart;
 use App\Services\Doors\AbstractDoorPipeline;
 use App\Services\PhaseOneAiContentService;
 use App\Services\PhaseOneAiGenerationService;
 use App\Services\PhaseOneReportService;
+use App\Services\ReportPdfService;
 use App\Services\ReportStageMerger;
 use App\Services\ReportState;
 use App\Services\ReportTrace;
@@ -83,8 +83,7 @@ if ($door === 'render') {
     $report = app(PhaseOneReportService::class)->build($chart);
     file_put_contents($directory.'/clean-model.json', json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     file_put_contents($directory.'/clean.html', view('charts.report', compact('chart', 'report') + ['pdf' => true, 'wheelImage' => $chart->natal_wheel_image])->render());
-    $method = new ReflectionMethod(ChartController::class, 'renderReportPdf');
-    file_put_contents($directory.'/clean.pdf', $method->invoke(app(ChartController::class), $chart, $report, $chart->natal_wheel_image));
+    file_put_contents($directory.'/clean.pdf', app(ReportPdfService::class)->render($chart, $report, $chart->natal_wheel_image));
     echo 'Rendered clean report'.PHP_EOL;
     exit;
 }

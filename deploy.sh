@@ -5,7 +5,7 @@ DEPLOY_PATH="${DEPLOY_PATH:-/volume1/docker/configCNDhara}"
 PROJECT_PATH="${PROJECT_PATH:-/volume1/docker/CartaNatalDhara}"
 APP_PATH="$PROJECT_PATH/app"
 ENV_FILE="$DEPLOY_PATH/.env"
-COMPOSE_FILE="$DEPLOY_PATH/docker-compose.yml"
+COMPOSE_FILE="${COMPOSE_FILE:-$PROJECT_PATH/docker-compose.yml}"
 
 if [ ! -d "$APP_PATH" ]; then
     echo "No existe $APP_PATH. Copia el proyecto completo en $PROJECT_PATH antes de desplegar."
@@ -13,7 +13,7 @@ if [ ! -d "$APP_PATH" ]; then
 fi
 
 if [ ! -f "$COMPOSE_FILE" ]; then
-    echo "No existe $COMPOSE_FILE. Copia docker-compose.yml en $DEPLOY_PATH antes de desplegar."
+    echo "No existe $COMPOSE_FILE. Actualiza el repositorio o configura COMPOSE_FILE antes de desplegar."
     exit 1
 fi
 
@@ -78,11 +78,13 @@ if docker ps -a --format '{{.Names}}' | grep -Fxq 'cartaNatal-app'; then
     docker rm -f cartaNatal-app
 fi
 
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan migrate --force
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan db:seed --force
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan optimize:clear
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app php artisan config:cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build app
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T app chown -R www-data:www-data storage bootstrap/cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan migrate --force
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan db:seed --force
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan optimize:clear
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T -u www-data app php artisan config:cache
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --no-build report-worker
 
 APP_PORT_VALUE="$(grep -E '^APP_PORT=' "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- | tr -d '"' || true)"
 APP_PORT_VALUE="${APP_PORT_VALUE:-8080}"

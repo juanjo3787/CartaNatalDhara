@@ -52,6 +52,10 @@
     </div>
 
     <h1>Carta de {{ $chart->person->alias }}</h1>
+    <form method="POST" action="{{ route('reports.jobs.store', $chart) }}" data-report-job>
+        @csrf
+        <button type="submit">Generar informe en segundo plano</button>
+    </form>
 
     <div style="margin: 1.5rem 0; display: flex; justify-content: center; background: rgba(255,255,255,0.45); border: 1px solid var(--line); border-radius: 18px; padding: 1rem;">
         <div

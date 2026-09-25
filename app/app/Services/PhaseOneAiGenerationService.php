@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Chart;
-use App\Models\ChartTemplate;
 use App\Domain\Astrology\DoorSequence;
 use App\Domain\Astrology\RulerUsageRegistry;
+use App\Models\Chart;
+use App\Models\ChartTemplate;
 use App\Models\ReportGeneration;
+use App\Models\ReportJob;
 use App\Services\Doors\AbstractDoorPipeline;
 use App\Services\Doors\DoorPipelineFactory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 final class PhaseOneAiGenerationService
@@ -18,20 +20,21 @@ final class PhaseOneAiGenerationService
     public function __construct(
         private readonly PhaseOneReportService $reportService,
         private readonly PhaseOneAiContentService $contentService,
-    ) {
-    }
+    ) {}
 
     public function generateDoor(Chart $chart, string $door): int
     {
         $context = $this->reportService->contextForDoor($chart, $door);
-        $context['trace_id'] = (string) \Illuminate\Support\Str::uuid();
+        $context['trace_id'] = (string) Str::uuid();
         $context['previous_doors'] = $this->previousDoorContent($chart, $door);
-        $context['introduced_rulers'] = (new RulerUsageRegistry())->alreadyIntroduced($chart, $door);
+        $context['introduced_rulers'] = (new RulerUsageRegistry)->alreadyIntroduced($chart, $door);
         $blocks = $this->contentService->generate($door, $context);
         $usage = $this->contentService->usage();
+
         return DB::transaction(function () use ($chart, $door, $blocks, $context, $usage): int {
             $saved = $this->persistBlocks($chart, $door, $blocks, $context);
             $this->storeAiCost($chart, $door, $usage, $this->contentService->prompts());
+
             return $saved;
         });
     }
@@ -40,7 +43,7 @@ final class PhaseOneAiGenerationService
      * Generates one stage of a door's dossier at a time, caching a draft between requests so a failed
      * stage can be retried without regenerating the stages already completed and persisted.
      */
-    public function generateDoorStage(Chart $chart, string $door, string $stage, string $sessionId): array
+    public function generateDoorStage(Chart $chart, string $door, string $stage, string $sessionId, ?ReportJob $job = null): array
     {
         $stageIndex = array_search($stage, AbstractDoorPipeline::STAGES, true);
         if ($stageIndex === false) {
@@ -48,9 +51,9 @@ final class PhaseOneAiGenerationService
         }
 
         $key = 'phase1_ai_draft_v'.ReportState::SCHEMA_VERSION.'_'.ReportState::PROMPT_VERSION.'_'.$door.'_'.$chart->id.'_'.hash('sha256', $sessionId);
-        $draft = Cache::get($key);
+        $draft = $job ? ($job->drafts[$door] ?? null) : Cache::get($key);
         if (is_array($draft) && $stageIndex < ($draft['next'] ?? 0)) {
-            return ['stage' => $stage, 'complete' => false, 'blocks' => 0, 'already_completed' => true];
+            return ['stage' => $stage, 'complete' => $draft['next'] === count(AbstractDoorPipeline::STAGES), 'blocks' => 0, 'already_completed' => true];
         }
         if ($stageIndex > 0 && (! is_array($draft) || ($draft['next'] ?? null) !== $stageIndex)) {
             throw new RuntimeException('La generación por etapas debe comenzar por la primera etapa y seguir el orden.');
@@ -79,7 +82,12 @@ final class PhaseOneAiGenerationService
         $draft['next'] = $stageIndex + 1;
 
         if ($draft['next'] < count(AbstractDoorPipeline::STAGES)) {
-            Cache::put($key, $draft, now()->addHour());
+            if ($job) {
+                $job->update(['drafts' => array_replace($job->drafts ?? [], [$door => $draft])]);
+            } else {
+                Cache::put($key, $draft, now()->addHour());
+            }
+
             return ['stage' => $stage, 'complete' => false, 'blocks' => 0];
         }
 
@@ -88,9 +96,13 @@ final class PhaseOneAiGenerationService
             'system' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['system']}", $draft['prompts'])),
             'user' => implode("\n\n", array_map(static fn (array $item): string => "[{$item['stage']}]\n{$item['user']}", $draft['prompts'])),
         ];
-        $saved = DB::transaction(function () use ($chart, $door, $blocks, $context, $draft, $prompts): int {
+        $saved = DB::transaction(function () use ($chart, $door, $blocks, $context, $draft, $prompts, $job): int {
             $saved = $this->persistBlocks($chart, $door, $blocks, $context);
             $this->storeAiCost($chart, $door, $draft['usage'], $prompts);
+            if ($job) {
+                $job->update(['drafts' => array_replace($job->drafts ?? [], [$door => $draft])]);
+            }
+
             return $saved;
         });
         Cache::forget($key);
@@ -113,42 +125,42 @@ final class PhaseOneAiGenerationService
     {
         $saved = 0;
         $chart->interpretations()
-                ->where('door', $door)
-                ->where('phase', 'fase-1')
-                ->where('ai_assisted', true)
-                ->delete();
+            ->where('door', $door)
+            ->where('phase', 'fase-1')
+            ->where('ai_assisted', true)
+            ->delete();
 
-            foreach ($blocks as $block => $paragraphs) {
-                if (isset(ReportState::HEADINGS[$block])) {
-                    $state = ReportState::fromRendered($paragraphs, $door.'.'.$block, $block);
-                    ReportTrace::record('persistence', $state, ['chart_id' => $chart->id, 'trace_id' => $context['trace_id'] ?? null, 'section_id' => $door.'.'.$block]);
-                }
-                $template = ChartTemplate::firstOrCreate(
-                    [
-                        'name' => "fase1_ai_{$door}_{$block}",
-                        'version' => ReportState::SCHEMA_VERSION,
-                    ],
-                    [
-                        'door' => $door,
-                        'block' => $block,
-                        'content_type' => 'phase1_ai',
-                        'status' => 'published',
-                        'content' => 'Generación dinámica validada por PhaseOnePromptBuilder.',
-                    ],
-                );
-
-                $chart->interpretations()->create([
-                    'template_id' => $template->id,
-                    'phase' => 'fase-1',
+        foreach ($blocks as $block => $paragraphs) {
+            if (isset(ReportState::HEADINGS[$block])) {
+                $state = ReportState::fromRendered($paragraphs, $door.'.'.$block, $block);
+                ReportTrace::record('persistence', $state, ['chart_id' => $chart->id, 'trace_id' => $context['trace_id'] ?? null, 'section_id' => $door.'.'.$block]);
+            }
+            $template = ChartTemplate::firstOrCreate(
+                [
+                    'name' => "fase1_ai_{$door}_{$block}",
+                    'version' => ReportState::SCHEMA_VERSION,
+                ],
+                [
                     'door' => $door,
                     'block' => $block,
-                    'content' => implode("\n\n", $paragraphs),
-                    'ai_assisted' => true,
-                    'rulers_used' => $context['ruler_keys'] ?? [],
-                ]);
-                $saved++;
-            }
-        
+                    'content_type' => 'phase1_ai',
+                    'status' => 'published',
+                    'content' => 'Generación dinámica validada por PhaseOnePromptBuilder.',
+                ],
+            );
+
+            $chart->interpretations()->create([
+                'template_id' => $template->id,
+                'phase' => 'fase-1',
+                'door' => $door,
+                'block' => $block,
+                'content' => implode("\n\n", $paragraphs),
+                'ai_assisted' => true,
+                'rulers_used' => $context['ruler_keys'] ?? [],
+            ]);
+            $saved++;
+        }
+
         $chart->forceFill(['phase_one_pdf' => null, 'phase_one_pdf_generated_at' => null])->save();
 
         return $saved;

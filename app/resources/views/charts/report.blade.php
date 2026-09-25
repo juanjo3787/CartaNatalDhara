@@ -18,112 +18,11 @@
         @media (max-width:700px) { .report-action-bar { padding: .45rem; } .report-action { font-size: .72rem; } }
     </style>
         <nav class="report-action-bar" aria-label="Acciones del informe">
-            <form id="regenerate-report-form" method="POST" action="{{ route('charts.report.regenerate', $chart) }}" data-confirm-message="¿Regenerar el informe con IA y actualizar el PDF?">@csrf<button class="report-action report-action-primary" type="submit">Regenerar informe</button></form>
-        <form id="validate-report-form" method="POST" action="{{ route('charts.report.validate', $chart) }}">@csrf<input type="hidden" name="wheel_image" data-wheel-image-input><button class="report-action report-action-validate" type="submit">Validar y guardar PDF</button></form>
+            <form id="regenerate-report-form" data-report-job method="POST" action="{{ route('charts.report.regenerate', $chart) }}">@csrf<button class="report-action report-action-primary" type="submit">Regenerar informe</button></form>
+        <form id="validate-report-form" data-report-job method="POST" action="{{ route('charts.report.validate', $chart) }}">@csrf<input type="hidden" name="wheel_image" data-wheel-image-input><button class="report-action report-action-validate" type="submit">Validar y guardar PDF</button></form>
         <a class="report-action" href="{{ route('charts.report.download', $chart) }}">Descargar PDF</a>
         <a class="report-action report-action-primary" href="{{ route('charts.report.edit', $chart) }}">Editar informe</a>
         <a class="report-action" href="{{ route('charts.show', $chart) }}">Volver a la carta</a>
     </nav>
 @endsection
-@endif
-
-@if (empty($pdf))
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('regenerate-report-form');
-    const overlay = document.querySelector('[data-app-loading]');
-    const progress = document.querySelector('[data-app-loading-progress]');
-    const progressBar = document.querySelector('[data-app-loading-progress-bar]');
-    const progressValue = document.querySelector('[data-app-loading-progress-value]');
-    const loadingMessage = document.querySelector('[data-app-loading-message]');
-    const errorPanel = document.querySelector('[data-report-regenerate-error]');
-    const doors = ['sol', 'luna', 'ascendente', 'descendente'];
-    // One small HTTP request per stage instead of chaining several OpenAI calls behind a single
-    // request: a single big request used to exceed Cloudflare's 120s proxy read timeout (524).
-    const STAGES = @json(\App\Services\Doors\AbstractDoorPipeline::STAGES);
-    const stageUrlTemplate = @json(url('/charts/' . $chart->id . '/report/ai/DOOR_PLACEHOLDER/stages/STAGE_PLACEHOLDER'));
-    document.getElementById('validate-report-form')?.addEventListener('submit', async (event) => {
-        const validationForm = event.currentTarget;
-        if (validationForm.dataset.wheelReady === 'true') return;
-        event.preventDefault();
-        let image = '';
-        try {
-            image = await window.getNatalWheelImage?.() || '';
-        } catch (error) {
-            console.error('No se pudo convertir la rueda astrológica a PNG.', error);
-        }
-        if (!image) {
-            errorPanel.hidden = false;
-            errorPanel.textContent = 'La rueda astrológica todavía no ha terminado de dibujarse. Espera un instante y vuelve a validar.';
-            return;
-        }
-        validationForm.querySelector('[data-wheel-image-input]').value = image;
-        validationForm.dataset.wheelReady = 'true';
-        validationForm.requestSubmit();
-    });
-
-    form?.addEventListener('submit', async (event) => {
-        if (event.defaultPrevented || form.dataset.confirmed !== 'true') return;
-
-        event.preventDefault();
-        const csrf = form.querySelector('input[name="_token"]')?.value;
-        const setProgress = (value) => {
-            progressBar.value = value;
-            progressValue.textContent = `${value}%`;
-        };
-
-        overlay.classList.add('is-visible');
-        overlay.setAttribute('aria-busy', 'true');
-        loadingMessage.classList.remove('is-error');
-        loadingMessage.textContent = 'Generando contenido con IA...';
-        errorPanel.hidden = true;
-        progress.classList.add('is-visible');
-        progress.setAttribute('aria-hidden', 'false');
-        setProgress(0);
-
-        try {
-            const totalSteps = doors.length * STAGES.length;
-            let completedSteps = 0;
-            for (const door of doors) {
-                for (const stage of STAGES) {
-                    const url = stageUrlTemplate.replace('DOOR_PLACEHOLDER', door).replace('STAGE_PLACEHOLDER', stage);
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ _token: csrf }),
-                    });
-                    const body = await response.json().catch(() => ({}));
-                    if (!response.ok) {
-                        const message = typeof body.message === 'string' ? body.message.replace(/^Error de IA:\s*/, '') : null;
-                        throw new Error(message || `No se pudo generar ${door} (etapa ${stage}). HTTP ${response.status}.`);
-                    }
-                    completedSteps += 1;
-                    setProgress(Math.round((completedSteps / totalSteps) * 100));
-                    loadingMessage.textContent = `${door} · etapa ${stage} completada. Preparando la siguiente...`;
-                }
-            }
-
-            const wheelImage = await window.getNatalWheelImage?.() || '';
-            if (!wheelImage) throw new Error('La rueda astrológica no ha terminado de dibujarse.');
-            const pdfResponse = await fetch(form.action, {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ _token: csrf, ai_ready: '1', wheel_image: wheelImage }),
-            });
-            if (!pdfResponse.ok) throw new Error(`No se pudo actualizar el PDF. HTTP ${pdfResponse.status}.`);
-            window.location.assign('{{ route('charts.report', $chart) }}');
-        } catch (error) {
-            overlay.classList.remove('is-visible');
-            overlay.setAttribute('aria-busy', 'false');
-            progress.classList.remove('is-visible');
-            form.dataset.confirmed = 'false';
-            const message = error.name === 'AbortError'
-                ? 'La generación de IA superó el tiempo máximo de espera.'
-                : (error.message || 'No se pudo regenerar el informe con IA.');
-            errorPanel.textContent = `Error durante la regeneración con IA: ${message}`;
-            errorPanel.hidden = false;
-        }
-    }, true);
-});
-</script>
 @endif

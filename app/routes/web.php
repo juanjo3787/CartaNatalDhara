@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChartController;
+use App\Http\Controllers\ReportJobController;
 use App\Http\Middleware\AllowLocalValidationWithoutLogin;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,10 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::middleware(AllowLocalValidationWithoutLogin::class)->group(function () {
+    Route::post('/charts/{chart}/report/jobs', [ReportJobController::class, 'store'])->name('reports.jobs.store');
+    Route::get('/reports/jobs', [ReportJobController::class, 'index'])->name('reports.jobs.index');
+    Route::get('/reports/jobs/{job}', [ReportJobController::class, 'show'])->name('reports.jobs.show');
+    Route::post('/reports/jobs/{job}/retry', [ReportJobController::class, 'retry'])->name('reports.jobs.retry');
     Route::redirect('/', '/charts');
 
     Route::get('/charts', [ChartController::class, 'index'])->name('charts.index');

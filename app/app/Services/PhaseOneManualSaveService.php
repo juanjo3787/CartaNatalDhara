@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Chart;
 use App\Models\ChartTemplate;
+use App\Models\ReportJob;
 use Illuminate\Support\Facades\DB;
 
 final class PhaseOneManualSaveService
@@ -11,6 +12,8 @@ final class PhaseOneManualSaveService
     public function save(Chart $chart, array $shared, array $doors): int
     {
         return DB::transaction(function () use ($chart, $shared, $doors): int {
+            Chart::whereKey($chart->id)->lockForUpdate()->firstOrFail();
+            abort_if(ReportJob::where('active_chart_id', $chart->id)->exists(), 409, 'Espera a que termine la generación antes de guardar cambios en este informe.');
             $chart->interpretations()->where('phase', 'fase-1')->delete();
             $saved = 0;
 

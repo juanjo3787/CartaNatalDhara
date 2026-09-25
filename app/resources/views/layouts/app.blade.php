@@ -588,6 +588,9 @@
         @endauth
         @endif
         <div class="card">
+            @if(empty($pdf))
+                @include('reports.jobs-progress')
+            @endif
             @yield('content')
         </div>
     </div>
@@ -681,7 +684,7 @@
                 });
 
                 document.addEventListener('submit', (event) => {
-                    if (!event.defaultPrevented) showLoading();
+                    if (!event.defaultPrevented && !event.target.matches('form[data-report-job]')) showLoading();
                 }, true);
 
                 document.addEventListener('click', (event) => {
@@ -690,6 +693,7 @@
                     if (!action || event.defaultPrevented) return;
                     if (action.matches('button[type="submit"]')) {
                         const form = action.form || document.getElementById(action.getAttribute('form'));
+                        if (form?.hasAttribute('data-report-job')) return;
                         if (form && !form.checkValidity()) return;
                         if (form?.dataset.confirmMessage && form.dataset.confirmed !== 'true') return;
                     }

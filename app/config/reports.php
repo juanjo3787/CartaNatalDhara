@@ -2,7 +2,6 @@
 
 return [
     'trace_structure' => (bool) env('REPORT_TRACE_STRUCTURE', false),
-    // Cloudflare closes proxied requests at 120 seconds. Leave enough margin for
-    // Laravel to finish the response after Dompdf has rendered a long dossier.
+    // PDF rendering runs inside the report worker's per-stage execution budget.
     'pdf_render_timeout' => (int) env('PDF_RENDER_TIMEOUT', 110),
 ];

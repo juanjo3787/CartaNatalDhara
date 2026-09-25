@@ -107,5 +107,24 @@ final class ReportGenerationIntegrationTest extends TestCase
         $this->get(route('charts.report', $chart))->assertStatus(422)->assertSee('Regenerar esta puerta');
         $this->getJson(route('charts.report', $chart))->assertStatus(422)->assertJsonPath('error_code', 'SECTION_SCHEMA_CONTAMINATION');
         $this->assertSame($broken->content, $broken->fresh()->content);
+        $sunBefore = $chart->interpretations()->where('door', 'sol')->orderBy('id')->get()->toArray();
+        foreach (['luna', 'ascendente'] as $door) {
+            $chart->interpretations()->where('door', $door)->whereIn('block', ['harmony', 'excess'])
+                ->update(['ai_assisted' => true, 'content' => '<ol><li>Contenido antiguo</li></ol>']);
+        }
+        $pendingDoors = ['luna', 'ascendente', 'descendente'];
+        $response = $this->get(route('charts.report', $chart))->assertStatus(422)
+            ->assertViewHas('doors', $pendingDoors)->assertSee('Regenerar los apartados pendientes');
+        $this->assertStringContainsString("data-doors='".json_encode($pendingDoors)."'", $response->getContent());
+        $this->getJson(route('charts.report', $chart))->assertStatus(422)->assertJsonPath('invalid_doors', $pendingDoors);
+        foreach ($pendingDoors as $door) {
+            foreach (AbstractDoorPipeline::STAGES as $stage) {
+                $result = $service->generateDoorStage($chart, $door, $stage, 'repair-'.$door);
+            }
+            $this->assertTrue($result['complete']);
+        }
+        $this->get(route('charts.report', $chart))->assertOk();
+        $this->assertSame($sunBefore, $chart->interpretations()->where('door', 'sol')->orderBy('id')->get()->toArray());
+        $this->assertSame($snapshot, $chart->fresh()->snapshot);
     }
 }

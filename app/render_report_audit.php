@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\ChartController;
+use App\Services\ReportPdfService;
 use App\Services\ReportState;
 use Illuminate\Contracts\Console\Kernel;
 
@@ -25,8 +25,6 @@ $html = view('charts.report', compact('chart', 'report') + ['pdf' => true, 'whee
 file_put_contents(__DIR__.'/storage/app/private/report-audit/after.html', $html);
 $web = view('reports.phase-one.template', compact('chart', 'report') + ['pdf' => false])->render();
 file_put_contents(__DIR__.'/storage/app/private/report-audit/web.html', '<!doctype html><html lang="es"><meta charset="UTF-8"><style>*{box-sizing:border-box}body{margin:0;background:#eee}</style>'.$web.'</html>');
-$controller = app(ChartController::class);
-$method = new ReflectionMethod($controller, 'renderReportPdf');
-$pdf = $method->invoke($controller, $chart, $report, $chart->natal_wheel_image);
+$pdf = app(ReportPdfService::class)->render($chart, $report, $chart->natal_wheel_image);
 file_put_contents(__DIR__.'/storage/app/private/report-audit/after.pdf', $pdf);
 echo strlen($pdf).PHP_EOL;

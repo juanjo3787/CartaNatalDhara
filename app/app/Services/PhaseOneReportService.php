@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Domain\Astrology\RegencyResolver;
+use App\Exceptions\SectionSchemaException;
 use App\Models\Chart;
 use App\Models\ChartTemplate;
 use DateTimeInterface;
@@ -69,6 +70,7 @@ final class PhaseOneReportService
             ->get()
             ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared').'.'.$interpretation->block);
 
+        $invalidStates = [];
         foreach ($doorReports as &$doorReport) {
             foreach ($doorReport['blocks'] as $block => &$paragraphs) {
                 $stored = $storedInterpretations->get($doorReport['key'].'.'.$block);
@@ -76,7 +78,13 @@ final class PhaseOneReportService
                     $paragraphs = preg_split('/\R{2,}/', $stored->content) ?: [$stored->content];
                     if ($stored->ai_assisted && isset(ReportState::HEADINGS[$block])) {
                         $id = $doorReport['key'].'.'.$block;
-                        $doorReport['states'][$block] = ReportState::fromRendered($paragraphs, $id, $block);
+                        try {
+                            $doorReport['states'][$block] = ReportState::fromRendered($paragraphs, $id, $block);
+                        } catch (SectionSchemaException $exception) {
+                            $invalidStates[$doorReport['key']] ??= $exception->getMessage();
+
+                            continue;
+                        }
                         $paragraphs = ReportState::render($doorReport['states'][$block], $block);
                         ReportTrace::record('document_model', $doorReport['states'][$block], ['chart_id' => $chart->id, 'section_id' => $id, 'interpretation_id' => $stored->id]);
                     }
@@ -84,6 +92,9 @@ final class PhaseOneReportService
             }
         }
         unset($doorReport, $paragraphs);
+        if ($invalidStates !== []) {
+            throw new SectionSchemaException(reset($invalidStates), array_keys($invalidStates));
+        }
 
         $expansion = $this->buildExpansion($snapshot);
         $sections = [
