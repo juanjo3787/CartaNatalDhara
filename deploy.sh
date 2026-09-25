@@ -28,9 +28,18 @@ if ! git -C "$PROJECT_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; the
     exit 1
 fi
 
-echo "Actualizando codigo en $PROJECT_PATH..."
-git -C "$PROJECT_PATH" fetch --prune
-git -C "$PROJECT_PATH" reset --hard "@{u}"
+if [ "${CND_DEPLOY_UPDATED:-}" != "$PROJECT_PATH" ]; then
+    echo "Actualizando codigo en $PROJECT_PATH..."
+    git -C "$PROJECT_PATH" fetch --prune
+    git -C "$PROJECT_PATH" reset --hard "@{u}"
+    export CND_DEPLOY_UPDATED="$PROJECT_PATH"
+    export PROJECT_PATH DEPLOY_PATH COMPOSE_FILE
+    echo "Continuando con el deploy.sh actualizado del repositorio..."
+    exec sh "$PROJECT_PATH/deploy.sh" "$@"
+fi
+unset CND_DEPLOY_UPDATED
+echo "Script de despliegue: $PROJECT_PATH/deploy.sh"
+echo "Compose utilizado: $COMPOSE_FILE"
 
 mkdir -p \
     "$DEPLOY_PATH/storage/app" \
@@ -168,4 +177,4 @@ if command -v curl >/dev/null 2>&1; then
     fi
 fi
 
-echo "Despliegue finalizado: ${APP_URL:-https://cartanataldhara.synology.me}"
+echo "Despliegue finalizado: ${APP_URL:-https://cartanatal.saranaveda.com}"
