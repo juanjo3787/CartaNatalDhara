@@ -1,0 +1,66 @@
+/* Screen overrides only. PDF rendering does not load this file. */
+@media screen {
+    body .row > div, body .toolbar > *, body .editor-toolbar > *,
+    body .p-toast-detail, body .p-message-wrapper > *, body .report-index-item > * { min-width: 0; }
+    body .card { overflow-wrap: anywhere; }
+    body img, body [data-natal-wheel] svg { max-width: 100%; height: auto; }
+    body input, body select, body textarea { min-width: 0; max-width: 100%; }
+    body .table-scroll { max-width: 100%; overflow-x: auto; display: flow-root; margin-top: 1rem; }
+    body .table-scroll > table { margin-top: 0; }
+    body .table-scroll:has(> .report-table) { margin-top: 1.5rem; }
+    body .table-scroll:focus-visible, body a:focus-visible, body button:focus-visible,
+    body textarea:focus-visible { outline: 2px solid #795c48; outline-offset: 3px; }
+    body .p-dialog { max-height: calc(100dvh - 2rem); overflow-y: auto; }
+    body .p-dialog-footer, body .editor-toolbar-actions { flex-wrap: wrap; }
+    body .app-loading-panel { max-width: calc(100% - 2rem); flex-wrap: wrap; }
+    body .chart-search-form input { min-width: 0; }
+}
+
+@media screen and (max-width: 768px) {
+    body { padding: 1rem; }
+    body .card { padding: 1.25rem; }
+    body .row { flex-wrap: wrap; align-items: stretch; }
+    body .row > div { flex-basis: 240px; }
+    body input, body select, body textarea, body .rich-editor .ql-editor { font-size: 16px; }
+    body input:not([type="hidden"]), body select, body button,
+    body .app-action, body .report-action, body .file-download-action { min-height: 44px; }
+    body button, body .app-action, body .report-action { height: auto; white-space: normal; }
+    body .file-download-action, body .delete-action,
+    body .p-dialog-close, body .p-toast-close { min-width: 44px; flex-shrink: 0; }
+    body .app-action-bar { flex-wrap: wrap; gap: .5rem; padding: .6rem; }
+    body .app-action { flex: 1 1 130px; font-size: .95rem; padding: .6rem; }
+    body .report-action-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    body .report-action { width: 100%; font-size: .95rem; padding: .6rem; }
+    body .page-shell { padding-bottom: 12rem; }
+    body #report-jobs .report-actions { flex-wrap: wrap; gap: .4rem .75rem; }
+    body #report-jobs .report-actions a { display: inline-flex; align-items: center; min-height: 44px; white-space: normal; }
+    body #report-jobs .dismiss-report-button { flex: 0 0 44px; width: 44px; height: 44px; }
+    body .editor-toolbar { flex-wrap: wrap; }
+    body .editor-section { padding: 1rem; }
+    body .quill-toolbar button { min-width: 44px; }
+    body .report-document { margin: 0 auto; }
+    body .report-page { padding: 2rem 1rem; min-height: 0; }
+    body .report-index-grid { grid-template-columns: 1fr; }
+    body .report-cover h1 { font-size: clamp(1.8rem, 5vw, 3.2rem); margin-top: 2rem; }
+    body .report-gray p { max-width: 100%; }
+    body .report-cover-wheel { padding: .4rem; }
+    body .table-scroll table { min-width: 520px; }
+    body .table-scroll td > div { flex-wrap: wrap; }
+    body .table-scroll td { overflow-wrap: anywhere; }
+}
+
+@media screen and (max-width: 480px) {
+    body { padding: .75rem; }
+    body .card { padding: 1rem; border-radius: 16px; }
+    body .row { flex-direction: column; gap: .5rem; }
+    body .row > div { flex-basis: auto; width: 100%; }
+    body .address-action .form-action { width: 100%; transform: none; }
+    body .report-action-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body .page-shell { padding-bottom: 17rem; }
+    body #report-jobs .report-actions { width: 100%; }
+    body .report-page { padding: 1.5rem .25rem; }
+    body .report-index-item { grid-template-columns: 2rem minmax(0, 1fr); gap: .5rem; padding: .75rem 0; }
+    body .editor-section { padding: .75rem; }
+    body .editor-door { padding: .75rem; }
+    body .note { padding: .8rem; }
+}

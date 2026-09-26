@@ -576,6 +576,9 @@
         body.is-loading { cursor: wait; }
         body.is-loading a, body.is-loading button { pointer-events: none; }
     </style>
+    @if (empty($pdf))
+        <link rel="stylesheet" href="{{ asset('css/responsive.css') }}" media="screen">
+    @endif
 </head>
 <body>
     <div class="page-shell">

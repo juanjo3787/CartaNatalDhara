@@ -1,5 +1,20 @@
 import { WheelChart } from '@eaprelsky/nocturna-wheel';
 import '@eaprelsky/nocturna-wheel/css/nocturna-wheel.css';
+import { initializeDateTimeInputs } from './date-time-input';
+
+document.addEventListener('DOMContentLoaded', () => initializeDateTimeInputs());
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.card table').forEach(table => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-scroll';
+        wrapper.tabIndex = 0;
+        wrapper.setAttribute('role', 'region');
+        wrapper.setAttribute('aria-label', 'Tabla desplazable');
+        table.before(wrapper);
+        wrapper.append(table);
+    });
+});
 
 window.getNatalWheelImage = async () => {
 	const svg = document.querySelector('[data-natal-wheel] svg');

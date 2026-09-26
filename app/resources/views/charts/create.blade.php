@@ -24,6 +24,9 @@
                 <input
                     type="text"
                     name="local_date"
+                    id="local_date"
+                    data-date-time="date"
+                    maxlength="10"
                     value="{{ old('local_date') }}"
                     placeholder="DD/MM/YYYY"
                     inputmode="numeric"
@@ -38,6 +41,8 @@
                     type="text"
                     id="local_time"
                     name="local_time"
+                    data-date-time="time"
+                    maxlength="5"
                     value="{{ old('local_time') }}"
                     placeholder="HH:mm"
                     inputmode="numeric"
