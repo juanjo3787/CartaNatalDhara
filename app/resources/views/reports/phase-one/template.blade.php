@@ -68,8 +68,8 @@
     .report-action-primary { background: #795c48; color: #fff; }
     @endif
     @if ($pdf)
-    .report-cover-wheel { display: block; width: 82mm; margin: 5mm auto 4mm; padding: 3mm; border: 1px solid #d8cabc; background: #fff; }
-    .report-cover-wheel-container { height: 82mm; }
+    .report-cover-wheel { display: block; box-sizing: content-box; width: 98.4mm; margin: 5mm auto 4mm; padding: 3mm; border: 1px solid #d8cabc; background: #fff; }
+    .report-cover-wheel-container { height: 98.4mm; }
     .report-cover-wheel-actions { display: none; }
     .report-pdf-only { display: block; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 .82rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
@@ -90,9 +90,10 @@
     .report-page.report-cover { padding: 14mm 10mm; }
     .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
-    .report-cover { display: block; position: relative; min-height: 250mm; height: 250mm; padding: 14mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
+    /* Dompdf reserves the 28mm vertical padding in addition to this content height. */
+    .report-cover { display: block; position: relative; min-height: 0; height: 222mm; padding: 14mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
     .report-worksheet { page-break-inside: avoid; }
-    .report-cover h1 { margin: 22mm 0 5mm; font-size: 28pt; }
+    .report-cover h1 { margin: 4mm 0 5mm; font-size: 28pt; }
     .report-cover-name { margin-top: 5mm; font-size: 13pt; line-height: 1.35; }
     .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; }
     .report-index-grid { display: block; }
@@ -106,6 +107,8 @@
     .report-block-title + .report-block-body, .report-block-body > h3 { page-break-before: avoid; }
     .report-block-title { padding: 6pt 10pt; font-size: 11pt; background: #f8dfcc; box-shadow: 3pt 3pt 0 rgba(122, 86, 61, .12); } .report-table { font-size: 8.5pt; }
     .report-table th, .report-table td { padding: 5pt; } .report-note { display: block; }
+    .report-document, .report-document * { background-color: #fff; background-image: none; box-shadow: none; text-shadow: none; }
+    .report-document .report-cover, .report-document .report-page h2, .report-document .report-block-title, .report-document .report-table th, .report-document .report-note { background: #fff; box-shadow: none; }
     @endif
 </style>
 
@@ -143,7 +146,6 @@
             @endforeach
         </section>
     @endforeach
-    @if ($report['sections']['integration']['enabled'])<section class="report-page report-chapter"><h1>Integración de las cuatro puertas</h1><p>{{ $report['combined']['intro'] }}</p><table class="report-table"><thead><tr><th>Puerta</th><th>Recurso</th><th>Necesidad</th></tr></thead><tbody>@foreach ($report['combined']['rows'] as $row)<tr><td>{{ $row['door'] }}</td><td>{{ $row['resource'] }}</td><td>{{ $row['need'] }}</td></tr>@endforeach</tbody></table>@foreach ($report['combined']['paragraphs'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach</section>@endif
     @if ($report['sections']['expansion']['enabled'])<section class="report-page report-chapter"><h1>Ampliación de tu mapa interior</h1>@foreach ($report['expansion'] as $item)<div class="report-block"><h2 class="report-block-title">{{ $item['title'] }}</h2><div class="report-block-body"><p>{{ $item['content'] }}</p><p>{{ $item['example'] }}</p><p>{{ $item['question'] }}</p></div></div>@endforeach</section>@endif
     @if ($report['sections']['practice']['enabled'])<section class="report-page report-chapter"><h1>Tu práctica de autoobservación</h1><p>{{ $report['practice']['intro'] }}</p><ol>@foreach ($report['practice']['weeks'] as $week)<li>{{ $week }}</li>@endforeach</ol>@foreach ($report['practice']['guidance'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach</section><section class="report-page report-chapter report-worksheet"><h1>Hoja de práctica diaria</h1><ol>@foreach ($report['practice']['sheet'] as $question)<li>{{ $question }}</li>@endforeach</ol></section>@endif
     <section class="report-page report-chapter"><h1>Cierre de tu primera lectura</h1>@foreach ($report['closing']['paragraphs'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<h3>Preguntas de autoobservación</h3><ul>@foreach ($report['closing']['questions'] as $question)<li>{{ $question }}</li>@endforeach</ul><div class="report-note"><strong>Frase de integración</strong><br>{{ $report['closing']['phrase'] }}</div></section>

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 final class PhaseOneReportService
 {
-    public function build(Chart $chart): array
+    public function build(Chart $chart, bool $storedOnly = false): array
     {
         $chart->loadMissing('person', 'birthData.place');
 
@@ -62,13 +62,37 @@ final class PhaseOneReportService
         ));
         $storedInterpretations = $chart->interpretations()
             ->where('phase', 'fase-1')
-            ->where(function ($query): void {
+            ->when(! $storedOnly, fn ($query) => $query->where(function ($query): void {
                 $query->where('ai_assisted', true)
                     ->orWhereHas('template', fn ($templateQuery) => $templateQuery->where('version', '>=', 2));
-            })
+            }))
             ->orderBy('id')
             ->get()
             ->keyBy(fn ($interpretation) => ($interpretation->door ?? 'shared').'.'.$interpretation->block);
+
+        $missing = [];
+        foreach ($fixed as $block => &$paragraphs) {
+            $key = 'shared.shared_'.$block;
+            $stored = $storedInterpretations->get($key);
+            if ($stored && trim(strip_tags($stored->content)) !== '') {
+                $paragraphs = preg_split('/\R{2,}/', $stored->content) ?: [$stored->content];
+            } else {
+                $missing[] = $key;
+            }
+        }
+        unset($paragraphs);
+        foreach ($doorReports as $doorReport) {
+            foreach (array_keys($doorReport['blocks']) as $block) {
+                $key = $doorReport['key'].'.'.$block;
+                $stored = $storedInterpretations->get($key);
+                if (! $stored || trim(strip_tags($stored->content)) === '') {
+                    $missing[] = $key;
+                }
+            }
+        }
+        if ($storedOnly && $missing !== []) {
+            throw new \RuntimeException('Faltan bloques guardados: '.implode(', ', $missing));
+        }
 
         $invalidStates = [];
         foreach ($doorReports as &$doorReport) {
@@ -102,7 +126,6 @@ final class PhaseOneReportService
             'luna' => ['title' => 'La Luna', 'summary' => 'Calidez, expresión y pertenencia', 'enabled' => true],
             'ascendente' => ['title' => 'El Ascendente', 'summary' => 'Ritmo, estabilidad y continuidad', 'enabled' => true],
             'descendente' => ['title' => 'El Descendente', 'summary' => 'Confianza, compromiso y autonomía', 'enabled' => true],
-            'integration' => ['title' => 'Integración de las cuatro puertas', 'summary' => 'Cómo conviven tus necesidades', 'enabled' => true],
             'expansion' => ['title' => 'Ampliación de tu mapa interior', 'summary' => 'Otros recursos y funciones de la carta', 'enabled' => $expansion !== []],
             'practice' => ['title' => 'Práctica personal', 'summary' => 'Autoobservación y registro cotidiano', 'enabled' => true],
             'technical' => ['title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado', 'enabled' => true],

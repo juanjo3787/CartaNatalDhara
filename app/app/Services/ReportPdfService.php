@@ -62,21 +62,12 @@ class ReportPdfService
                 }
                 $renderedDoors[$door] = true;
 
-                $page = $canvas->get_page_number();
-                if ($page % 2 === 0) {
-                    $canvas->new_page();
-                }
                 $doorStartPages[$door] = $canvas->get_page_number();
             },
         ]]);
         $dompdf->render();
         if (array_keys($doorStartPages) !== $expectedDoors) {
             throw new \RuntimeException('No se han paginado todas las puertas activas del informe.');
-        }
-        foreach ($doorStartPages as $door => $page) {
-            if ($page % 2 === 0) {
-                throw new \RuntimeException("La puerta {$door} no comienza en una página impar.");
-            }
         }
         $canvas = $dompdf->getCanvas();
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');

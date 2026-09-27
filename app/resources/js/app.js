@@ -20,6 +20,8 @@ window.getNatalWheelImage = async () => {
 	const svg = document.querySelector('[data-natal-wheel] svg');
 	if (!svg) return '';
 	const copy = svg.cloneNode(true);
+	// Keep stored wheel images canonical; screen enlargement must not accumulate in later PDFs.
+	copy.setAttribute('viewBox', '0 0 760 760');
 	const sourceNodes = [svg, ...svg.querySelectorAll('*')];
 	const copiedNodes = [copy, ...copy.querySelectorAll('*')];
 	const properties = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity', 'font-family', 'font-size', 'font-weight', 'text-anchor'];
@@ -74,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
 					svg: {
 						width: 760,
 						height: 760,
-						viewBox: '0 0 760 760',
+						// A centred viewport of 760 / 1.2 enlarges the drawing without changing its geometry.
+						viewBox: '63.333333 63.333333 633.333334 633.333334',
 						center: { x: 380, y: 380 },
 					},
 					theme: {
