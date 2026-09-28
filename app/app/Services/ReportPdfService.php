@@ -39,6 +39,7 @@ class ReportPdfService
         }
 
         $wrapper = app('dompdf.wrapper')
+            ->setOption('defaultMediaType', 'print')
             ->loadView('charts.report', compact('chart', 'report', 'wheelImage') + ['pdf' => true])
             ->setPaper('a4', 'portrait');
         $dompdf = $wrapper->getDomPDF();
