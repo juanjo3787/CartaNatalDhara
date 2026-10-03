@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\AstrologyCalculator;
 use App\Domain\Astrology\BirthData as CalculatorBirthData;
+use App\Domain\Astrology\ChartSnapshot;
 use App\Models\BirthData;
 use App\Models\Chart;
 
@@ -16,24 +17,15 @@ final class ChartService
 {
     public function __construct(
         private readonly AstrologyCalculator $calculator,
-    ) {
-    }
+    ) {}
 
-    public function calculateFor(BirthData $birthData): Chart
+    public function calculateFor(BirthData $birthData, string $houseSystem = 'placidus'): Chart
     {
-        $place = $birthData->place;
-
-        [$utcDate, $utcTime] = explode(' ', $birthData->utc_datetime->format('Y-m-d H:i:s'));
-
-        $calculatorInput = new CalculatorBirthData(
-            localDate: $utcDate,
-            localTime: $utcTime,
-            timezone: 'UTC',
-            latitude: (float) $place->latitude,
-            longitude: (float) $place->longitude,
+        $snapshot = $this->calculateSnapshotFor(
+            $birthData,
+            $birthData->utc_datetime->format('Y-m-d H:i:s'),
+            $houseSystem,
         );
-
-        $snapshot = $this->calculator->calculate($calculatorInput);
 
         return Chart::create([
             'person_id' => $birthData->person_id,
@@ -43,5 +35,20 @@ final class ChartService
             'snapshot' => $snapshot->positions,
             'status' => 'calculated',
         ]);
+    }
+
+    public function calculateSnapshotFor(BirthData $birthData, string $utcDateTime, string $houseSystem = 'placidus'): ChartSnapshot
+    {
+        $place = $birthData->place;
+        [$utcDate, $utcTime] = explode(' ', $utcDateTime);
+
+        return $this->calculator->calculate(new CalculatorBirthData(
+            localDate: $utcDate,
+            localTime: $utcTime,
+            timezone: 'UTC',
+            latitude: (float) $place->latitude,
+            longitude: (float) $place->longitude,
+            houseSystem: $houseSystem,
+        ));
     }
 }

@@ -41,9 +41,24 @@
 
         return [$libraryName => ['lon' => (float) $point['longitude']]];
     })->all();
+    if (isset($wheelPlanets['rahu'])) {
+        $wheelPlanets['ketu'] = ['lon' => fmod($wheelPlanets['rahu']['lon'] + 180, 360)];
+    }
     $wheelHouses = collect($snapshot['houses'] ?? [])->sortKeys()->map(fn (array $house): array => [
         'lon' => (float) $house['longitude'],
     ])->values()->all();
+    $houseSystemLabels = [
+        'placidus' => 'Placidus',
+        'koch' => 'Koch',
+        'equal' => 'Casas iguales',
+        'whole_sign' => 'Signo entero',
+        'regiomontanus' => 'Regiomontano',
+        'campanus' => 'Campanus',
+        'porphyry' => 'Porfirio',
+        'morinus' => 'Morinus',
+        'topocentric' => 'Topocéntrico',
+    ];
+    $houseSystem = $chart->configuration['houses'] ?? 'placidus';
 @endphp
 
 @section('content')
@@ -57,7 +72,60 @@
         <button type="submit">Generar informe en segundo plano</button>
     </form>
 
-    <div style="margin: 1.5rem 0; display: flex; justify-content: center; background: rgba(255,255,255,0.45); border: 1px solid var(--line); border-radius: 18px; padding: 1rem;">
+    <style>
+        .wheel-controls { margin: 1.5rem 0; padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+        .wheel-control-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem 1rem; align-items: end; }
+        .wheel-control-row label { margin-top: .5rem; }
+        .wheel-aspects { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .75rem; }
+        .wheel-aspects label { display: inline-flex; align-items: center; gap: .35rem; margin: 0; }
+        .wheel-aspects input { width: auto; min-height: 0; margin: 0; }
+        .wheel-status { min-height: 1.4rem; margin-top: .5rem; color: var(--muted); }
+        [hidden] { display: none !important; }
+    </style>
+
+    <div data-wheel-panel data-transit-url="{{ route('charts.transits', $chart) }}">
+        <div class="wheel-controls">
+            <div class="wheel-control-row">
+                <div>
+                    <label for="secondary-chart-mode">Segundo círculo</label>
+                    <select id="secondary-chart-mode" data-secondary-mode>
+                        <option value="none">Sin segundo círculo</option>
+                        <option value="transits" selected>Tránsitos</option>
+                        <option value="synastry">Sinastría</option>
+                    </select>
+                </div>
+                <div data-transit-controls>
+                    <label for="transit-date-time">Fecha y hora local</label>
+                    <input id="transit-date-time" type="datetime-local" value="{{ now($chart->birthData->timezone_identifier)->format('Y-m-d\\TH:i') }}" data-transit-date-time>
+                    <button type="button" data-calculate-transits>Calcular tránsitos</button>
+                </div>
+                <div data-synastry-controls hidden>
+                    <label for="synastry-chart">Carta para comparar</label>
+                    <select id="synastry-chart" data-synastry-chart>
+                        <option value="">{{ $secondaryCharts->isEmpty() ? 'No hay otras cartas guardadas' : 'Selecciona una carta guardada' }}</option>
+                        @foreach ($secondaryCharts as $secondaryChart)
+                            <option value="{{ $secondaryChart['id'] }}" data-planets="{{ json_encode($secondaryChart['planets'], JSON_HEX_APOS | JSON_HEX_QUOT) }}">{{ $secondaryChart['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="aspect-orb">Orbe de aspectos (grados)</label>
+                    <input id="aspect-orb" type="number" min="0" max="15" step="0.5" value="6" data-aspect-orb>
+                </div>
+            </div>
+            <fieldset style="margin-top: .75rem;">
+                <legend>Aspectos visibles</legend>
+                <div class="wheel-aspects">
+                    <label><input type="checkbox" value="conjunction" checked data-aspect-type> Conjunción</label>
+                    <label><input type="checkbox" value="opposition" checked data-aspect-type> Oposición</label>
+                    <label><input type="checkbox" value="trine" checked data-aspect-type> Trígono</label>
+                    <label><input type="checkbox" value="square" checked data-aspect-type> Cuadratura</label>
+                    <label><input type="checkbox" value="sextile" checked data-aspect-type> Sextil</label>
+                </div>
+            </fieldset>
+            <p class="wheel-status" role="status" aria-live="polite" data-wheel-status></p>
+        </div>
+
         <div
             class="nocturna-wheel-container"
             data-natal-wheel
@@ -67,8 +135,9 @@
                 'ascendant' => (float) ($snapshot['ascendant']['longitude'] ?? 0),
                 'midheaven' => (float) ($snapshot['midheaven']['longitude'] ?? 0),
                 'latitude' => (float) $chart->birthData->place->latitude,
+                'houseSystem' => $houseSystem,
             ], JSON_HEX_APOS | JSON_HEX_QUOT) }}"
-            style="width: min(100%, 760px); aspect-ratio: 1;"
+            style="width: min(100%, 760px); aspect-ratio: 1; margin: 0 auto;"
         ></div>
     </div>
 
@@ -78,7 +147,7 @@
         UTC utilizado para el cálculo: {{ $chart->birthData->utc_datetime }}<br>
         Lugar: {{ $chart->birthData->place->city }}, {{ $chart->birthData->place->country }}
         ({{ $chart->birthData->place->latitude }}, {{ $chart->birthData->place->longitude }})<br>
-        Sistema: {{ $chart->configuration['zodiac'] }} / {{ $chart->configuration['houses'] }} / {{ $chart->engine_version }}
+        Sistema: {{ $chart->configuration['zodiac'] }} / {{ $houseSystemLabels[$houseSystem] ?? $houseSystem }} / {{ $chart->engine_version }}
     </div>
 
     <table>

@@ -16,6 +16,6 @@ final readonly class BirthData
         public string $timezone,
         public float $latitude,
         public float $longitude,
-    ) {
-    }
+        public string $houseSystem = 'placidus',
+    ) {}
 }

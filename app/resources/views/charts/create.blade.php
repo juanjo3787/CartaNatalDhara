@@ -113,6 +113,20 @@
             </div>
         </div>
 
+        <label for="houses">Sistema de casas</label>
+        <select id="houses" name="houses" required>
+            <option value="placidus" @selected(old('houses', 'placidus') === 'placidus')>Placidus</option>
+            <option value="koch" @selected(old('houses') === 'koch')>Koch</option>
+            <option value="equal" @selected(old('houses') === 'equal')>Casas iguales</option>
+            <option value="whole_sign" @selected(old('houses') === 'whole_sign')>Signo entero</option>
+            <option value="regiomontanus" @selected(old('houses') === 'regiomontanus')>Regiomontano</option>
+            <option value="campanus" @selected(old('houses') === 'campanus')>Campanus</option>
+            <option value="porphyry" @selected(old('houses') === 'porphyry')>Porfirio</option>
+            <option value="morinus" @selected(old('houses') === 'morinus')>Morinus</option>
+            <option value="topocentric" @selected(old('houses') === 'topocentric')>Topocéntrico</option>
+        </select>
+        @error('houses')<small class="field-error">{{ $message }}</small>@enderror
+
         <label for="notes">Notas privadas (opcional)</label>
         <textarea id="notes" name="notes" rows="4" style="resize: none;">{{ old('notes') }}</textarea>
 

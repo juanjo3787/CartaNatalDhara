@@ -41,11 +41,22 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
         'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
     ];
 
+    private const HOUSE_SYSTEMS = [
+        'placidus' => 'P',
+        'koch' => 'K',
+        'equal' => 'E',
+        'whole_sign' => 'W',
+        'regiomontanus' => 'R',
+        'campanus' => 'C',
+        'porphyry' => 'O',
+        'morinus' => 'M',
+        'topocentric' => 'T',
+    ];
+
     public function __construct(
         private readonly string $binaryPath,
         private readonly string $ephemerisPath,
-    ) {
-    }
+    ) {}
 
     public function calculate(BirthData $birthData): ChartSnapshot
     {
@@ -55,7 +66,7 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
             : new Process(['sh', '-c', $command]);
         $process->run();
 
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             throw new RuntimeException('swetest failed: '.$process->getErrorOutput());
         }
 
@@ -66,7 +77,7 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
             positions: $this->buildPositions($rows),
             configuration: [
                 'zodiac' => 'tropical',
-                'houses' => 'placidus',
+                'houses' => $birthData->houseSystem,
                 'engine' => 'swetest',
             ],
         );
@@ -79,7 +90,12 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
 
         $dateArg = sprintf('%d.%d.%d', (int) $day, (int) $month, (int) $year);
         $timeArg = sprintf('%d:%d', (int) $hour, (int) $minute);
-        $houseArg = sprintf('%s,%s,P', $birthData->longitude, $birthData->latitude);
+        $houseCode = self::HOUSE_SYSTEMS[$birthData->houseSystem] ?? null;
+        if ($houseCode === null) {
+            throw new RuntimeException('Unsupported house system: '.$birthData->houseSystem);
+        }
+
+        $houseArg = sprintf('%s,%s,%s', $birthData->longitude, $birthData->latitude, $houseCode);
 
         return sprintf(
             '%s -edir%s -b%s -ut%s -house%s -p%s -fPl -g, -head',
@@ -100,7 +116,7 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
         $rows = [];
 
         foreach (explode("\n", trim($output)) as $line) {
-            if (!str_contains($line, ',')) {
+            if (! str_contains($line, ',')) {
                 continue;
             }
 
@@ -113,14 +129,14 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
     }
 
     /**
-     * @param array<string, float> $rows
+     * @param  array<string, float>  $rows
      */
     private function buildPositions(array $rows): array
     {
         $positions = [];
 
         foreach (self::PLANET_NAMES as $sweName => $key) {
-            if (!array_key_exists($sweName, $rows)) {
+            if (! array_key_exists($sweName, $rows)) {
                 continue;
             }
 

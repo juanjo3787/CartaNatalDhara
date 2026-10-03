@@ -21,6 +21,7 @@ Route::middleware(AllowLocalValidationWithoutLogin::class)->group(function () {
     Route::get('/charts', [ChartController::class, 'index'])->name('charts.index');
     Route::get('/charts/create', [ChartController::class, 'create'])->name('charts.create');
     Route::post('/charts', [ChartController::class, 'store'])->name('charts.store');
+    Route::post('/charts/{chart}/transits', [ChartController::class, 'transits'])->name('charts.transits');
     Route::delete('/charts/{chart}', [ChartController::class, 'destroy'])->name('charts.destroy');
     Route::post('/charts/{chart}/report/ai/{door}/stages/{stage}', [ChartController::class, 'generateDoorAiStage'])->name('charts.report.ai.stage');
     Route::post('/charts/{chart}/report/ai/{door}', [ChartController::class, 'generateAiReport'])->name('charts.report.ai');

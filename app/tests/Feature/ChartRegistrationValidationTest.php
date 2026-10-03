@@ -37,6 +37,7 @@ class ChartRegistrationValidationTest extends TestCase
             'local_time',
             'time_source',
             'time_precision',
+            'houses',
         ]);
     }
 
@@ -69,6 +70,13 @@ class ChartRegistrationValidationTest extends TestCase
         );
     }
 
+    public function test_unsupported_house_system_is_rejected(): void
+    {
+        $response = $this->post('/charts', $this->validRegistration(['houses' => 'alcabitius']));
+
+        $response->assertSessionHasErrors('houses');
+    }
+
     private function validRegistration(array $overrides = []): array
     {
         return array_merge([
@@ -83,6 +91,7 @@ class ChartRegistrationValidationTest extends TestCase
             'local_time' => '14:30',
             'time_source' => 'unknown',
             'time_precision' => 'unknown',
+            'houses' => 'placidus',
         ], $overrides);
     }
 }

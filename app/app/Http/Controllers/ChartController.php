@@ -14,12 +14,14 @@ use App\Services\ChartService;
 use App\Services\PdfPageGeometry;
 use App\Services\PhaseOneManualSaveService;
 use App\Services\PhaseOneReportService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use RuntimeException;
 
 class ChartController extends Controller
 {
@@ -84,7 +86,7 @@ class ChartController extends Controller
             'time_precision' => $normalized->timePrecision,
         ]);
 
-        $chart = $chartService->calculateFor($birthData->load('place'));
+        $chart = $chartService->calculateFor($birthData->load('place'), $validated['houses']);
 
         return redirect()->route('charts.show', $chart);
     }
@@ -92,8 +94,54 @@ class ChartController extends Controller
     public function show(Chart $chart): View
     {
         $chart->load('person', 'birthData.place');
+        $secondaryCharts = Chart::query()
+            ->with('person')
+            ->where('id', '<>', $chart->getKey())
+            ->whereNotNull('snapshot')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn (Chart $secondaryChart): array => [
+                'id' => $secondaryChart->id,
+                'label' => $secondaryChart->person->alias.' · '.$secondaryChart->person->full_name,
+                'planets' => $this->wheelPlanets($secondaryChart->snapshot ?? []),
+            ]);
 
-        return view('charts.show', ['chart' => $chart]);
+        return view('charts.show', [
+            'chart' => $chart,
+            'secondaryCharts' => $secondaryCharts,
+        ]);
+    }
+
+    public function transits(Request $request, Chart $chart, ChartService $chartService): JsonResponse
+    {
+        $validated = $request->validate([
+            'date_time' => ['required', 'date_format:Y-m-d\\TH:i'],
+        ], [
+            'date_time.required' => 'Indica la fecha y hora para calcular los tránsitos.',
+            'date_time.date_format' => 'La fecha y hora de tránsito no tienen un formato válido.',
+        ]);
+
+        $chart->load('birthData.place');
+        $timezone = $chart->birthData->timezone_identifier;
+        $utcDateTime = CarbonImmutable::createFromFormat('Y-m-d\\TH:i', $validated['date_time'], $timezone)
+            ->utc()
+            ->format('Y-m-d H:i:s');
+        try {
+            $snapshot = $chartService->calculateSnapshotFor(
+                $chart->birthData,
+                $utcDateTime,
+                $chart->configuration['houses'] ?? 'placidus',
+            );
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'No se pudieron calcular los tránsitos. Comprueba que Swiss Ephemeris esté disponible en el servidor.',
+            ], 503);
+        }
+
+        return response()->json(['planets' => $this->wheelPlanets($snapshot->positions)]);
     }
 
     public function report(Chart $chart, PhaseOneReportService $reportService): View
@@ -152,6 +200,7 @@ class ChartController extends Controller
             'local_time' => ['required', 'date_format:H:i'],
             'time_source' => ['required', 'in:document,family,estimated,unknown'],
             'time_precision' => ['required', 'in:exact,approximate,unknown'],
+            'houses' => [Rule::requiredIf($person === null), Rule::in(['placidus', 'koch', 'equal', 'whole_sign', 'regiomontanus', 'campanus', 'porphyry', 'morinus', 'topocentric'])],
         ];
     }
 
@@ -180,8 +229,39 @@ class ChartController extends Controller
                 'local_time' => 'hora de nacimiento',
                 'time_source' => 'fuente de la hora',
                 'time_precision' => 'precisión de la hora',
+                'houses' => 'sistema de casas',
             ],
         ];
+    }
+
+    /** @return array<string, array{lon: float}> */
+    private function wheelPlanets(array $snapshot): array
+    {
+        $planetNames = [
+            'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
+            'true_node', 'mean_apogee',
+        ];
+        $planets = [];
+
+        foreach ($planetNames as $name) {
+            $point = $snapshot[$name] ?? null;
+            if (! is_array($point) || ! isset($point['longitude'])) {
+                continue;
+            }
+
+            $libraryName = match ($name) {
+                'true_node' => 'rahu',
+                'mean_apogee' => 'lilith',
+                default => $name,
+            };
+            $planets[$libraryName] = ['lon' => (float) $point['longitude']];
+        }
+
+        if (isset($planets['rahu'])) {
+            $planets['ketu'] = ['lon' => fmod($planets['rahu']['lon'] + 180, 360)];
+        }
+
+        return $planets;
     }
 
     public function editRegistration(Chart $chart): View
