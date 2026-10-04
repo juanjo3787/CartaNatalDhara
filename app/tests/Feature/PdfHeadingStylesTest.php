@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Dompdf\Dompdf;
 use App\Services\AspectMatrixBuilder;
+use Dompdf\Dompdf;
 use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
@@ -87,7 +87,7 @@ class PdfHeadingStylesTest extends TestCase
 
         $this->assertStringContainsString('.report-cover-visuals { width: 100%;', $pdfStyle);
         $this->assertStringContainsString('.report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }', $pdfStyle);
-        $this->assertStringContainsString('width: 93mm;', $pdfStyle);
+        $this->assertStringContainsString('width: 77mm;', $pdfStyle);
         $this->assertStringContainsString('background: #fffdf9 !important;', $pdfStyle);
         $this->assertStringContainsString('data-background-color="#fffdf9"', $cover);
         $this->assertStringContainsString("@include('components.aspect-matrix'", $cover);
@@ -111,11 +111,13 @@ class PdfHeadingStylesTest extends TestCase
         $matrixData = app(AspectMatrixBuilder::class)->build($snapshot);
         $matrixHtml = view('components.aspect-matrix', $matrixData + ['variant' => 'cover', 'showPositions' => true])->render();
         $wheel = 'data:image/jpeg;base64,'.base64_encode(file_get_contents(__DIR__.'/../Fixtures/wheel.jpg'));
-        $html = '<!DOCTYPE html><html><head>'.$pdfStyle.'</head><body><div class="report-document"><section class="report-page report-cover">'
-            .'<div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><h1>Carta natal de<br>Persona de prueba</h1><h2>Sol · Luna · Ascendente · Descendente</h2>'
+        $coverHtml = '<div class="report-document"><section class="report-page report-cover">'
+            .'<div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div><h1>Carta natal de<br>Persona de prueba</h1><h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>'
             .'<table class="report-cover-visuals"><tbody><tr><td class="report-cover-wheel-cell" colspan="2"><div class="report-cover-wheel"><div class="report-cover-wheel-container"><img class="report-cover-wheel-image" src="'.$wheel.'"></div></div></td></tr>'
             .'<tr><td class="report-cover-matrix-cell" colspan="2">'.$matrixHtml.'</td></tr></tbody></table><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div>'
-            .'<div class="report-cover-meta">28/09/1986 · 21:00 · Sevilla, España<br>Zodiaco tropical · Casas Placidus</div></section></div></body></html>';
+            .'<div class="report-cover-meta">28/09/1986 · 21:00 · Sevilla, España<br>Zodiaco tropical · Casas Placidus</div></section></div>';
+        $html = view('layouts.app', ['pdf' => true])->render();
+        $html = str_replace('</body>', $pdfStyle.$coverHtml.'</body>', $html);
 
         $dompdf = new Dompdf;
         $dompdf->setPaper('a4', 'portrait');
