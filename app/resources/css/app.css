@@ -7,3 +7,64 @@
     --font-sans: Aptos, 'Segoe UI', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+.aspect-section { margin: 2rem 0; }
+.aspect-matrix-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .42fr); gap: 1rem; align-items: start; }
+.aspect-matrix-scroll { max-width: 100%; overflow: auto; }
+.aspect-matrix-table { width: max-content; min-width: 100%; margin-top: 0; border: 0; border-collapse: collapse; border-radius: 0 !important; overflow: visible !important; background: transparent; table-layout: fixed; font-size: .9rem; }
+.aspect-matrix-table th, .aspect-matrix-table td { width: 34px; min-width: 34px; height: 32px; padding: .15rem; border-radius: 0 !important; text-align: center; vertical-align: middle; }
+.aspect-matrix-table th { color: var(--muted); font-weight: 600; }
+.aspect-matrix-table thead th:first-child, .aspect-matrix-table tbody th { position: sticky; left: 0; z-index: 1; background: var(--panel-strong); }
+.aspect-matrix-table tbody th { border: 1px solid var(--line); }
+.aspect-matrix-table td[data-aspect-cell], .aspect-matrix-table td.aspect-diagonal { border: 1px solid var(--line); }
+.aspect-matrix-table td.aspect-diagonal { color: var(--ink); background: #f6f4f0; }
+.aspect-matrix-table td.aspect-empty { border: 0; }
+.aspect-glyph { display: inline-block; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', sans-serif; font-size: 1rem; line-height: 1; }
+.aspect-glyph--conjunction { color: #c21870; }
+.aspect-glyph--opposition, .aspect-glyph--square { color: #c23b36; }
+.aspect-glyph--trine { color: #236bb2; }
+.aspect-glyph--sextile { color: #16834b; }
+.aspect-positions { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.aspect-position { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; padding: .35rem 0; border-bottom: 1px solid var(--line); font-size: .88rem; }
+.aspect-position dt { min-width: 0; }
+.aspect-position dd { margin: 0; color: var(--muted); text-align: right; white-space: nowrap; }
+.aspect-position-glyph { display: inline-block; width: 1.5rem; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols 2', sans-serif; text-align: center; }
+
+.nocturna-wheel-container .chart-outer-circle { fill: #dceff3 !important; stroke: #171717 !important; stroke-width: .8 !important; }
+.nocturna-wheel-container .chart-middle-circle,
+.nocturna-wheel-container .chart-inner-circle { fill: #fff !important; stroke: #282828 !important; stroke-width: .65 !important; }
+.nocturna-wheel-container .zodiac-division-line { stroke: #777 !important; stroke-width: .55 !important; }
+.nocturna-wheel-container .house-division-line { stroke: #575757 !important; stroke-width: .55 !important; }
+.nocturna-wheel-container .house-division-line.axis { stroke: #191919 !important; stroke-width: .8 !important; }
+.nocturna-wheel-container .house-number { fill: #171717 !important; font-size: 11px !important; }
+.nocturna-wheel-container .aspect-line { stroke-width: .7 !important; }
+.nocturna-wheel-container .aspect-line.conjunction,
+.nocturna-wheel-container .aspect-line.opposition,
+.nocturna-wheel-container .aspect-line.square { stroke: #d42d34 !important; }
+.nocturna-wheel-container .aspect-line.trine { stroke: #164fbd !important; }
+.nocturna-wheel-container .aspect-line.sextile { stroke: #218647 !important; stroke-dasharray: 3 2 !important; }
+.nocturna-wheel-container .zodiac-sign-aries,
+.nocturna-wheel-container .zodiac-sign-leo,
+.nocturna-wheel-container .zodiac-sign-sagittarius { filter: invert(24%) sepia(83%) saturate(1977%) hue-rotate(337deg) brightness(92%) contrast(95%); }
+.nocturna-wheel-container .zodiac-sign-taurus,
+.nocturna-wheel-container .zodiac-sign-virgo,
+.nocturna-wheel-container .zodiac-sign-capricorn { filter: invert(39%) sepia(23%) saturate(1256%) hue-rotate(82deg) brightness(88%) contrast(90%); }
+.nocturna-wheel-container .zodiac-sign-gemini,
+.nocturna-wheel-container .zodiac-sign-libra,
+.nocturna-wheel-container .zodiac-sign-aquarius { filter: invert(43%) sepia(78%) saturate(1165%) hue-rotate(3deg) brightness(95%) contrast(92%); }
+.nocturna-wheel-container .zodiac-sign-cancer,
+.nocturna-wheel-container .zodiac-sign-scorpio,
+.nocturna-wheel-container .zodiac-sign-pisces { filter: invert(27%) sepia(62%) saturate(1375%) hue-rotate(185deg) brightness(88%) contrast(91%); }
+.nocturna-wheel-container .reference-degree-tick { stroke: #bd3731; stroke-width: .65; }
+.nocturna-wheel-container .reference-degree-tick.medium { stroke-width: .9; }
+.nocturna-wheel-container .reference-degree-tick.major { stroke: #222; stroke-width: 1.1; }
+.nocturna-wheel-container .reference-planet-degree { fill: #202020; font-family: Aptos, 'Segoe UI', sans-serif; font-size: 9px; pointer-events: none; }
+.nocturna-wheel-container .reference-position-sign.fire { filter: invert(24%) sepia(83%) saturate(1977%) hue-rotate(337deg) brightness(92%) contrast(95%); }
+.nocturna-wheel-container .reference-position-sign.earth { filter: invert(39%) sepia(23%) saturate(1256%) hue-rotate(82deg) brightness(88%) contrast(90%); }
+.nocturna-wheel-container .reference-position-sign.air { filter: invert(43%) sepia(78%) saturate(1165%) hue-rotate(3deg) brightness(95%) contrast(92%); }
+.nocturna-wheel-container .reference-position-sign.water { filter: invert(27%) sepia(62%) saturate(1375%) hue-rotate(185deg) brightness(88%) contrast(91%); }
+
+@media (max-width: 760px) {
+    .aspect-matrix-layout { grid-template-columns: minmax(0, 1fr); }
+    .aspect-matrix-table th, .aspect-matrix-table td { width: 30px; min-width: 30px; }
+}

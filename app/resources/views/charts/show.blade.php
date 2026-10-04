@@ -23,13 +23,13 @@
     };
 
     $describe = fn (array $p) => sprintf('%s %d° %d\' %s"', $translateSign($p['sign'] ?? ''), $p['degrees'], $p['minutes'], $p['seconds']);
-    $snapshot = $chart->snapshot;
+    $snapshot = $chart->snapshot ?? [];
     $wheelPlanets = collect([
         'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
         'true_node', 'mean_apogee',
     ])->mapWithKeys(function (string $name) use ($snapshot): array {
         $point = $snapshot[$name] ?? null;
-        if (! $point || ! isset($point['longitude'])) {
+        if (! is_array($point) || ! isset($point['longitude'])) {
             return [];
         }
 
@@ -59,6 +59,7 @@
         'topocentric' => 'Topocéntrico',
     ];
     $houseSystem = $chart->configuration['houses'] ?? 'placidus';
+    $aspectMatrix = app(\App\Services\AspectMatrixBuilder::class)->build($snapshot);
 @endphp
 
 @section('content')
@@ -139,6 +140,8 @@
             ], JSON_HEX_APOS | JSON_HEX_QUOT) }}"
             style="width: min(100%, 760px); aspect-ratio: 1; margin: 0 auto;"
         ></div>
+
+        @include('components.aspect-matrix', $aspectMatrix + ['showPositions' => true])
     </div>
 
     <div class="note">

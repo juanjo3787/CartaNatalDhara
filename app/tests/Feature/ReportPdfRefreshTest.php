@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Services\PhaseOneReportService;
 use App\Services\ReportPdfRefreshService;
 use App\Services\ReportPdfService;
-use Dompdf\Dompdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Http;
@@ -77,6 +76,11 @@ class ReportPdfRefreshTest extends TestCase
         $wheelImage = $chart->natal_wheel_image;
         foreach ([false, true] as $pdf) {
             $html = view('reports.phase-one.template', compact('chart', 'report', 'pdf', 'wheelImage'))->render();
+            $this->assertStringContainsString('Matriz de aspectos', $html);
+            $this->assertStringContainsString('data-aspect-cell', $html);
+            $this->assertStringContainsString('☌', $html);
+            $this->assertStringContainsString('report-cover-visuals', $html);
+            $this->assertStringContainsString($pdf ? 'alt="Rueda astrológica"' : 'data-natal-wheel', $html);
             $this->assertStringNotContainsString('Integración de las cuatro puertas', $html);
             $this->assertStringContainsString('Introducción editada manualmente y conservada.', $html);
             $this->assertStringContainsString('Integración individual editada y conservada.', $html);
@@ -164,25 +168,16 @@ class ReportPdfRefreshTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_pdf_wheel_image_itself_is_twenty_percent_larger(): void
+    public function test_pdf_cover_stacks_wheel_above_matrix_with_cream_background(): void
     {
         $template = file_get_contents(resource_path('views/reports/phase-one/template.blade.php'));
         $style = substr($template, strpos($template, '<style>'), strpos($template, '</style>') + 8 - strpos($template, '<style>'));
         $style = Blade::render($style, ['pdf' => true]);
-        $previous = str_replace('box-sizing: content-box; width: 98.4mm;', 'width: 82mm;', $style);
-        $widths = [];
-        foreach ([$previous, $style] as $css) {
-            $dompdf = new Dompdf;
-            $image = 'data:image/jpeg;base64,'.base64_encode(file_get_contents(__DIR__.'/../Fixtures/wheel.jpg'));
-            $dompdf->loadHtml('<style>* { box-sizing: border-box; }</style>'.$css.'<div class="report-cover-wheel"><div class="report-cover-wheel-container"><img class="report-cover-wheel-image" src="'.$image.'"></div></div>');
-            $dompdf->setCallbacks([['event' => 'end_frame', 'f' => static function ($frame) use (&$widths): void {
-                if ($frame->get_node()->nodeName === 'img') {
-                    $widths[] = $frame->get_content_box()['w'];
-                }
-            }]]);
-            $dompdf->render();
-        }
-        $this->assertCount(2, $widths);
-        $this->assertEqualsWithDelta($widths[0] * 1.2, $widths[1], 0.01, json_encode($widths));
+        $this->assertStringContainsString('.report-cover-visuals { width: 100%;', $style);
+        $this->assertStringContainsString('.report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }', $style);
+        $this->assertStringContainsString('background: #fffdf9 !important;', $style);
+        $this->assertStringContainsString('width: 93mm;', $style);
+        $this->assertStringContainsString('height: 93mm;', $style);
+        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-positions { display: block;', $style);
     }
 }

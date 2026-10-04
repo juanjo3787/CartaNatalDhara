@@ -1,5 +1,35 @@
 @php
     $pdf = $pdf ?? false;
+    $reportSnapshot = $chart->snapshot ?? [];
+    $coverAspectMatrix = app(\App\Services\AspectMatrixBuilder::class)->build($reportSnapshot);
+    $coverWheelPlanets = collect([
+        'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
+        'true_node', 'mean_apogee',
+    ])->mapWithKeys(function (string $name) use ($reportSnapshot): array {
+        $point = $reportSnapshot[$name] ?? null;
+        if (! is_array($point) || ! isset($point['longitude'])) {
+            return [];
+        }
+
+        $libraryName = match ($name) {
+            'true_node' => 'rahu',
+            'mean_apogee' => 'lilith',
+            default => $name,
+        };
+
+        return [$libraryName => ['lon' => (float) $point['longitude']]];
+    })->all();
+    if (isset($coverWheelPlanets['rahu'])) {
+        $coverWheelPlanets['ketu'] = ['lon' => fmod($coverWheelPlanets['rahu']['lon'] + 180, 360)];
+    }
+    $coverWheelData = [
+        'planets' => $coverWheelPlanets,
+        'houses' => collect($reportSnapshot['houses'] ?? [])->sortKeys()->map(fn (array $house): array => ['lon' => (float) $house['longitude']])->values()->all(),
+        'ascendant' => (float) ($reportSnapshot['ascendant']['longitude'] ?? 0),
+        'midheaven' => (float) ($reportSnapshot['midheaven']['longitude'] ?? 0),
+        'latitude' => (float) $chart->birthData->place->latitude,
+        'houseSystem' => $chart->configuration['houses'] ?? 'placidus',
+    ];
     $blockTitles = [
         'shared_intro' => 'Función y posición', 'function' => 'Función y posición',
         'sign' => 'Qué necesita este signo', 'house' => 'La casa y el territorio de experiencia',
@@ -16,13 +46,39 @@
     .report-brand { letter-spacing: .18em; font: 700 .75rem Aptos, 'Segoe UI', sans-serif; color: #6d5a48; }
     .report-cover h1 { margin: 5rem 0 1rem; font: 400 3.2rem/1.1 Aptos, 'Segoe UI', sans-serif; letter-spacing: 0; color: #1d1d1d; }
     .report-page.report-cover h2 { display: block; width: auto; min-width: 0; max-width: none; margin: 0; padding: 0; background: transparent; box-shadow: none; color: #695c52; font: 400 1.35rem/1.5 Aptos, 'Segoe UI', sans-serif; text-align: center; }
-    .report-cover-name { margin-top: 3rem; font-size: 1.5rem; }
-    .report-cover-wheel { width: min(100%, 620px); margin: 2rem auto 1.5rem; padding: 1rem; background: rgba(255,255,255,.72); border: 1px solid #d8cabc; border-radius: 18px; }
+    .report-cover > div:first-child { display: flex; flex: 1; flex-direction: column; }
+    .report-cover-name { margin-top: auto; padding-top: 1rem; font-size: .92rem; line-height: 1.2; }
+    .report-cover-visuals { display: table; width: 100%; margin: .75rem auto .5rem; table-layout: fixed; border: 0; border-collapse: collapse; border-radius: 0; background: #fffdf9; }
+    .report-cover-visuals > tbody > tr > td { padding: 0; border: 0; vertical-align: middle; }
+    .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
+    .report-cover-matrix-cell { padding: .4rem 0 0 !important; }
+    .report-cover-wheel { width: min(100%, 520px); margin: .35rem auto .5rem; padding: .5rem; background: #fffdf9; border: 1px solid #d8cabc; border-radius: 0; }
     .report-cover-wheel-container { width: 100%; aspect-ratio: 1; }
     .report-cover-wheel-image { display: block; width: 100%; height: auto; }
     .report-cover-wheel-actions { display: flex; justify-content: center; margin-top: .75rem; }
+    .report-cover .aspect-section--cover { max-width: 135mm; margin: 0 auto; padding: .35rem; background: #fffdf9; text-align: left; }
+    .report-cover .aspect-section--cover h2 { margin: 0 0 .35rem; font-size: .9rem; text-align: left; }
+    .report-cover .aspect-section--cover .aspect-matrix-layout { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: .5rem; background: #fffdf9; }
+    .report-cover .aspect-section--cover .aspect-matrix-scroll { overflow: visible; }
+    .report-cover .aspect-section--cover .aspect-matrix-table { width: 100%; min-width: 0; margin: 0; border: 0; border-radius: 0; background: #fffdf9; font-size: .62rem; }
+    .report-cover .aspect-section--cover .aspect-matrix-table th,
+    .report-cover .aspect-section--cover .aspect-matrix-table td { width: 3.4mm; min-width: 0; height: 3.4mm; padding: 0; border: .25pt solid #c9c7c1; border-radius: 0; background: #fffdf9; text-align: center; }
+    .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-empty { border: 0; }
+    .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background: #eef1f2; }
+    .report-cover .aspect-section--cover .aspect-glyph { font-family: DejaVu Sans, sans-serif; font-size: 6.5pt; }
+    .report-cover .aspect-section--cover .aspect-position { grid-template-columns: minmax(0, 1fr) auto; gap: .1rem; padding: .1rem 0; font-size: .55rem; line-height: 1.05; }
+    .report-cover .aspect-section--cover .aspect-position dt,
+    .report-cover .aspect-section--cover .aspect-position dd { white-space: nowrap; }
+    .report-cover .aspect-section--cover .aspect-position dd { font-size: .52rem; }
+    .report-cover .aspect-section--cover .aspect-position-glyph { width: 1rem; }
+    .report-cover .aspect-section--cover .aspect-glyph--conjunction { color: #c21870; }
+    .report-cover .aspect-section--cover .aspect-glyph--opposition,
+    .report-cover .aspect-section--cover .aspect-glyph--square { color: #c23b36; }
+    .report-cover .aspect-section--cover .aspect-glyph--trine { color: #236bb2; }
+    .report-cover .aspect-section--cover .aspect-glyph--sextile { color: #16834b; }
+    .report-cover .aspect-section--cover .aspect-positions { display: block; margin: 0; background: #fffdf9; }
     .report-wheel-refresh { border: 1px solid #b58b67; border-radius: 5px; padding: .55rem .9rem; background: #fffaf5; color: #674b39; cursor: pointer; font: 600 .8rem Aptos, 'Segoe UI', sans-serif; }
-    .report-cover-meta { color: #6f665f; font: .95rem/1.8 Aptos, 'Segoe UI', sans-serif; }
+    .report-cover-meta { color: #6f665f; font: .78rem/1.35 Aptos, 'Segoe UI', sans-serif; }
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
     .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
@@ -68,9 +124,27 @@
     .report-action-primary { background: #795c48; color: #fff; }
     @endif
     @if ($pdf)
-    .report-cover-wheel { display: block; box-sizing: content-box; width: 98.4mm; margin: 5mm auto 4mm; padding: 3mm; border: 1px solid #d8cabc; background: #fff; }
-    .report-cover-wheel-container { height: 98.4mm; }
+    .report-cover-visuals { width: 100%; margin: 2mm auto; }
+    .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
+    .report-cover-matrix-cell { padding: 0 !important; }
+    .report-cover-wheel { display: block; box-sizing: border-box; width: 96mm; max-width: 100%; margin: 0 auto 2mm; padding: 1mm; border: .5pt solid #d8cabc; background: #fffdf9; }
+    .report-cover-wheel-container { width: 93mm; height: 93mm; background: #fffdf9; }
+    .report-cover-wheel-image { width: 93mm; height: 93mm; background: #fffdf9; }
     .report-cover-wheel-actions { display: none; }
+    .report-cover .aspect-section--cover { width: 128mm; max-width: 100%; margin: 0 auto; padding: 0; background: #fffdf9; }
+    .report-cover .aspect-section--cover h2 { margin: 0 0 1mm; font-size: 7pt; }
+    .report-cover .aspect-section--cover .aspect-matrix-layout { display: table; width: 100%; table-layout: fixed; background: #fffdf9; }
+    .report-cover .aspect-section--cover .aspect-matrix-scroll,
+    .report-cover .aspect-section--cover aside { display: table-cell; vertical-align: top; }
+    .report-cover .aspect-section--cover .aspect-matrix-scroll { width: 72%; overflow: visible; }
+    .report-cover .aspect-section--cover aside { width: 28%; padding-left: 1mm; }
+    .report-cover .aspect-section--cover aside h3 { margin: 0 0 1mm; font-size: 7pt; }
+    .report-cover .aspect-section--cover .aspect-position { gap: 0; padding: .25mm 0; font-size: 5.1pt; line-height: 1.1; }
+    .report-cover .aspect-section--cover .aspect-position-glyph { width: 3.5mm; }
+    .report-cover .aspect-section--cover .aspect-position dd { font-size: 4.8pt; }
+    .report-cover .aspect-section--cover .aspect-matrix-table { font-size: 6pt; }
+    .report-cover .aspect-section--cover .aspect-matrix-table th,
+    .report-cover .aspect-section--cover .aspect-matrix-table td { width: 3.4mm; height: 3.4mm; font-size: 6.5pt; }
     .report-pdf-only { display: block; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 .82rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
     .report-pdf-indicator::before { content: '> '; color: #b58b67; }
@@ -92,10 +166,11 @@
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
     /* Dompdf reserves the 28mm vertical padding in addition to this content height. */
     .report-cover { display: block; position: relative; min-height: 0; height: 222mm; padding: 14mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
+    .report-cover > div:first-child { display: block; }
     .report-worksheet { page-break-inside: avoid; }
     .report-cover h1 { margin: 4mm 0 5mm; font-size: 28pt; }
-    .report-cover-name { margin-top: 5mm; font-size: 13pt; line-height: 1.35; }
-    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; }
+    .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 31mm; margin: 0; padding: 0; font-size: 9pt; line-height: 1.2; }
+    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; font-size: 7.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-door { page-break-before: auto; }
@@ -108,7 +183,18 @@
     .report-block-title { padding: 6pt 10pt; font-size: 11pt; background: #f8dfcc; box-shadow: 3pt 3pt 0 rgba(122, 86, 61, .12); } .report-table { font-size: 8.5pt; }
     .report-table th, .report-table td { padding: 5pt; } .report-note { display: block; }
     .report-document, .report-document * { background-color: #fff; background-image: none; box-shadow: none; text-shadow: none; }
-    .report-document .report-cover, .report-document .report-table th, .report-document .report-note { background: #fff; box-shadow: none; }
+    .report-document .report-cover,
+    .report-document .report-cover .report-cover-visuals,
+    .report-document .report-cover .report-cover-wheel,
+    .report-document .report-cover .report-cover-wheel-container,
+    .report-document .report-cover .report-cover-wheel-image,
+    .report-document .report-cover .aspect-section--cover,
+    .report-document .report-cover .aspect-section--cover .aspect-matrix-layout,
+    .report-document .report-cover .aspect-section--cover .aspect-matrix-table,
+    .report-document .report-cover .aspect-section--cover .aspect-matrix-table th,
+    .report-document .report-cover .aspect-section--cover .aspect-matrix-table td,
+    .report-document .report-cover .aspect-section--cover .aspect-positions { background: #fffdf9 !important; }
+    .report-document .report-table th, .report-document .report-note { background: #fff; box-shadow: none; }
     @endif
     @media print {
         /* Original heading appearance from 7ec25a2, before responsive and ink-saving overrides. */
@@ -120,7 +206,37 @@
 </style>
 
 <div class="report-document">
-    <section class="report-page report-cover"><div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div><h1>Carta natal de<br>{{ $report['name'] }}</h1><h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2><div class="report-cover-wheel" data-wheel-panel><div class="report-cover-wheel-container" @if (!$pdf) data-natal-wheel data-chart="{{ json_encode(['planets' => collect(['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'true_node', 'mean_apogee'])->mapWithKeys(function (string $name) use ($chart): array { $point = $chart->snapshot[$name] ?? null; if (! $point || ! isset($point['longitude'])) return []; $libraryName = match ($name) { 'true_node' => 'rahu', 'mean_apogee' => 'lilith', default => $name }; return [$libraryName => ['lon' => (float) $point['longitude']]]; })->all(), 'houses' => collect($chart->snapshot['houses'] ?? [])->sortKeys()->map(fn (array $house): array => ['lon' => (float) $house['longitude']])->values()->all(), 'ascendant' => (float) ($chart->snapshot['ascendant']['longitude'] ?? 0), 'midheaven' => (float) ($chart->snapshot['midheaven']['longitude'] ?? 0), 'latitude' => (float) $chart->birthData->place->latitude], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>@if ($pdf && !empty($wheelImage))<img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">@endif</div><div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div></div><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div><div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div></section>
+    <section class="report-page report-cover">
+        <div>
+            <div class="report-brand">ASTROLOGÍA SARANA VEDA</div>
+            <div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div>
+            <h1>Carta natal de<br>{{ $report['name'] }}</h1>
+            <h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>
+            <table class="report-cover-visuals">
+                <tbody>
+                    <tr>
+                    <td class="report-cover-wheel-cell" colspan="2">
+                        <div class="report-cover-wheel" data-wheel-panel>
+                            <div class="report-cover-wheel-container" data-background-color="#fffdf9" @if (!$pdf) data-natal-wheel data-chart="{{ json_encode($coverWheelData + ['backgroundColor' => '#fffdf9'], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>
+                                @if ($pdf && ! empty($wheelImage))
+                                    <img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">
+                                @endif
+                            </div>
+                            <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
+                        </div>
+                    </td>
+                    </tr>
+                    <tr>
+                        <td class="report-cover-matrix-cell" colspan="2">
+                            @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true])
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div>
+        </div>
+        <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
+    </section>
     <section class="report-page"><h1>Recorrido del dossier</h1><p>Este informe puede recorrerse por bloques. Cada apartado propone una pregunta y una forma de observarla en la experiencia cotidiana.</p><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item"><div class="report-index-number">{{ $item['number'] }}</div><div><strong>{{ $item['title'] }}</strong><span>{{ $item['summary'] }}</span></div></div>@endforeach</div></section>
     <section class="report-page"><h1>Tu primera lectura</h1><div class="report-gray">@foreach ($report['shared']['intro'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div><h2 class="report-section-title">Las cuatro puertas</h2><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     <section class="report-page"><div class="report-arrow-title report-door-intro-title">UNA BREVE INTRODUCCIÓN A TUS CUATRO PUERTAS</div>@foreach ($report['door_introduction'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<table class="report-table report-doors-table"><tr><th>Puerta</th><th>Posición</th><th>Pregunta</th></tr>@foreach ($report['doors'] as $door)@continue(!($report['sections'][$door['key']]['enabled'] ?? false))<tr><td>{{ str_replace(['Primera puerta el ', 'Segunda puerta la ', 'Tercera puerta el ', 'Cuarta puerta el '], '', $door['title']) }}</td><td>{{ $door['position'] }}</td><td>{{ $door['question'] }}</td></tr>@endforeach</table><div class="report-arrow-title">ESTADOS DE CADA PUERTA: Cómo reconocer armonía, defecto y exceso</div><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
