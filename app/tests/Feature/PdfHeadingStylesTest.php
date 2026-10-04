@@ -87,7 +87,7 @@ class PdfHeadingStylesTest extends TestCase
 
         $this->assertStringContainsString('.report-cover-visuals { width: 100%;', $pdfStyle);
         $this->assertStringContainsString('.report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }', $pdfStyle);
-        $this->assertStringContainsString('width: 77mm;', $pdfStyle);
+        $this->assertStringContainsString('width: 104mm;', $pdfStyle);
         $this->assertStringContainsString('background: #fffdf9 !important;', $pdfStyle);
         $this->assertStringContainsString('data-background-color="#fffdf9"', $cover);
         $this->assertStringContainsString("@include('components.aspect-matrix'", $cover);

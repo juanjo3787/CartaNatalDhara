@@ -47,12 +47,13 @@
     .report-cover h1 { margin: 5rem 0 1rem; font: 400 3.2rem/1.1 Aptos, 'Segoe UI', sans-serif; letter-spacing: 0; color: #1d1d1d; }
     .report-page.report-cover h2 { display: block; width: auto; min-width: 0; max-width: none; margin: 0; padding: 0; background: transparent; box-shadow: none; color: #695c52; font: 400 1.35rem/1.5 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-cover > div:first-child { display: flex; flex: 1; flex-direction: column; }
+    .report-cover-kicker { margin-top: 1.5rem; }
     .report-cover-name { margin-top: auto; padding-top: 1rem; font-size: .92rem; line-height: 1.2; }
     .report-cover-visuals { display: table; width: 100%; margin: .75rem auto .5rem; table-layout: fixed; border: 0; border-collapse: collapse; border-radius: 0; background: #fffdf9; }
     .report-cover-visuals > tbody > tr > td { padding: 0; border: 0; vertical-align: middle; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: .4rem 0 0 !important; }
-    .report-cover-wheel { width: min(100%, 520px); margin: .35rem auto .5rem; padding: .5rem; background: #fffdf9; border: 1px solid #d8cabc; border-radius: 0; }
+    .report-cover-wheel { width: min(100%, 405px); margin: .35rem auto .5rem; padding: .5rem; background: #fffdf9; border: 1px solid #d8cabc; border-radius: 0; }
     .report-cover-wheel-container { width: 100%; aspect-ratio: 1; }
     .report-cover-wheel-image { display: block; width: 100%; height: auto; }
     .report-cover-wheel-actions { display: flex; justify-content: center; margin-top: .75rem; }
@@ -125,12 +126,12 @@
     @endif
     @if ($pdf)
     .report-brand, .report-kicker { font-size: 9pt; }
-    .report-cover-visuals { width: 100%; margin: 2mm auto; }
+    .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: 0 !important; }
-    .report-cover-wheel { display: block; box-sizing: border-box; width: 80mm; max-width: 100%; margin: 0 auto 1mm; padding: .5mm; border: .5pt solid #d8cabc; background: #fffdf9; }
-    .report-cover-wheel-container { width: 77mm; height: 77mm; background: #fffdf9; }
-    .report-cover-wheel-image { width: 77mm; height: 77mm; background: #fffdf9; }
+    .report-cover-wheel { display: block; box-sizing: border-box; width: 107mm; max-width: 100%; margin: 0 auto 1mm; padding: .5mm; border: .5pt solid #d8cabc; background: #fffdf9; }
+    .report-cover-wheel-container { width: 104mm; height: 104mm; background: #fffdf9; }
+    .report-cover-wheel-image { width: 104mm; height: 104mm; background: #fffdf9; }
     .report-cover-wheel-actions { display: none; }
     .report-cover .aspect-section--cover { width: 128mm; max-width: 100%; margin: 0 auto; padding: 0; background: #fffdf9; }
     .report-cover .aspect-section--cover h2 { margin: 0 0 .5mm; font-size: 8pt; }
@@ -165,14 +166,15 @@
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { width: 174mm; margin: 0 auto; padding: 0; font-size: 10.5pt; line-height: 1.48; }
     .report-page { width: auto; min-height: 0; height: auto; margin: 0; padding: 0 10mm; border: 0; page-break-after: always; box-sizing: border-box; }
-    .report-page.report-cover { padding: 14mm 10mm; }
+    .report-page.report-cover { padding: 4mm 10mm; }
     .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
     /* Dompdf reserves the 28mm vertical padding in addition to this content height. */
-    .report-cover { display: block; position: relative; min-height: 0; height: 222mm; padding: 14mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
+    .report-cover { display: block; position: relative; min-height: 0; height: 222mm; padding: 4mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
     .report-cover > div:first-child { display: block; }
     .report-worksheet { page-break-inside: avoid; }
-    .report-cover h1 { margin: 4mm 0 5mm; font-size: 28pt; }
+    .report-cover-kicker { margin-top: .5rem; }
+    .report-cover h1 { margin: 2mm 0; font-size: 28pt; }
     .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 31mm; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
     .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
@@ -218,7 +220,7 @@
     <section class="report-page report-cover">
         <div>
             <div class="report-brand">ASTROLOGÍA SARANA VEDA</div>
-            <div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div>
+            <div class="report-cover-kicker"><span class="report-kicker">Dossier personal</span></div>
             <h1>Carta natal de<br>{{ $report['name'] }}</h1>
             <h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>
             <table class="report-cover-visuals">
