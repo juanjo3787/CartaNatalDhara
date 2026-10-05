@@ -129,24 +129,24 @@
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: 0 !important; }
-    .report-cover-wheel { display: block; box-sizing: border-box; width: 107mm; max-width: 100%; margin: 0 auto 1mm; padding: .5mm; border: .5pt solid #d8cabc; background: #fffdf9; }
-    .report-cover-wheel-container { width: 104mm; height: 104mm; background: #fffdf9; }
-    .report-cover-wheel-image { width: 104mm; height: 104mm; background: #fffdf9; }
+    .report-cover-wheel { display: block; box-sizing: border-box; width: 82mm; max-width: 100%; margin: 0 auto 1mm; padding: .5mm; border: .5pt solid #d8cabc; background: #fffdf9; }
+    .report-cover-wheel-container { width: 79mm; height: 79mm; background: #fffdf9; }
+    .report-cover-wheel-image { width: 79mm; height: 79mm; background: #fffdf9; }
     .report-cover-wheel-actions { display: none; }
     .report-cover .aspect-section--cover { width: 128mm; max-width: 100%; margin: 0 auto; padding: 0; background: #fffdf9; }
     .report-cover .aspect-section--cover h2 { margin: 0 0 .5mm; font-size: 8pt; }
     .report-cover .aspect-section--cover .aspect-matrix-layout { display: table; width: 100%; table-layout: fixed; background: #fffdf9; }
     .report-cover .aspect-section--cover .aspect-matrix-scroll,
     .report-cover .aspect-section--cover aside { display: table-cell; vertical-align: top; }
-    .report-cover .aspect-section--cover .aspect-matrix-scroll { width: 72%; overflow: visible; }
-    .report-cover .aspect-section--cover aside { width: 28%; padding-left: 1mm; }
+    .report-cover .aspect-section--cover .aspect-matrix-scroll { width: 50%; overflow: visible; }
+    .report-cover .aspect-section--cover aside { width: 50%; padding-left: 1mm; }
     .report-cover .aspect-section--cover aside h3 { margin: 0 0 1mm; font-size: 8pt; }
-    .report-cover .aspect-section--cover .aspect-position { display: table; width: 100%; table-layout: fixed; gap: 0; padding: .1mm 0; font-size: 8pt; line-height: 1.05; }
+    .report-cover .aspect-section--cover .aspect-position { display: table; width: 100%; table-layout: fixed; gap: 0; padding: .1mm 0; font-size: 6.8pt; line-height: 1.1; }
     .report-cover .aspect-section--cover .aspect-position dt,
     .report-cover .aspect-section--cover .aspect-position dd { display: table-cell; vertical-align: middle; }
-    .report-cover .aspect-section--cover .aspect-position dt { width: 58%; }
-    .report-cover .aspect-section--cover .aspect-position-glyph { display: inline-block; width: 3mm; font-size: 8pt; }
-    .report-cover .aspect-section--cover .aspect-position dd { width: 42%; margin: 0; font-size: 8pt; text-align: right; }
+    .report-cover .aspect-section--cover .aspect-position dt { width: 50%; }
+    .report-cover .aspect-section--cover .aspect-position-glyph { display: inline-block; width: 3mm; font-size: 6.8pt; }
+    .report-cover .aspect-section--cover .aspect-position dd { width: 50%; margin: 0; font-size: 6.8pt; text-align: right; }
     .report-cover .aspect-section--cover .aspect-matrix-table { font-size: 6.5pt; }
     .report-cover .aspect-section--cover .aspect-matrix-table th,
     .report-cover .aspect-section--cover .aspect-matrix-table td { width: 3mm; height: 3mm; font-size: 6.5pt; }
