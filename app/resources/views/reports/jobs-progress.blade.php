@@ -96,22 +96,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (image) data.wheel_image = image;
         return send(url, data);
     };
-    document.querySelectorAll('form[data-report-job]').forEach(form => {
-        form.addEventListener('submit', async event => {
-            event.preventDefault();
-            const button = form.querySelector('button[type="submit"]');
-            if (button) button.disabled = true;
-            try { await window.startReportJob(form.action); } catch (error) { showError(error); }
-            finally { if (button) button.disabled = false; }
-        });
+    document.addEventListener('submit', async event => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.matches('form[data-report-job]')) return;
+        event.preventDefault();
+        const button = form.querySelector('button[type="submit"]');
+        if (button) button.disabled = true;
+        try { await window.startReportJob(form.action); } catch (error) { showError(error); }
+        finally { if (button) button.disabled = false; }
     });
-    document.querySelectorAll('[data-report-job-url]').forEach(button => {
-        button.addEventListener('click', async () => {
-            button.disabled = true;
-            try { await window.startReportJob(button.dataset.reportJobUrl, JSON.parse(button.dataset.doors)); }
-            catch (error) { showError(error); }
-            finally { button.disabled = false; }
-        });
+    document.addEventListener('click', async event => {
+        const button = event.target instanceof Element ? event.target.closest('[data-report-job-url]') : null;
+        if (!(button instanceof HTMLButtonElement)) return;
+        button.disabled = true;
+        try { await window.startReportJob(button.dataset.reportJobUrl, JSON.parse(button.dataset.doors)); }
+        catch (error) { showError(error); }
+        finally { button.disabled = false; }
     });
     async function poll() {
         const requestedRevision = revision;
