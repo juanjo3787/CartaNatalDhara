@@ -1,4 +1,4 @@
-@props(['points' => [], 'matches' => [], 'variant' => 'page', 'showPositions' => true])
+@props(['points' => [], 'matches' => [], 'variant' => 'page', 'showPositions' => true, 'pdf' => false])
 
 <section class="aspect-section aspect-section--{{ $variant }}" aria-labelledby="aspect-matrix-heading">
     <h2 id="aspect-matrix-heading">Matriz de aspectos</h2>
@@ -10,10 +10,12 @@
                     data-aspect-matrix
                     data-points="{{ json_encode($points, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG) }}"
                 >
-                    <caption class="sr-only">Aspectos entre los puntos calculados de la carta natal</caption>
+                    @if (! $pdf || $variant !== 'cover')
+                        <caption class="sr-only">Aspectos entre los puntos calculados de la carta natal</caption>
+                    @endif
                     <thead>
                         <tr>
-                            <th scope="col"><span class="sr-only">Punto</span></th>
+                            <th scope="col">@if (! $pdf || $variant !== 'cover')<span class="sr-only">Punto</span>@endif</th>
                             @foreach ($points as $point)
                                 <th scope="col" title="{{ $point['label'] }} · {{ $point['position'] }}">{{ $point['glyph'] }}</th>
                             @endforeach

@@ -49,8 +49,8 @@
     .report-cover > div:first-child { display: flex; flex: 1; flex-direction: column; }
     .report-cover-kicker { margin-top: 1.5rem; }
     .report-cover-name { margin-top: auto; padding-top: 1rem; font-size: .92rem; line-height: 1.2; }
-    .report-cover-visuals { display: table; width: 100%; margin: .75rem auto .5rem; table-layout: fixed; border: 0; border-collapse: collapse; border-radius: 0; background: #fffdf9; }
-    .report-cover-visuals > tbody > tr > td { padding: 0; border: 0; vertical-align: middle; }
+    .report-cover-visuals { display: block; width: 100%; margin: .75rem auto .5rem; background: #fffdf9; }
+    .report-cover-visuals > div { display: block; width: 100%; padding: 0; border: 0; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: .4rem 0 0 !important; }
     .report-cover-wheel { width: min(100%, 405px); margin: .35rem auto .5rem; padding: .5rem; background: #fffdf9; border: 1px solid #d8cabc; border-radius: 0; }
@@ -68,7 +68,7 @@
     .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background: #eef1f2; }
     .report-cover .aspect-section--cover .aspect-glyph { font-family: DejaVu Sans, sans-serif; font-size: 6.5pt; }
     .report-cover .aspect-section--cover .aspect-position { grid-template-columns: minmax(0, 1fr) auto; gap: .1rem; padding: .1rem 0; font-size: .55rem; line-height: 1.05; }
-    .report-cover .aspect-section--cover .aspect-position dt,
+    .report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }
     .report-cover .aspect-section--cover .aspect-position dd { white-space: nowrap; }
     .report-cover .aspect-section--cover .aspect-position dd { font-size: .52rem; }
     .report-cover .aspect-section--cover .aspect-position-glyph { width: 1rem; }
@@ -83,7 +83,7 @@
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
     .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
-    .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.75; }
+    .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; text-indent: 1.5em; font-size: 1rem; line-height: 1.75; }
     .report-page p, .report-page li { orphans: 3; widows: 3; }
     .report-page h1, .report-page h2, .report-page h3, .report-block-title, .report-arrow-title { page-break-after: avoid; }
     .report-tail-group { page-break-inside: avoid; }
@@ -129,9 +129,9 @@
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: 0 !important; }
-    .report-cover-wheel { display: block; box-sizing: border-box; width: 82mm; max-width: 100%; margin: 0 auto 1mm; padding: .5mm; border: .5pt solid #d8cabc; background: #fffdf9; }
-    .report-cover-wheel-container { width: 79mm; height: 79mm; background: #fffdf9; }
-    .report-cover-wheel-image { width: 79mm; height: 79mm; background: #fffdf9; }
+    .report-cover-wheel { display: block; width: 65mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
+    .report-cover-wheel-container { position: relative; width: 65mm; height: 65mm; overflow: hidden; background: transparent; }
+    .report-cover-wheel-image { position: absolute; top: -32.5mm; left: -32.5mm; width: 130mm; height: 130mm; max-width: none; background: transparent; }
     .report-cover-wheel-actions { display: none; }
     .report-cover .aspect-section--cover { width: 128mm; max-width: 100%; margin: 0 auto; padding: 0; background: #fffdf9; }
     .report-cover .aspect-section--cover h2 { margin: 0 0 .5mm; font-size: 8pt; }
@@ -149,7 +149,9 @@
     .report-cover .aspect-section--cover .aspect-position dd { width: 50%; margin: 0; font-size: 6.8pt; text-align: right; }
     .report-cover .aspect-section--cover .aspect-matrix-table { font-size: 6.5pt; }
     .report-cover .aspect-section--cover .aspect-matrix-table th,
-    .report-cover .aspect-section--cover .aspect-matrix-table td { width: 3mm; height: 3mm; font-size: 6.5pt; }
+    .report-cover .aspect-section--cover .aspect-matrix-table td { width: 2.7mm; height: 2.7mm; font-size: 6.5pt; }
+    .report-cover .aspect-section--cover .aspect-matrix-table th,
+    .report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }
     .report-pdf-only { display: block; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
     .report-pdf-indicator::before { content: '> '; color: #b58b67; }
@@ -170,13 +172,13 @@
     .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
     /* Dompdf reserves the 28mm vertical padding in addition to this content height. */
-    .report-cover { display: block; position: relative; min-height: 0; height: 222mm; padding: 4mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
+    .report-cover { display: block; position: relative; min-height: 0; height: 240mm; padding: 4mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
     .report-cover > div:first-child { display: block; }
     .report-worksheet { page-break-inside: avoid; }
     .report-cover-kicker { margin-top: .5rem; }
     .report-cover h1 { margin: 2mm 0; font-size: 28pt; }
-    .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 31mm; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
-    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 18mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
+    .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 24mm; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
+    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 11mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-door { page-break-before: auto; }
@@ -205,6 +207,8 @@
     .report-document .report-cover .aspect-section--cover .aspect-matrix-table th,
     .report-document .report-cover .aspect-section--cover .aspect-matrix-table td,
     .report-document .report-cover .aspect-section--cover .aspect-positions { background: #fffdf9 !important; }
+    .report-document .report-cover .aspect-section--cover *:not(.aspect-diagonal) { background-color: #fffdf9 !important; }
+    .report-document .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background-color: #eef1f2 !important; }
     .report-document .report-table th, .report-document .report-note { background: #fff; box-shadow: none; }
     @endif
     @media print {
@@ -223,27 +227,21 @@
             <div class="report-cover-kicker"><span class="report-kicker">Dossier personal</span></div>
             <h1>Carta natal de<br>{{ $report['name'] }}</h1>
             <h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>
-            <table class="report-cover-visuals">
-                <tbody>
-                    <tr>
-                    <td class="report-cover-wheel-cell" colspan="2">
-                        <div class="report-cover-wheel" data-wheel-panel>
-                            <div class="report-cover-wheel-container" data-background-color="#fffdf9" @if (!$pdf) data-natal-wheel data-chart="{{ json_encode($coverWheelData + ['backgroundColor' => '#fffdf9'], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>
-                                @if ($pdf && ! empty($wheelImage))
-                                    <img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">
-                                @endif
-                            </div>
-                            <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
+            <div class="report-cover-visuals">
+                <div class="report-cover-wheel-cell">
+                    <div class="report-cover-wheel" data-wheel-panel>
+                        <div class="report-cover-wheel-container" data-background-color="#fffdf9" @if (!$pdf) data-natal-wheel data-chart="{{ json_encode($coverWheelData + ['backgroundColor' => '#fffdf9'], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>
+                            @if ($pdf && ! empty($wheelImage))
+                                <img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">
+                            @endif
                         </div>
-                    </td>
-                    </tr>
-                    <tr>
-                        <td class="report-cover-matrix-cell" colspan="2">
-                            @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true])
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
+                    </div>
+                </div>
+                <div class="report-cover-matrix-cell">
+                    @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true, 'pdf' => $pdf])
+                </div>
+            </div>
             <div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div>
         </div>
         <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>

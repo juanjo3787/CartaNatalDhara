@@ -87,11 +87,22 @@ class PdfHeadingStylesTest extends TestCase
 
         $this->assertStringContainsString('.report-cover-visuals { width: 100%;', $pdfStyle);
         $this->assertStringContainsString('.report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }', $pdfStyle);
-        $this->assertStringContainsString('width: 104mm;', $pdfStyle);
+        $this->assertStringContainsString('<div class="report-cover-visuals">', $cover);
+        $this->assertStringNotContainsString('<table class="report-cover-visuals">', $cover);
+        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }', $pdfStyle);
+        $this->assertStringContainsString('overflow: hidden;', $pdfStyle);
+        $this->assertStringContainsString('top: -32.5mm; left: -32.5mm; width: 130mm; height: 130mm;', $pdfStyle);
+        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }', $pdfStyle);
+        $this->assertStringContainsString('padding: 0; border: 0; background: transparent;', $pdfStyle);
+        $this->assertStringContainsString('.report-document .report-cover .aspect-section--cover *:not(.aspect-diagonal) { background-color: #fffdf9 !important; }', $pdfStyle);
+        $this->assertStringContainsString('.report-document .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background-color: #eef1f2 !important; }', $pdfStyle);
+        $this->assertStringContainsString('text-indent: 1.5em;', $pdfStyle);
+        $this->assertStringContainsString('margin: 0 auto 1.25rem;', $pdfStyle);
+        $this->assertStringContainsString('width: 128mm;', $pdfStyle);
         $this->assertStringContainsString('background: #fffdf9 !important;', $pdfStyle);
         $this->assertStringContainsString('data-background-color="#fffdf9"', $cover);
         $this->assertStringContainsString("@include('components.aspect-matrix'", $cover);
-        $this->assertStringContainsString("['variant' => 'cover', 'showPositions' => true]", $cover);
+        $this->assertStringContainsString('[\'variant\' => \'cover\', \'showPositions\' => true, \'pdf\' => $pdf]', $cover);
         $this->assertLessThan(
             strpos($cover, 'report-cover-matrix-cell'),
             strpos($cover, 'report-cover-wheel-cell'),
@@ -109,12 +120,14 @@ class PdfHeadingStylesTest extends TestCase
             $snapshot[$point] = ['longitude' => 185];
         }
         $matrixData = app(AspectMatrixBuilder::class)->build($snapshot);
-        $matrixHtml = view('components.aspect-matrix', $matrixData + ['variant' => 'cover', 'showPositions' => true])->render();
+        $matrixHtml = view('components.aspect-matrix', $matrixData + ['variant' => 'cover', 'showPositions' => true, 'pdf' => true])->render();
+        $this->assertStringNotContainsString('Aspectos entre los puntos calculados', $matrixHtml);
+        $this->assertStringNotContainsString('>Punto</span>', $matrixHtml);
         $wheel = 'data:image/jpeg;base64,'.base64_encode(file_get_contents(__DIR__.'/../Fixtures/wheel.jpg'));
         $coverHtml = '<div class="report-document"><section class="report-page report-cover">'
             .'<div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div><h1>Carta natal de<br>Persona de prueba</h1><h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>'
-            .'<table class="report-cover-visuals"><tbody><tr><td class="report-cover-wheel-cell" colspan="2"><div class="report-cover-wheel"><div class="report-cover-wheel-container"><img class="report-cover-wheel-image" src="'.$wheel.'"></div></div></td></tr>'
-            .'<tr><td class="report-cover-matrix-cell" colspan="2">'.$matrixHtml.'</td></tr></tbody></table><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div>'
+            .'<div class="report-cover-visuals"><div class="report-cover-wheel-cell"><div class="report-cover-wheel"><div class="report-cover-wheel-container"><img class="report-cover-wheel-image" src="'.$wheel.'"></div></div></div>'
+            .'<div class="report-cover-matrix-cell">'.$matrixHtml.'</div></div><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div>'
             .'<div class="report-cover-meta">28/09/1986 · 21:00 · Sevilla, España<br>Zodiaco tropical · Casas Placidus</div></section></div>';
         $html = view('layouts.app', ['pdf' => true])->render();
         $html = str_replace('</body>', $pdfStyle.$coverHtml.'</body>', $html);

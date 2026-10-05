@@ -8,8 +8,8 @@
     .report-cover > div:first-child { display: flex; flex: 1; flex-direction: column; }
     .report-cover-kicker { margin-top: 1.5rem; }
     .report-cover-name { margin-top: auto; padding-top: 1rem; font-size: .92rem; line-height: 1.2; }
-    .report-cover-visuals { display: table; width: 100%; margin: .75rem auto .5rem; table-layout: fixed; border: 0; border-collapse: collapse; border-radius: 0; background: #fffdf9; }
-    .report-cover-visuals > tbody > tr > td { padding: 0; border: 0; vertical-align: middle; }
+    .report-cover-visuals { display: block; width: 100%; margin: .75rem auto .5rem; background: #fffdf9; }
+    .report-cover-visuals > div { display: block; width: 100%; padding: 0; border: 0; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: .4rem 0 0 !important; }
     .report-cover-wheel { width: min(100%, 405px); margin: .35rem auto .5rem; padding: .5rem; background: #fffdf9; border: 1px solid #d8cabc; border-radius: 0; }
@@ -27,7 +27,7 @@
     .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background: #eef1f2; }
     .report-cover .aspect-section--cover .aspect-glyph { font-family: DejaVu Sans, sans-serif; font-size: 6.5pt; }
     .report-cover .aspect-section--cover .aspect-position { grid-template-columns: minmax(0, 1fr) auto; gap: .1rem; padding: .1rem 0; font-size: .55rem; line-height: 1.05; }
-    .report-cover .aspect-section--cover .aspect-position dt,
+    .report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }
     .report-cover .aspect-section--cover .aspect-position dd { white-space: nowrap; }
     .report-cover .aspect-section--cover .aspect-position dd { font-size: .52rem; }
     .report-cover .aspect-section--cover .aspect-position-glyph { width: 1rem; }
@@ -42,7 +42,7 @@
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
     .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
-    .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.75; }
+    .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; text-indent: 1.5em; font-size: 1rem; line-height: 1.75; }
     .report-page p, .report-page li { orphans: 3; widows: 3; }
     .report-page h1, .report-page h2, .report-page h3, .report-block-title, .report-arrow-title { page-break-after: avoid; }
     .report-tail-group { page-break-inside: avoid; }
@@ -97,20 +97,16 @@
             <div class="report-cover-kicker"><span class="report-kicker">Dossier personal</span></div>
             <h1>Carta natal de<br>Pastora María Villarreal Muñiz</h1>
             <h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>
-            <table class="report-cover-visuals">
-                <tbody>
-                    <tr>
-                    <td class="report-cover-wheel-cell" colspan="2">
-                        <div class="report-cover-wheel" data-wheel-panel>
-                            <div class="report-cover-wheel-container" data-background-color="#fffdf9"  data-natal-wheel data-chart="{&quot;planets&quot;:{&quot;sun&quot;:{&quot;lon&quot;:185.3926334},&quot;moon&quot;:{&quot;lon&quot;:125.296276},&quot;mercury&quot;:{&quot;lon&quot;:202.3385281},&quot;venus&quot;:{&quot;lon&quot;:225.5017395},&quot;mars&quot;:{&quot;lon&quot;:294.6978523},&quot;jupiter&quot;:{&quot;lon&quot;:345.5748154},&quot;saturn&quot;:{&quot;lon&quot;:245.2091416},&quot;uranus&quot;:{&quot;lon&quot;:258.7915909},&quot;neptune&quot;:{&quot;lon&quot;:273.0927935},&quot;pluto&quot;:{&quot;lon&quot;:216.0387692},&quot;rahu&quot;:{&quot;lon&quot;:20.9933653},&quot;lilith&quot;:{&quot;lon&quot;:83.7661051},&quot;ketu&quot;:{&quot;lon&quot;:200.9933653}},&quot;houses&quot;:[{&quot;lon&quot;:47.2972972},{&quot;lon&quot;:74.9660419},{&quot;lon&quot;:97.0763708},{&quot;lon&quot;:119.1637326},{&quot;lon&quot;:145.6691567},{&quot;lon&quot;:181.8336997},{&quot;lon&quot;:227.2972972},{&quot;lon&quot;:254.9660419},{&quot;lon&quot;:277.0763708},{&quot;lon&quot;:299.1637326},{&quot;lon&quot;:325.6691567},{&quot;lon&quot;:1.8336997}],&quot;ascendant&quot;:47.2972972,&quot;midheaven&quot;:299.1637326,&quot;latitude&quot;:37.406758,&quot;houseSystem&quot;:&quot;placidus&quot;,&quot;backgroundColor&quot;:&quot;#fffdf9&quot;}" >
-                                                            </div>
-                            <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
-                        </div>
-                    </td>
-                    </tr>
-                    <tr>
-                        <td class="report-cover-matrix-cell" colspan="2">
-                            <section class="aspect-section aspect-section--cover" aria-labelledby="aspect-matrix-heading">
+            <div class="report-cover-visuals">
+                <div class="report-cover-wheel-cell">
+                    <div class="report-cover-wheel" data-wheel-panel>
+                        <div class="report-cover-wheel-container" data-background-color="#fffdf9"  data-natal-wheel data-chart="{&quot;planets&quot;:{&quot;sun&quot;:{&quot;lon&quot;:185.3926334},&quot;moon&quot;:{&quot;lon&quot;:125.296276},&quot;mercury&quot;:{&quot;lon&quot;:202.3385281},&quot;venus&quot;:{&quot;lon&quot;:225.5017395},&quot;mars&quot;:{&quot;lon&quot;:294.6978523},&quot;jupiter&quot;:{&quot;lon&quot;:345.5748154},&quot;saturn&quot;:{&quot;lon&quot;:245.2091416},&quot;uranus&quot;:{&quot;lon&quot;:258.7915909},&quot;neptune&quot;:{&quot;lon&quot;:273.0927935},&quot;pluto&quot;:{&quot;lon&quot;:216.0387692},&quot;rahu&quot;:{&quot;lon&quot;:20.9933653},&quot;lilith&quot;:{&quot;lon&quot;:83.7661051},&quot;ketu&quot;:{&quot;lon&quot;:200.9933653}},&quot;houses&quot;:[{&quot;lon&quot;:47.2972972},{&quot;lon&quot;:74.9660419},{&quot;lon&quot;:97.0763708},{&quot;lon&quot;:119.1637326},{&quot;lon&quot;:145.6691567},{&quot;lon&quot;:181.8336997},{&quot;lon&quot;:227.2972972},{&quot;lon&quot;:254.9660419},{&quot;lon&quot;:277.0763708},{&quot;lon&quot;:299.1637326},{&quot;lon&quot;:325.6691567},{&quot;lon&quot;:1.8336997}],&quot;ascendant&quot;:47.2972972,&quot;midheaven&quot;:299.1637326,&quot;latitude&quot;:37.406758,&quot;houseSystem&quot;:&quot;placidus&quot;,&quot;backgroundColor&quot;:&quot;#fffdf9&quot;}" >
+                                                    </div>
+                        <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
+                    </div>
+                </div>
+                <div class="report-cover-matrix-cell">
+                    <section class="aspect-section aspect-section--cover" aria-labelledby="aspect-matrix-heading">
     <h2 id="aspect-matrix-heading">Matriz de aspectos</h2>
             <div class="aspect-matrix-layout">
             <div class="aspect-matrix-scroll" role="region" aria-label="Matriz triangular desplazable" tabindex="0">
@@ -119,8 +115,8 @@
                     data-aspect-matrix
                     data-points="[{&quot;key&quot;:&quot;sun&quot;,&quot;label&quot;:&quot;Sol&quot;,&quot;glyph&quot;:&quot;\u2609&quot;,&quot;longitude&quot;:185.3926334,&quot;position&quot;:&quot;Libra 5\u00b0 23\u0027 33.5\u0022&quot;},{&quot;key&quot;:&quot;moon&quot;,&quot;label&quot;:&quot;Luna&quot;,&quot;glyph&quot;:&quot;\u263d&quot;,&quot;longitude&quot;:125.296276,&quot;position&quot;:&quot;Leo 5\u00b0 17\u0027 46.6\u0022&quot;},{&quot;key&quot;:&quot;mercury&quot;,&quot;label&quot;:&quot;Mercurio&quot;,&quot;glyph&quot;:&quot;\u263f&quot;,&quot;longitude&quot;:202.3385281,&quot;position&quot;:&quot;Libra 22\u00b0 20\u0027 18.7\u0022&quot;},{&quot;key&quot;:&quot;venus&quot;,&quot;label&quot;:&quot;Venus&quot;,&quot;glyph&quot;:&quot;\u2640&quot;,&quot;longitude&quot;:225.5017395,&quot;position&quot;:&quot;Escorpio 15\u00b0 30\u0027 6.3\u0022&quot;},{&quot;key&quot;:&quot;mars&quot;,&quot;label&quot;:&quot;Marte&quot;,&quot;glyph&quot;:&quot;\u2642&quot;,&quot;longitude&quot;:294.6978523,&quot;position&quot;:&quot;Capricornio 24\u00b0 41\u0027 52.3\u0022&quot;},{&quot;key&quot;:&quot;jupiter&quot;,&quot;label&quot;:&quot;J\u00fapiter&quot;,&quot;glyph&quot;:&quot;\u2643&quot;,&quot;longitude&quot;:345.5748154,&quot;position&quot;:&quot;Piscis 15\u00b0 34\u0027 29.3\u0022&quot;},{&quot;key&quot;:&quot;saturn&quot;,&quot;label&quot;:&quot;Saturno&quot;,&quot;glyph&quot;:&quot;\u2644&quot;,&quot;longitude&quot;:245.2091416,&quot;position&quot;:&quot;Sagitario 5\u00b0 12\u0027 32.9\u0022&quot;},{&quot;key&quot;:&quot;uranus&quot;,&quot;label&quot;:&quot;Urano&quot;,&quot;glyph&quot;:&quot;\u2645&quot;,&quot;longitude&quot;:258.7915909,&quot;position&quot;:&quot;Sagitario 18\u00b0 47\u0027 29.7\u0022&quot;},{&quot;key&quot;:&quot;neptune&quot;,&quot;label&quot;:&quot;Neptuno&quot;,&quot;glyph&quot;:&quot;\u2646&quot;,&quot;longitude&quot;:273.0927935,&quot;position&quot;:&quot;Capricornio 3\u00b0 5\u0027 34.1\u0022&quot;},{&quot;key&quot;:&quot;pluto&quot;,&quot;label&quot;:&quot;Plut\u00f3n&quot;,&quot;glyph&quot;:&quot;\u2647&quot;,&quot;longitude&quot;:216.0387692,&quot;position&quot;:&quot;Escorpio 6\u00b0 2\u0027 19.6\u0022&quot;},{&quot;key&quot;:&quot;rahu&quot;,&quot;label&quot;:&quot;Nodo norte&quot;,&quot;glyph&quot;:&quot;\u260a&quot;,&quot;longitude&quot;:20.9933653,&quot;position&quot;:&quot;Aries 20\u00b0 59\u0027 36.1\u0022&quot;},{&quot;key&quot;:&quot;ketu&quot;,&quot;label&quot;:&quot;Nodo sur&quot;,&quot;glyph&quot;:&quot;\u260b&quot;,&quot;longitude&quot;:200.9933653,&quot;position&quot;:&quot;Libra 20\u00b0 59\u0027 36.1\u0022&quot;},{&quot;key&quot;:&quot;lilith&quot;,&quot;label&quot;:&quot;Lilith&quot;,&quot;glyph&quot;:&quot;\u26b8&quot;,&quot;longitude&quot;:83.7661051,&quot;position&quot;:&quot;G\u00e9minis 23\u00b0 45\u0027 58.0\u0022&quot;},{&quot;key&quot;:&quot;ascendant&quot;,&quot;label&quot;:&quot;Ascendente&quot;,&quot;glyph&quot;:&quot;AC&quot;,&quot;longitude&quot;:47.2972972,&quot;position&quot;:&quot;Tauro 17\u00b0 17\u0027 50.3\u0022&quot;},{&quot;key&quot;:&quot;midheaven&quot;,&quot;label&quot;:&quot;Medio Cielo&quot;,&quot;glyph&quot;:&quot;MC&quot;,&quot;longitude&quot;:299.1637326,&quot;position&quot;:&quot;Capricornio 29\u00b0 9\u0027 49.4\u0022&quot;}]"
                 >
-                    <caption class="sr-only">Aspectos entre los puntos calculados de la carta natal</caption>
-                    <thead>
+                                            <caption class="sr-only">Aspectos entre los puntos calculados de la carta natal</caption>
+                                        <thead>
                         <tr>
                             <th scope="col"><span class="sr-only">Punto</span></th>
                                                             <th scope="col" title="Sol · Libra 5° 23&#039; 33.5&quot;">☉</th>
@@ -610,10 +606,8 @@
                                             </dl>
                 </aside>
                     </div>
-    </section>                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    </section>                </div>
+            </div>
             <div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div>
         </div>
         <div class="report-cover-meta">28/09/1986 · 21:00:00 · Sevilla, España<br>Zodiaco tropical · Casas placidus</div>

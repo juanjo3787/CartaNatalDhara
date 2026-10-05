@@ -176,8 +176,8 @@ class ReportPdfRefreshTest extends TestCase
         $this->assertStringContainsString('.report-cover-visuals { width: 100%;', $style);
         $this->assertStringContainsString('.report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }', $style);
         $this->assertStringContainsString('background: #fffdf9 !important;', $style);
-        $this->assertStringContainsString('width: 104mm;', $style);
-        $this->assertStringContainsString('height: 104mm;', $style);
+        $this->assertStringContainsString('width: 65mm;', $style);
+        $this->assertStringContainsString('height: 65mm;', $style);
         $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-positions { display: block;', $style);
     }
 }
