@@ -90,8 +90,12 @@ class PdfHeadingStylesTest extends TestCase
         $this->assertStringContainsString('<div class="report-cover-visuals">', $cover);
         $this->assertStringNotContainsString('<table class="report-cover-visuals">', $cover);
         $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }', $pdfStyle);
-        $this->assertStringContainsString('overflow: hidden;', $pdfStyle);
-        $this->assertStringContainsString('top: -32.5mm; left: -32.5mm; width: 130mm; height: 130mm;', $pdfStyle);
+        $this->assertStringContainsString('.report-cover-wheel-container { position: relative; width: 76mm; height: 76mm; overflow: hidden; background: transparent; }', $pdfStyle);
+        $this->assertStringContainsString('.report-cover-wheel-image { position: absolute; top: -12mm; left: -12mm; width: 100mm; height: 100mm; max-width: none; background: transparent; }', $pdfStyle);
+        $this->assertStringContainsString('.report-cover-matrix-cell { padding: 2mm 0 0 !important; }', $pdfStyle);
+        $this->assertStringContainsString('.report-cover h1 { margin: 1mm 0; font-size: 25pt; }', $pdfStyle);
+        $this->assertStringContainsString('.report-page.report-cover h2 { font-size: 13pt; line-height: 1.25; }', $pdfStyle);
+        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal,', $pdfStyle);
         $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }', $pdfStyle);
         $this->assertStringContainsString('padding: 0; border: 0; background: transparent;', $pdfStyle);
         $this->assertStringContainsString('.report-document .report-cover .aspect-section--cover *:not(.aspect-diagonal) { background-color: #fffdf9 !important; }', $pdfStyle);

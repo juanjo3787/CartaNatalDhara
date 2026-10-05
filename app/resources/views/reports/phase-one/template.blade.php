@@ -125,14 +125,17 @@
     .report-action-primary { background: #795c48; color: #fff; }
     @endif
     @if ($pdf)
-    .report-brand, .report-kicker { font-size: 9pt; }
+    .report-brand, .report-kicker { font-size: 8.5pt; }
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
-    .report-cover-matrix-cell { padding: 0 !important; }
-    .report-cover-wheel { display: block; width: 65mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
-    .report-cover-wheel-container { position: relative; width: 65mm; height: 65mm; overflow: hidden; background: transparent; }
-    .report-cover-wheel-image { position: absolute; top: -32.5mm; left: -32.5mm; width: 130mm; height: 130mm; max-width: none; background: transparent; }
+    .report-cover-matrix-cell { padding: 2mm 0 0 !important; }
+    .report-cover-wheel { display: block; width: 76mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
+    .report-cover-wheel-container { position: relative; width: 76mm; height: 76mm; overflow: hidden; background: transparent; }
+    .report-cover-wheel-image { position: absolute; top: -12mm; left: -12mm; width: 100mm; height: 100mm; max-width: none; background: transparent; }
     .report-cover-wheel-actions { display: none; }
+    .report-cover-kicker { margin-top: 1mm; }
+    .report-cover h1 { margin: 1mm 0; font-size: 25pt; }
+    .report-page.report-cover h2 { font-size: 13pt; line-height: 1.25; }
     .report-cover .aspect-section--cover { width: 128mm; max-width: 100%; margin: 0 auto; padding: 0; background: #fffdf9; }
     .report-cover .aspect-section--cover h2 { margin: 0 0 .5mm; font-size: 8pt; }
     .report-cover .aspect-section--cover .aspect-matrix-layout { display: table; width: 100%; table-layout: fixed; background: #fffdf9; }
@@ -151,6 +154,7 @@
     .report-cover .aspect-section--cover .aspect-matrix-table th,
     .report-cover .aspect-section--cover .aspect-matrix-table td { width: 2.7mm; height: 2.7mm; font-size: 6.5pt; }
     .report-cover .aspect-section--cover .aspect-matrix-table th,
+    .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal,
     .report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }
     .report-pdf-only { display: block; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
@@ -177,8 +181,8 @@
     .report-worksheet { page-break-inside: avoid; }
     .report-cover-kicker { margin-top: .5rem; }
     .report-cover h1 { margin: 2mm 0; font-size: 28pt; }
-    .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 24mm; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
-    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 11mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
+    .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 20mm; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
+    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 7mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-door { page-break-before: auto; }
