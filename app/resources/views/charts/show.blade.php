@@ -130,6 +130,7 @@
         <div
             class="nocturna-wheel-container"
             data-natal-wheel
+            data-background-color="#fffdf9"
             data-chart="{{ json_encode([
                 'planets' => $wheelPlanets,
                 'houses' => $wheelHouses,
@@ -137,6 +138,7 @@
                 'midheaven' => (float) ($snapshot['midheaven']['longitude'] ?? 0),
                 'latitude' => (float) $chart->birthData->place->latitude,
                 'houseSystem' => $houseSystem,
+                'backgroundColor' => '#fffdf9',
             ], JSON_HEX_APOS | JSON_HEX_QUOT) }}"
             style="width: min(100%, 760px); aspect-ratio: 1; margin: 0 auto;"
         ></div>

@@ -53,7 +53,7 @@ function baseWheelConfiguration(chartData) {
 			center: { x: 380, y: 380 },
 		},
 		theme: {
-			backgroundColor: chartData.backgroundColor || '#ffffff',
+			backgroundColor: chartData.backgroundColor || '#fffdf9',
 			textColor: '#374151',
 			lineColor: '#9ca3af',
 			lightLineColor: '#d1d5db',
@@ -266,7 +266,7 @@ window.getNatalWheelImage = async () => {
 			canvas.width = 1200;
 			canvas.height = 1200;
 			const context = canvas.getContext('2d');
-			context.fillStyle = wheelElement?.dataset.backgroundColor || '#ffffff';
+			context.fillStyle = wheelElement?.dataset.backgroundColor || '#fffdf9';
 			context.fillRect(0, 0, canvas.width, canvas.height);
 			context.drawImage(image, 0, 0, canvas.width, canvas.height);
 			return canvas.toDataURL('image/jpeg', 0.96);
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						center: { x: 380, y: 380 },
 					},
 					theme: {
-						backgroundColor: '#ffffff',
+						backgroundColor: chartData.backgroundColor || '#fffdf9',
 						textColor: '#374151',
 						lineColor: '#9ca3af',
 						lightLineColor: '#d1d5db',
