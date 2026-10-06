@@ -129,9 +129,9 @@
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: 3mm 0 0 !important; }
-    .report-cover-wheel { display: block; width: 105mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
-    .report-cover-wheel-container { width: 105mm; height: 105mm; background: transparent; }
-    .report-cover-wheel-image { display: block; width: 105mm; height: 105mm; max-width: none; background: transparent; }
+    .report-cover-wheel { display: block; width: 90mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
+    .report-cover-wheel-container { width: 90mm; height: 90mm; background: transparent; }
+    .report-cover-wheel-image { display: block; width: 90mm; height: 90mm; max-width: none; background: transparent; }
     .report-cover-wheel-actions { display: none; }
     .report-cover-kicker { margin-top: 1mm; }
     .report-cover h1 { margin: 1mm 0; font-size: 25pt; }
@@ -181,7 +181,7 @@
     .report-worksheet { page-break-inside: avoid; }
     .report-cover-kicker { margin-top: .5rem; }
     .report-cover h1 { margin: 2mm 0; font-size: 28pt; }
-    .report-cover-name { position: absolute; left: 10mm; right: 10mm; bottom: 10mm; margin: 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
+    .report-cover-name { position: static; margin: 5mm 0 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
     .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 3mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }

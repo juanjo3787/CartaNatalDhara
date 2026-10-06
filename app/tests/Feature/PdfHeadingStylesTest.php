@@ -90,11 +90,11 @@ class PdfHeadingStylesTest extends TestCase
         $this->assertStringContainsString('<div class="report-cover-visuals">', $cover);
         $this->assertStringNotContainsString('<table class="report-cover-visuals">', $cover);
         $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-wheel-container { width: 105mm; height: 105mm; background: transparent; }', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-wheel-image { display: block; width: 105mm; height: 105mm; max-width: none; background: transparent; }', $pdfStyle);
+        $this->assertStringContainsString('.report-cover-wheel-container { width: 90mm; height: 90mm; background: transparent; }', $pdfStyle);
+        $this->assertStringContainsString('.report-cover-wheel-image { display: block; width: 90mm; height: 90mm; max-width: none; background: transparent; }', $pdfStyle);
         $this->assertStringContainsString('.report-cover-matrix-cell { padding: 3mm 0 0 !important; }', $pdfStyle);
         $this->assertStringContainsString('height: 250mm;', $pdfStyle);
-        $this->assertStringContainsString('bottom: 10mm;', $pdfStyle);
+        $this->assertStringContainsString('.report-cover-name { position: static; margin: 5mm 0 0;', $pdfStyle);
         $this->assertStringContainsString('bottom: 3mm;', $pdfStyle);
         $this->assertStringContainsString('.report-cover h1 { margin: 1mm 0; font-size: 25pt; }', $pdfStyle);
         $this->assertStringContainsString('.report-page.report-cover h2 { font-size: 13pt; line-height: 1.25; }', $pdfStyle);
