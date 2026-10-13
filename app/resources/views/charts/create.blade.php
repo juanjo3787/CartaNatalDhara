@@ -177,8 +177,13 @@
                         }
 
                         const result = results[0];
-                        latitudeInput.value = result.lat;
-                        longitudeInput.value = result.lon;
+                        const latitude = Number(result.lat);
+                        const longitude = Number(result.lon);
+                        if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+                            throw new Error('La búsqueda devolvió coordenadas no válidas.');
+                        }
+                        latitudeInput.value = latitude.toFixed(6);
+                        longitudeInput.value = longitude.toFixed(6);
 
                         const addressParts = result.address || {};
                         const displayParts = (result.display_name || '').split(',').map((part) => part.trim()).filter(Boolean);

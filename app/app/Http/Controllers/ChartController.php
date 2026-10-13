@@ -55,6 +55,7 @@ class ChartController extends Controller
     public function store(Request $request, BirthDataNormalizer $normalizer, ChartService $chartService): RedirectResponse
     {
         $validated = $request->validate($this->registrationRules(), $this->registrationMessages());
+        $validated = $this->roundCoordinates($validated);
 
         $validated['local_date'] = \DateTime::createFromFormat('d/m/Y', $validated['local_date'])->format('Y-m-d');
 
@@ -178,6 +179,15 @@ class ChartController extends Controller
         return app(ReportJobController::class)->store(request(), $chart);
     }
 
+    private function roundCoordinates(array $validated): array
+    {
+        foreach (['latitude', 'longitude'] as $coordinate) {
+            $validated[$coordinate] = number_format(round((float) $validated[$coordinate], 6), 6, '.', '');
+        }
+
+        return $validated;
+    }
+
     private function registrationRules(?Person $person = null): array
     {
         $aliasRule = Rule::unique('people', 'alias');
@@ -280,6 +290,7 @@ class ChartController extends Controller
             $this->registrationRules($chart->person),
             $this->registrationMessages(),
         );
+        $validated = $this->roundCoordinates($validated);
 
         $validated['local_date'] = \DateTime::createFromFormat('d/m/Y', $validated['local_date'])->format('Y-m-d');
         $normalized = $normalizer->normalize($validated);

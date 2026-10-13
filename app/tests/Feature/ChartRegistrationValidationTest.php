@@ -77,6 +77,23 @@ class ChartRegistrationValidationTest extends TestCase
         $response->assertSessionHasErrors('houses');
     }
 
+    public function test_coordinates_are_rounded_before_storage_and_calculation(): void
+    {
+        $this->mock(\App\Contracts\AstrologyCalculator::class)
+            ->shouldReceive('calculate')->once()
+            ->withArgs(fn (\App\Domain\Astrology\BirthData $birth): bool => $birth->latitude === 40.416776 && $birth->longitude === -3.703791)
+            ->andReturn(new \App\Domain\Astrology\ChartSnapshot('2026-10-13', [], ['houses' => 'placidus']));
+
+        $this->post('/charts', $this->validRegistration([
+            'latitude' => '40.4167759',
+            'longitude' => '-3.7037908',
+        ]))->assertSessionHasNoErrors()->assertRedirect();
+
+        $place = \App\Models\Place::firstOrFail();
+        $this->assertSame('40.416776', $place->latitude);
+        $this->assertSame('-3.703791', $place->longitude);
+    }
+
     private function validRegistration(array $overrides = []): array
     {
         return array_merge([

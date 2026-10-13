@@ -37,6 +37,7 @@ Si al migrar aparece `Host 'x.x.x.x' is not allowed to connect to this MariaDB s
 - Nodo Verdadero.
 - Lilith como Luna Negra Media.
 - Orbes configurables en `config/astrology.php`.
+- Las coordenadas geograficas se redondean a seis decimales en el formulario y antes de guardarlas, de acuerdo con la precision de la tabla `places`. El calculo utiliza las mismas coordenadas persistidas.
 - Revolucion Solar usando la residencia actual (modulo posterior).
 
 ## Requisitos verificados en este equipo

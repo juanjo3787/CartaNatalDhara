@@ -221,6 +221,18 @@ function styleNatalWheel(wheelElement, chartData, secondaryPlanets, radii) {
 document.addEventListener('DOMContentLoaded', () => initializeDateTimeInputs());
 
 document.addEventListener('DOMContentLoaded', () => {
+	document.querySelectorAll('input[name="latitude"], input[name="longitude"]').forEach((input) => {
+		input.addEventListener('change', () => {
+			const value = input.valueAsNumber;
+			const limit = input.name === 'latitude' ? 90 : 180;
+			if (Number.isFinite(value) && Math.abs(value) <= limit) {
+				input.value = value.toFixed(6);
+			}
+		});
+	});
+});
+
+document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.card table').forEach(table => {
         const wrapper = document.createElement('div');
         wrapper.className = 'table-scroll';
