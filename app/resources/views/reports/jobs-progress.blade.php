@@ -1,8 +1,22 @@
 @auth
 <style>
-    #report-jobs .report-row { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .75rem; margin-block: .25rem; }
+    #report-jobs {
+        position: fixed; top: 1rem; left: 1rem; z-index: 10001;
+        display: grid; gap: .65rem; width: min(24rem, calc(100vw - 2rem));
+        max-height: calc(100vh - 2rem); overflow-y: auto;
+        font: .85rem/1.45 Aptos, 'Segoe UI', sans-serif;
+    }
+    #report-jobs:empty { display: none; }
+    #report-jobs .report-row, #report-jobs > p {
+        margin: 0; padding: .85rem 1rem; border: 1px solid #d8cabc;
+        border-radius: 6px; background: #fffdf9; color: #674b39;
+        box-shadow: 0 8px 24px rgba(68, 48, 33, .16);
+        overflow-wrap: anywhere;
+    }
+    #report-jobs .report-row { display: grid; gap: .35rem; }
+    #report-jobs > p { border-color: #f5b5b5; background: #fff2f2; color: #b42318; }
     #report-jobs .report-row[hidden] { display: none; }
-    #report-jobs .report-actions { display: inline-flex; align-items: center; gap: .75rem; }
+    #report-jobs .report-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem .75rem; }
     #report-jobs .report-actions a { white-space: nowrap; }
     #report-jobs .dismiss-report-button {
         display: inline-flex; align-items: center; justify-content: center;
@@ -15,7 +29,7 @@
     #report-jobs .dismiss-report-button:hover { background: #f1e9e1; color: #513b2b; box-shadow: none; transform: none; }
     #report-jobs .dismiss-report-button:focus-visible { outline: 2px solid #795c48; outline-offset: 2px; }
 </style>
-<aside id="report-jobs" aria-live="polite" style="margin:1rem 0"></aside>
+<aside id="report-jobs" aria-label="Progreso de los informes" aria-live="polite"></aside>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const panel = document.getElementById('report-jobs');

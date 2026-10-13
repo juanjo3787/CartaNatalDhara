@@ -3,6 +3,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
+test('report progress floats at the top left and stays hidden when empty', () => {
+    const source = fs.readFileSync(require('node:path').join(__dirname, '../../resources/views/reports/jobs-progress.blade.php'), 'utf8');
+    const style = source.split('<style>')[1].split('</style>')[0];
+    assert.match(style, /#report-jobs\s*\{[^}]*position:\s*fixed;\s*top:\s*1rem;\s*left:\s*1rem;/);
+    assert.match(style, /width:\s*min\(24rem,\s*calc\(100vw - 2rem\)\)/);
+    assert.match(style, /max-height:\s*calc\(100vh - 2rem\);\s*overflow-y:\s*auto/);
+    assert.match(style, /#report-jobs:empty\s*\{\s*display:\s*none;/);
+    assert.match(source, /<aside id="report-jobs" aria-label="Progreso de los informes" aria-live="polite"><\/aside>/);
+});
+
 test('dismiss hides immediately, rejects stale polls and restores a failed dismissal', async () => {
     class Element {
         constructor(tag) { this.tag = tag; this.children = []; this.style = {}; this.attributes = {}; }
