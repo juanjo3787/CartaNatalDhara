@@ -242,7 +242,7 @@ window.getNatalWheelImage = async () => {
 		copy.setAttribute('viewBox', '0 0 760 760');
 		const sourceNodes = [svg, ...svg.querySelectorAll('*')];
 		const copiedNodes = [copy, ...copy.querySelectorAll('*')];
-		const properties = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 'opacity', 'filter', 'font-family', 'font-size', 'font-weight', 'text-anchor'];
+		const properties = ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 'stroke-miterlimit', 'opacity', 'filter', 'clip-path', 'mask', 'font-family', 'font-size', 'font-weight', 'text-anchor', 'dominant-baseline', 'visibility', 'display'];
 		sourceNodes.forEach((source, index) => {
 			const computed = window.getComputedStyle(source);
 			const target = copiedNodes[index];
@@ -269,7 +269,7 @@ window.getNatalWheelImage = async () => {
 			context.fillStyle = wheelElement?.dataset.backgroundColor || '#fffdf9';
 			context.fillRect(0, 0, canvas.width, canvas.height);
 			context.drawImage(image, 0, 0, canvas.width, canvas.height);
-			return canvas.toDataURL('image/jpeg', 0.96);
+			return canvas.toDataURL('image/png');
 		} finally {
 			URL.revokeObjectURL(url);
 		}
@@ -280,6 +280,7 @@ window.getNatalWheelImage = async () => {
 document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('[data-wheel-panel]').forEach((panel) => {
 		const wheelElement = panel.querySelector('[data-natal-wheel]');
+		if (!wheelElement) return;
 		const chartData = JSON.parse(wheelElement.dataset.chart);
 		const modeSelect = panel.querySelector('[data-secondary-mode]');
 		if (!modeSelect) {

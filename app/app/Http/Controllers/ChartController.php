@@ -149,6 +149,7 @@ class ChartController extends Controller
         return view('charts.report', [
             'chart' => $chart,
             'report' => $reportService->build($chart),
+            'wheelImage' => $chart->natal_wheel_image,
         ]);
     }
 

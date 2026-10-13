@@ -234,12 +234,17 @@
             <div class="report-cover-visuals">
                 <div class="report-cover-wheel-cell">
                     <div class="report-cover-wheel" data-wheel-panel>
-                        <div class="report-cover-wheel-container" data-background-color="#fffdf9" @if (!$pdf) data-natal-wheel data-chart="{{ json_encode($coverWheelData + ['backgroundColor' => '#fffdf9'], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>
+                        <div class="report-cover-wheel-container nocturna-wheel-container" data-background-color="#fffdf9" @if (!$pdf && (empty($wheelImage) || ! str_starts_with($wheelImage, 'data:image/png;base64,'))) data-natal-wheel data-chart="{{ json_encode($coverWheelData + ['backgroundColor' => '#fffdf9'], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>
+                            @if (!$pdf && ! empty($wheelImage) && str_starts_with($wheelImage, 'data:image/png;base64,'))
+                                <img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">
+                            @endif
                             @if ($pdf && ! empty($wheelImage))
                                 <img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">
                             @endif
                         </div>
-                        <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
+                        @if ($pdf || empty($wheelImage) || ! str_starts_with($wheelImage, 'data:image/png;base64,'))
+                            <div class="report-cover-wheel-actions"><button type="button" class="report-wheel-refresh" data-refresh-natal-wheel>Actualizar rueda astrológica</button></div>
+                        @endif
                     </div>
                 </div>
                 <div class="report-cover-matrix-cell">

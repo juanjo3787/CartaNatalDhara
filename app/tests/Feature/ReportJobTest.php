@@ -62,6 +62,19 @@ class ReportJobTest extends TestCase
         $this->postJson($url)->assertStatus(409);
     }
 
+    public function test_report_job_persists_the_png_wheel_image_sent_by_the_browser(): void
+    {
+        $chart = $this->chart();
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $wheelImage = 'data:image/png;base64,'.base64_encode("\x89PNG\r\n\x1a\nwheel-image");
+
+        $this->postJson(route('reports.jobs.store', $chart), ['wheel_image' => $wheelImage])
+            ->assertStatus(202);
+
+        $this->assertSame($wheelImage, $chart->fresh()->natal_wheel_image);
+    }
+
     public function test_worker_completes_report_and_pdf_from_persisted_steps_without_http_session(): void
     {
         config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);

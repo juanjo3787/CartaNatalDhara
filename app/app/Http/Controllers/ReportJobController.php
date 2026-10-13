@@ -20,9 +20,15 @@ class ReportJobController extends Controller
         $image = $data['wheel_image'] ?? null;
         abort_unless($image || $chart->natal_wheel_image, 422, 'Abre la carta y pulsa Generar informe cuando la rueda termine de dibujarse. Debemos conservarla en el PDF.');
         if ($image) {
-            abort_unless(str_starts_with($image, 'data:image/jpeg;base64,'), 422);
-            $binary = base64_decode(substr($image, strlen('data:image/jpeg;base64,')), true);
-            abort_unless($binary !== false && str_starts_with($binary, "\xff\xd8\xff"), 422);
+            $prefix = str_starts_with($image, 'data:image/png;base64,')
+                ? 'data:image/png;base64,'
+                : (str_starts_with($image, 'data:image/jpeg;base64,') ? 'data:image/jpeg;base64,' : null);
+            abort_unless($prefix !== null, 422);
+            $binary = base64_decode(substr($image, strlen($prefix)), true);
+            $validSignature = $prefix === 'data:image/png;base64,'
+                ? $binary !== false && str_starts_with($binary, "\x89PNG\r\n\x1a\n")
+                : $binary !== false && str_starts_with($binary, "\xff\xd8\xff");
+            abort_unless($validSignature, 422);
         }
         $job = app(ReportJobService::class)->start($chart, $request->user()->id, array_values(array_intersect(['sol', 'luna', 'ascendente', 'descendente'], $doors)), $image);
 

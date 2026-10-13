@@ -107,6 +107,20 @@ class ReportPdfRefreshTest extends TestCase
         }
     }
 
+    public function test_web_report_reuses_the_saved_lossless_wheel_image(): void
+    {
+        $chart = $this->savedChart();
+        $wheelImage = 'data:image/png;base64,'.base64_encode("\x89PNG\r\n\x1a\nwheel-image");
+        $chart->update(['natal_wheel_image' => $wheelImage]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('charts.report', $chart))
+            ->assertOk()
+            ->assertSee('class="report-cover-wheel-container nocturna-wheel-container"', false)
+            ->assertSee('src="'.$wheelImage.'"', false)
+            ->assertDontSee('data-natal-wheel');
+    }
+
     public function test_dry_run_reports_missing_blocks_without_defaults_or_writes(): void
     {
         $ready = $this->savedChart();
