@@ -25,8 +25,9 @@ RUN make swetests
 FROM php:8.3-apache
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libzip-dev libicu-dev \
-    && docker-php-ext-install bcmath intl pdo_mysql zip pcntl \
+    && apt-get install -y --no-install-recommends git unzip libzip-dev libicu-dev libpng-dev \
+    && docker-php-ext-install bcmath intl pdo_mysql zip pcntl gd \
+    && php -r '$image = imagecreatetruecolor(1, 1); ob_start(); imagepng($image); $png = ob_get_clean(); if (imagecreatefromstring($png) === false) { throw new RuntimeException("PHP GD cannot decode PNG images."); }' \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ephemeris /opt/swisseph-src/bin/swetest /usr/local/bin/swetest

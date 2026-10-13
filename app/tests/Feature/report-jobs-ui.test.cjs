@@ -13,6 +13,12 @@ test('report progress floats at the top left and stays hidden when empty', () =>
     assert.match(source, /<aside id="report-jobs" aria-label="Progreso de los informes" aria-live="polite"><\/aside>/);
 });
 
+test('report progress is rendered outside the filtered content card at body level', () => {
+    const layout = fs.readFileSync(require('node:path').join(__dirname, '../../resources/views/layouts/app.blade.php'), 'utf8');
+    assert.match(layout, /<div class="card">\s*@yield\('content'\)\s*<\/div>\s*<\/div>\s*@if \(empty\(\$pdf\)\)\s*@include\('reports.jobs-progress'\)\s*@endif\s*@yield\('floating_actions'\)/);
+    assert.equal(layout.split("@include('reports.jobs-progress')").length - 1, 1);
+});
+
 test('dismiss hides immediately, rejects stale polls and restores a failed dismissal', async () => {
     class Element {
         constructor(tag) { this.tag = tag; this.children = []; this.style = {}; this.attributes = {}; }

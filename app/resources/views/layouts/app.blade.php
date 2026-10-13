@@ -591,12 +591,12 @@
         @endauth
         @endif
         <div class="card">
-            @if(empty($pdf))
-                @include('reports.jobs-progress')
-            @endif
             @yield('content')
         </div>
     </div>
+    @if (empty($pdf))
+        @include('reports.jobs-progress')
+    @endif
     @yield('floating_actions')
 
     <div class="app-loading" data-app-loading aria-live="polite" aria-busy="false">

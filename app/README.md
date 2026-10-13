@@ -41,6 +41,7 @@ Si al migrar aparece `Host 'x.x.x.x' is not allowed to connect to this MariaDB s
 
 ## Requisitos verificados en este equipo
 
+- El contenedor PHP incluye `gd` con soporte PNG para incrustar la rueda guardada en los PDF de Dompdf. La construccion comprueba la codificacion y decodificacion de PNG. Si una imagen Docker anterior no incluye GD, hay que reconstruir y recrear tanto `app` como `report-worker`; limpiar la cache no instala extensiones PHP. Tras desplegar, usar «Reintentar etapa pendiente» para continuar un PDF fallido sin regenerar los textos con IA.
 - Git 2.55
 - PHP 8.3.33 con `fileinfo`, `openssl`, `mbstring`, `curl`, `pdo_mysql` habilitados
 - Composer 2.10.3
