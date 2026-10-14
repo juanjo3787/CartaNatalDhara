@@ -295,11 +295,19 @@
             @endforeach
         </section>
     @endforeach
-    @if ($report['sections']['practice']['enabled'])<section class="report-page report-chapter" id="report-section-practice"><h1>05. Tu práctica de autoobservación</h1><p>{{ $report['practice']['intro'] }}</p><ol>@foreach ($report['practice']['weeks'] as $week)<li>{{ $week }}</li>@endforeach</ol>@foreach ($report['practice']['guidance'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach</section><section class="report-page report-chapter report-worksheet"><h1>Hoja de práctica diaria</h1><ol>@foreach ($report['practice']['sheet'] as $question)<li>{{ $question }}</li>@endforeach</ol></section>@endif
+    @if ($report['sections']['practice']['enabled'])
+        <section class="report-page report-chapter" id="report-section-practice">
+            <div class="report-door-heading report-chapter-heading"><h1>05. Tu práctica de autoobservación</h1></div>
+            <p>{{ $report['practice']['intro'] }}</p>
+            <ol>@foreach ($report['practice']['weeks'] as $week)<li>{{ $week }}</li>@endforeach</ol>
+            @foreach ($report['practice']['guidance'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach
+        </section>
+        <section class="report-page report-chapter report-worksheet"><h1>Hoja de práctica diaria</h1><ol>@foreach ($report['practice']['sheet'] as $question)<li>{{ $question }}</li>@endforeach</ol></section>
+    @endif
     <section class="report-page report-chapter"><h1>Cierre de tu primera lectura</h1>@foreach ($report['closing']['paragraphs'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<h3>Preguntas de autoobservación</h3><ul>@foreach ($report['closing']['questions'] as $question)<li>{{ $question }}</li>@endforeach</ul><div class="report-note"><strong>Frase de integración</strong><br>{{ $report['closing']['phrase'] }}</div></section>
     @if ($report['sections']['expansion']['enabled'])
         <section class="report-page report-chapter report-expansion-closing" id="report-section-expansion">
-            <h1>06. Ampliación de tu mapa interior</h1>
+            <div class="report-door-heading report-chapter-heading"><h1>06. Ampliación de tu mapa interior</h1></div>
             @foreach ($report['expansion'] as $item)
                 <div class="report-block"><h2 class="report-block-title">{{ $item['title'] }}</h2><div class="report-block-body"><p>{{ $item['content'] }}</p><p>{{ $item['example'] }}</p><p>{{ $item['question'] }}</p></div></div>
             @endforeach
@@ -310,5 +318,19 @@
             <ol>@foreach ($report['expansion_closing']['houses'] as $house)<li>Casa {{ $loop->iteration }} — {{ $house }}</li>@endforeach</ol>
         </section>
     @endif
-    @if ($report['sections']['technical']['enabled'])<section class="report-page report-chapter report-last-page" id="report-section-technical"><h1>07. Datos de la carta</h1><p>Nombre: {{ $report['name'] }}. Nacimiento facilitado: {{ $report['technical']['birth_date'] }}, a las {{ $report['technical']['birth_time'] }}, en {{ $report['technical']['place'] }}. La hora se interpreta como hora civil local.</p><p>{{ $report['technical']['legal_time_note'] }}</p><p>Coordenadas de referencia: {{ $report['technical']['coordinates'] }}. Zodiaco {{ $report['technical']['zodiac'] }}, posiciones geocéntricas y sistema de casas {{ $report['technical']['houses'] }}. Motor de cálculo: {{ $report['technical']['engine'] }}. Día juliano: {{ $report['technical']['julian_day'] }}.</p><p>{{ $report['technical']['house_assignment_note'] }}</p><h3>Posiciones planetarias</h3><table class="report-table"><thead><tr><th>Posición</th><th>Signo y grado</th><th>Casa</th></tr></thead><tbody>@foreach ($report['technical']['positions'] as $position)<tr><td>{{ $position['name'] }}</td><td>{{ $position['position'] }}</td><td>{{ $position['house'] }}</td></tr>@endforeach</tbody></table><h3>Cúspides de casas</h3><table class="report-table"><thead><tr><th>Casa</th><th>Cúspide</th></tr></thead><tbody>@foreach ($report['technical']['houses_table'] as $house)<tr><td>{{ $house['number'] }}</td><td>{{ $house['position'] }}</td></tr>@endforeach</tbody></table><p>{{ $report['technical']['venus_cusp_note'] }}</p><p>{{ $report['technical']['regencies_note'] }}</p></section>@endif
+    @if ($report['sections']['technical']['enabled'])
+        <section class="report-page report-chapter report-last-page" id="report-section-technical">
+            <div class="report-door-heading report-chapter-heading"><h1>07. Datos de la carta</h1></div>
+            <p>Nombre: {{ $report['name'] }}. Nacimiento facilitado: {{ $report['technical']['birth_date'] }}, a las {{ $report['technical']['birth_time'] }}, en {{ $report['technical']['place'] }}. La hora se interpreta como hora civil local.</p>
+            <p>{{ $report['technical']['legal_time_note'] }}</p>
+            <p>Coordenadas de referencia: {{ $report['technical']['coordinates'] }}. Zodiaco {{ $report['technical']['zodiac'] }}, posiciones geocéntricas y sistema de casas {{ $report['technical']['houses'] }}. Motor de cálculo: {{ $report['technical']['engine'] }}. Día juliano: {{ $report['technical']['julian_day'] }}.</p>
+            <p>{{ $report['technical']['house_assignment_note'] }}</p>
+            <h3>Posiciones planetarias</h3>
+            <table class="report-table"><thead><tr><th>Posición</th><th>Signo y grado</th><th>Casa</th></tr></thead><tbody>@foreach ($report['technical']['positions'] as $position)<tr><td>{{ $position['name'] }}</td><td>{{ $position['position'] }}</td><td>{{ $position['house'] }}</td></tr>@endforeach</tbody></table>
+            <h3>Cúspides de casas</h3>
+            <table class="report-table"><thead><tr><th>Casa</th><th>Cúspide</th></tr></thead><tbody>@foreach ($report['technical']['houses_table'] as $house)<tr><td>{{ $house['number'] }}</td><td>{{ $house['position'] }}</td></tr>@endforeach</tbody></table>
+            <p>{{ $report['technical']['venus_cusp_note'] }}</p>
+            <p>{{ $report['technical']['regencies_note'] }}</p>
+        </section>
+    @endif
 </div>

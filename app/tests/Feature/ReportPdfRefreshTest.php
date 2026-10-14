@@ -147,6 +147,7 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertStringContainsString('05. Tu práctica de autoobservación', $html);
             $this->assertStringContainsString('06. Ampliación de tu mapa interior', $html);
             $this->assertStringContainsString('07. Datos de la carta', $html);
+            $this->assertSame(3, substr_count($html, 'class="report-door-heading report-chapter-heading"><h1>'));
             $this->assertStringContainsString('<strong>¿Y si el bloqueo que sientes', $html);
             $this->assertStringContainsString('<strong>Ahora, la verdadera pregunta es:', $html);
             $this->assertStringContainsString('Casa 12 — Inconsciente', $html);
