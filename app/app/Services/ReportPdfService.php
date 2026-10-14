@@ -80,7 +80,7 @@ class ReportPdfService
                         'page' => $canvas->get_page_number(),
                         'x' => $x,
                         'y' => $y,
-                        'width' => $frame->get_width(),
+                        'width' => $frame->get_margin_width(),
                     ];
                 }
             },
