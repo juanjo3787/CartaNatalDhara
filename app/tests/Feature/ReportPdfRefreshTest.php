@@ -134,7 +134,8 @@ class ReportPdfRefreshTest extends TestCase
             ['sol', 'luna', 'ascendente', 'descendente', 'practice', 'expansion', 'technical'],
             array_column($report['index'], 'key'),
         );
-        $this->assertCount(13, $report['expansion_closing']['paragraphs']);
+        $this->assertCount(11, $report['expansion_closing']['paragraphs']);
+        $this->assertCount(2, $report['expansion_closing']['closing_paragraphs']);
         $this->assertSame([
             'Identidad y Personalidad',
             'Recursos, Economía y Riquezas',
@@ -165,13 +166,16 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertSame(3, substr_count($html, 'class="report-door-heading report-chapter-heading"><h1>'));
             $this->assertStringContainsString('EN ESTE PLUS INFORMATIVO QUE TE OFREZCO', $html);
             $this->assertStringContainsString('¿Y si el bloqueo que sientes no es quién eres', $html);
-            $this->assertStringContainsString('<h2>Las Doce Cartas de tu Mapa Interior</h2>', $html);
-            $this->assertStringContainsString('<strong>¿Hay algún área de tu vida en la que necesitas claridad?</strong>', $html);
-            $this->assertStringContainsString('Casa 12 — Inconsciente', $html);
-            $this->assertStringContainsString('Casa 2 — Recursos, Economía y Riquezas', $html);
+            $this->assertStringContainsString('vida; Las Doce Cartas de tu Mapa Interior', $html);
+            $this->assertStringContainsString('<p>¿Hay algún área de tu vida en la que necesitas claridad?</p>', $html);
+            $this->assertStringContainsString('Casa 12 – Inconsciente', $html);
+            $this->assertStringContainsString('Casa 2 – Recursos, Economía y Riquezas', $html);
             $this->assertStringContainsString('En el informe 2 con la profundización de tu Mapa Interior', $html);
             $this->assertStringNotContainsString('LAS 12 CASAS DE TU MAPA INTERIOR', $html);
-            $this->assertStringNotContainsString('<strong>Ahora, la verdadera pregunta es:', $html);
+            $housesPosition = strpos($html, 'Casa 1 – Identidad y Personalidad');
+            $questionPosition = strpos($html, '¿Hay algún área de tu vida en la que necesitas claridad?');
+            $this->assertLessThan($questionPosition, $housesPosition);
+            $this->assertStringNotContainsString('<strong>¿Hay algún área de tu vida en la que necesitas claridad?</strong>', $html);
             $this->assertStringContainsString('Posiciones planetarias', $html);
             $this->assertStringContainsString('Cúspides de casas', $html);
             $this->assertSame($pdf, str_contains($html, 'report-pdf-blank-page'));

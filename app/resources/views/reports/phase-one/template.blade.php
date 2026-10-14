@@ -318,8 +318,10 @@
             @foreach ($report['expansion_closing']['paragraphs'] as $paragraph)
                 <p>@if ($paragraph['emphasis'])<strong>{{ $paragraph['text'] }}</strong>@else{{ $paragraph['text'] }}@endif</p>
             @endforeach
-            <h2>{{ $report['expansion_closing']['houses_title'] }}</h2>
-            <ul>@foreach ($report['expansion_closing']['houses'] as $house)<li>Casa {{ $loop->iteration }} — {{ $house }}</li>@endforeach</ul>
+            <div class="report-expansion-houses">@foreach ($report['expansion_closing']['houses'] as $house)<p>Casa {{ $loop->iteration }} – {{ $house }}</p>@endforeach</div>
+            @foreach ($report['expansion_closing']['closing_paragraphs'] as $paragraph)
+                <p>{{ $paragraph }}</p>
+            @endforeach
         </section>
     @endif
     @if ($report['sections']['technical']['enabled'])

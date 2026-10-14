@@ -186,9 +186,11 @@ final class PhaseOneReportService
                     ['text' => 'Si al leer tu mapa interior hay una casa o un planeta que te ha removido más que los demás, ahí está la pista. (Esto no es casualidad). Donde tu energía está pidiendo ser colocada en su sitio, y entender por qué se ha quedado retenida ahí es lo que termina de revelar tu carta completa.', 'emphasis' => false],
                     ['text' => 'Ya conoces tu identidad esencial. Quién eres, cómo sientes y cómo te vinculas.', 'emphasis' => false],
                     ['text' => 'Ahora, la verdadera pregunta es: ¿dónde está pidiendo vivir todo eso? ¿En qué área de tu vida se está acumulando tu energía y en cuál se te está quedando bloqueada sin saber por qué?', 'emphasis' => true],
-                    ['text' => 'Cuando hayas integrado y buceado tú Informe 1 puedes pedir esta extensión de la intensidad de tu vida. Pero primero conócete a ti mism@ para comenzar con bases a resolver las diferentes áreas de tu vida;', 'emphasis' => false],
-                    ['text' => '¿Hay algún área de tu vida en la que necesitas claridad?', 'emphasis' => true],
-                    ['text' => 'En el informe 2 con la profundización de tu Mapa Interior puedes descubrir más orientación sobre tu vida. ¿List@?', 'emphasis' => true],
+                    ['text' => 'Cuando hayas integrado y buceado tú Informe 1 puedes pedir esta extensión de la intensidad de tu vida. Pero primero conócete a ti mism@ para comenzar con bases a resolver las diferentes áreas de tu vida; Las Doce Cartas de tu Mapa Interior', 'emphasis' => false],
+                ],
+                'closing_paragraphs' => [
+                    '¿Hay algún área de tu vida en la que necesitas claridad?',
+                    'En el informe 2 con la profundización de tu Mapa Interior puedes descubrir más orientación sobre tu vida. ¿List@?',
                 ],
                 'houses' => [
                     'Identidad y Personalidad',
@@ -204,7 +206,6 @@ final class PhaseOneReportService
                     'Amigos y Comunidad',
                     'Inconsciente',
                 ],
-                'houses_title' => 'Las Doce Cartas de tu Mapa Interior',
             ],
             'closing' => [
                 'paragraphs' => [
