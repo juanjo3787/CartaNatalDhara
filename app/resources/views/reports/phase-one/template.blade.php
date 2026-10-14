@@ -99,6 +99,7 @@
     .report-index-item strong { display: block; font-size: 1.05rem; }
     .report-index-item span { color: #766b64; font: .88rem Aptos, 'Segoe UI', sans-serif; }
     .report-index-page { display: none; color: #fff; font: 700 .9rem Aptos, 'Segoe UI', sans-serif; text-align: right; }
+    .report-index-item .report-index-page { color: #fff; }
     .report-gray { background: transparent; padding: 0; margin: 1.5rem 0; }
     .report-gray p { max-width: min(601px, calc(100% - 2rem)); font-family: Aptos, 'Segoe UI', sans-serif; font-size: .95rem; }
     .report-arrow-title { display: inline-block; padding: .65rem 0; background: transparent; font: 700 1rem Aptos, 'Segoe UI', sans-serif; }
@@ -161,7 +162,7 @@
     .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal,
     .report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }
     .report-pdf-only { display: block; }
-    .report-index-page { position: absolute; top: 1.1rem; right: 1rem; display: block; width: 1.5rem; }
+    .report-index-item .report-index-page { position: absolute; top: 1.1rem; right: 1rem; display: block; width: 1.5rem; color: #fff; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
     .report-pdf-indicator::before { content: '> '; color: #b58b67; }
     .report-arrow-title { display: inline-block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }

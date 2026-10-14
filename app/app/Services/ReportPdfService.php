@@ -76,7 +76,12 @@ class ReportPdfService
                 if ($node->hasAttribute('data-index-page-label')) {
                     $key = $node->getAttribute('data-index-page-label');
                     [$x, $y] = $frame->get_position();
-                    $indexPageLabels[$key] ??= ['page' => $canvas->get_page_number(), 'x' => $x, 'y' => $y];
+                    $indexPageLabels[$key] ??= [
+                        'page' => $canvas->get_page_number(),
+                        'x' => $x,
+                        'y' => $y,
+                        'width' => $frame->get_width(),
+                    ];
                 }
             },
         ]]);
@@ -93,7 +98,16 @@ class ReportPdfService
         $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels): void {
             foreach ($indexPageLabels as $key => $label) {
                 if ($label['page'] === $pageNumber && isset($indexStartPages[$key])) {
-                    $pageCanvas->text($label['x'], $label['y'], (string) $indexStartPages[$key], $font, 8.5, [0.54, 0.47, 0.41]);
+                    $pageText = (string) $indexStartPages[$key];
+                    $pageTextWidth = $pageCanvas->get_text_width($pageText, $font, 8.5);
+                    $pageCanvas->text(
+                        $label['x'] + $label['width'] - $pageTextWidth,
+                        $label['y'],
+                        $pageText,
+                        $font,
+                        8.5,
+                        [0.54, 0.47, 0.41],
+                    );
                 }
             }
 
