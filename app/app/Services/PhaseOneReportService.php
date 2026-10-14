@@ -126,15 +126,17 @@ final class PhaseOneReportService
             'luna' => ['title' => 'La Luna', 'summary' => 'Calidez, expresión y pertenencia', 'enabled' => true],
             'ascendente' => ['title' => 'El Ascendente', 'summary' => 'Ritmo, estabilidad y continuidad', 'enabled' => true],
             'descendente' => ['title' => 'El Descendente', 'summary' => 'Confianza, compromiso y autonomía', 'enabled' => true],
-            'practice' => ['title' => 'Práctica personal', 'summary' => 'Autoobservación y registro cotidiano', 'enabled' => true],
+            'practice' => ['title' => 'Tu práctica de autoobservación', 'summary' => 'Autoobservación y registro cotidiano', 'enabled' => true],
             'expansion' => ['title' => 'Ampliación de tu mapa interior', 'summary' => 'Otros recursos y funciones de la carta', 'enabled' => true],
             'technical' => ['title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado', 'enabled' => true],
         ];
         $index = [];
         foreach (array_filter($sections, fn (array $section): bool => $section['enabled'], ARRAY_FILTER_USE_BOTH) as $key => $section) {
+            $number = str_pad((string) (count($index) + 1), 2, '0', STR_PAD_LEFT);
+            $sections[$key]['number'] = $number;
             $index[] = [
                 'key' => $key,
-                'number' => str_pad((string) (count($index) + 1), 2, '0', STR_PAD_LEFT),
+                'number' => $number,
                 'title' => $section['title'],
                 'summary' => $section['summary'],
             ];

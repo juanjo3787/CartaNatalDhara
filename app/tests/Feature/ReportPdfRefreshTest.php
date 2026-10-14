@@ -134,6 +134,10 @@ class ReportPdfRefreshTest extends TestCase
             ['sol', 'luna', 'ascendente', 'descendente', 'practice', 'expansion', 'technical'],
             array_column($report['index'], 'key'),
         );
+        $this->assertSame(
+            ['El Sol', 'La Luna', 'El Ascendente', 'El Descendente', 'Tu práctica de autoobservación', 'Ampliación de tu mapa interior', 'Datos de la carta'],
+            array_column($report['index'], 'title'),
+        );
         $this->assertCount(11, $report['expansion_closing']['paragraphs']);
         $this->assertCount(2, $report['expansion_closing']['closing_paragraphs']);
         $this->assertSame([
@@ -158,11 +162,13 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertStringContainsString('href="#report-section-practice"', $html);
             $this->assertStringContainsString('href="#report-section-expansion"', $html);
             $this->assertStringContainsString('href="#report-section-technical"', $html);
-            $this->assertStringContainsString('<h1>Tu práctica de autoobservación</h1>', $html);
-            $this->assertStringContainsString('<h1>Ampliación de tu mapa interior</h1>', $html);
-            $this->assertStringContainsString('07. Datos de la carta', $html);
-            $this->assertStringNotContainsString('<h1>05. Tu práctica de autoobservación</h1>', $html);
-            $this->assertStringNotContainsString('<h1>06. Ampliación de tu mapa interior</h1>', $html);
+            $this->assertStringContainsString('<h1>01 - El Sol</h1>', $html);
+            $this->assertStringContainsString('<h1>02 - La Luna</h1>', $html);
+            $this->assertStringContainsString('<h1>03 - El Ascendente</h1>', $html);
+            $this->assertStringContainsString('<h1>04 - El Descendente</h1>', $html);
+            $this->assertStringContainsString('<h1>05 - Tu práctica de autoobservación</h1>', $html);
+            $this->assertStringContainsString('<h1>06 - Ampliación de tu mapa interior</h1>', $html);
+            $this->assertStringContainsString('<h1>07 - Datos de la carta</h1>', $html);
             $this->assertSame(3, substr_count($html, 'class="report-door-heading report-chapter-heading"><h1>'));
             $this->assertStringContainsString('EN ESTE PLUS INFORMATIVO QUE TE OFREZCO', $html);
             $this->assertStringContainsString('¿Y si el bloqueo que sientes no es quién eres', $html);
@@ -179,10 +185,10 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertStringContainsString('Posiciones planetarias', $html);
             $this->assertStringContainsString('Cúspides de casas', $html);
             $this->assertSame($pdf, str_contains($html, 'report-pdf-blank-page'));
-            $practicePosition = strpos($html, '<h1>Tu práctica de autoobservación</h1>');
-            $expansionPosition = strpos($html, '<h1>Ampliación de tu mapa interior</h1>');
+            $practicePosition = strpos($html, '<h1>05 - Tu práctica de autoobservación</h1>');
+            $expansionPosition = strpos($html, '<h1>06 - Ampliación de tu mapa interior</h1>');
             $offerPosition = strpos($html, 'EN ESTE PLUS INFORMATIVO QUE TE OFREZCO');
-            $technicalPosition = strpos($html, '07. Datos de la carta');
+            $technicalPosition = strpos($html, '07 - Datos de la carta');
             $this->assertLessThan($expansionPosition, $practicePosition);
             $this->assertLessThan($offerPosition, $expansionPosition);
             $this->assertLessThan($technicalPosition, $offerPosition);
@@ -200,6 +206,9 @@ class ReportPdfRefreshTest extends TestCase
                 $this->assertLessThan($secondBlankPagePosition, $indexPosition);
                 $this->assertLessThan($contentPosition, $secondBlankPagePosition);
                 $this->assertSame(2, substr_count($html, 'report-pdf-blank-page'));
+                $this->assertSame(7, substr_count($html, 'data-index-page-label='));
+            } else {
+                $this->assertStringNotContainsString('data-index-page-label=', $html);
             }
         }
     }

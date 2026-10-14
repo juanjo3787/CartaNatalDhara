@@ -91,12 +91,14 @@
     .report-page ul { list-style: disc; }
     .report-page ol { list-style: decimal; }
     .report-index-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .report-index-item { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.1rem; border-bottom: 1px solid #ded7cf; }
+    .report-index-item { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; padding: 1.1rem; border-bottom: 1px solid #ded7cf; }
+    .report-index-item-pdf { position: relative; padding-right: 3rem; }
     .report-index-item a { color: inherit; text-decoration: none; }
     .report-index-item a:hover strong, .report-index-item a:focus-visible strong { text-decoration: underline; }
     .report-index-number { font: 700 1.5rem Aptos, 'Segoe UI', sans-serif; color: #9d7659; }
     .report-index-item strong { display: block; font-size: 1.05rem; }
     .report-index-item span { color: #766b64; font: .88rem Aptos, 'Segoe UI', sans-serif; }
+    .report-index-page { display: none; color: #fff; font: 700 .9rem Aptos, 'Segoe UI', sans-serif; text-align: right; }
     .report-gray { background: transparent; padding: 0; margin: 1.5rem 0; }
     .report-gray p { max-width: min(601px, calc(100% - 2rem)); font-family: Aptos, 'Segoe UI', sans-serif; font-size: .95rem; }
     .report-arrow-title { display: inline-block; padding: .65rem 0; background: transparent; font: 700 1rem Aptos, 'Segoe UI', sans-serif; }
@@ -159,6 +161,7 @@
     .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal,
     .report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }
     .report-pdf-only { display: block; }
+    .report-index-page { position: absolute; top: 1.1rem; right: 1rem; display: block; width: 1.5rem; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
     .report-pdf-indicator::before { content: '> '; color: #b58b67; }
     .report-arrow-title { display: inline-block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
@@ -263,15 +266,15 @@
         <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
     @if ($pdf)<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>@endif
-    <section class="report-page"><h1>Recorrido del dossier</h1><p>Este informe puede recorrerse por bloques. Cada apartado propone una pregunta y una forma de observarla en la experiencia cotidiana.</p><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong><span>{{ $item['summary'] }}</span></a></div>@endforeach</div></section>
+    <section class="report-page"><h1>Recorrido del dossier</h1><p>Este informe puede recorrerse por bloques. Cada apartado propone una pregunta y una forma de observarla en la experiencia cotidiana.</p><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong><span>{{ $item['summary'] }}</span></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">00</span>@endif</div>@endforeach</div></section>
     @if ($pdf)<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>@endif
     <section class="report-page"><h1>Tu primera lectura</h1><div class="report-gray">@foreach ($report['shared']['intro'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div><h2 class="report-section-title">Las cuatro puertas</h2><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     <section class="report-page"><div class="report-arrow-title report-door-intro-title">UNA BREVE INTRODUCCIÓN A TUS CUATRO PUERTAS</div>@foreach ($report['door_introduction'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<table class="report-table report-doors-table"><tr><th>Puerta</th><th>Posición</th><th>Pregunta</th></tr>@foreach ($report['doors'] as $door)@continue(!($report['sections'][$door['key']]['enabled'] ?? false))<tr><td>{{ str_replace(['Primera puerta el ', 'Segunda puerta la ', 'Tercera puerta el ', 'Cuarta puerta el '], '', $door['title']) }}</td><td>{{ $door['position'] }}</td><td>{{ $door['question'] }}</td></tr>@endforeach</table><div class="report-arrow-title">ESTADOS DE CADA PUERTA: Cómo reconocer armonía, defecto y exceso</div><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     <section class="report-page"><h1>Conclusiones importantes para tu lectura</h1><div class="report-gray">@foreach ($report['shared']['conclusions'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>
     @foreach ($report['doors'] as $door)
         @continue(!($report['sections'][$door['key']]['enabled'] ?? false))
-        <section class="report-page report-door" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}">
-            <div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
+        <section class="report-page report-door" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}">
+            <div class="report-door-heading"><h1>{{ $report['sections'][$door['key']]['number'] }} - {{ $report['sections'][$door['key']]['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
             @foreach ($door['blocks'] as $block => $paragraphs)
                 @if ($block !== 'shared_intro')
                     @if (isset($door['states'][$block]))
@@ -297,8 +300,8 @@
         </section>
     @endforeach
     @if ($report['sections']['practice']['enabled'])
-        <section class="report-page report-chapter" id="report-section-practice">
-            <div class="report-door-heading report-chapter-heading"><h1>Tu práctica de autoobservación</h1></div>
+        <section class="report-page report-chapter" id="report-section-practice" data-index-key="practice">
+            <div class="report-door-heading report-chapter-heading"><h1>{{ $report['sections']['practice']['number'] }} - {{ $report['sections']['practice']['title'] }}</h1></div>
             <p>{{ $report['practice']['intro'] }}</p>
             <ol>@foreach ($report['practice']['weeks'] as $week)<li>{{ $week }}</li>@endforeach</ol>
             @foreach ($report['practice']['guidance'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach
@@ -307,8 +310,8 @@
     @endif
     <section class="report-page report-chapter"><h1>Cierre de tu primera lectura</h1>@foreach ($report['closing']['paragraphs'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<h3>Preguntas de autoobservación</h3><ul>@foreach ($report['closing']['questions'] as $question)<li>{{ $question }}</li>@endforeach</ul><div class="report-note"><strong>Frase de integración</strong><br>{{ $report['closing']['phrase'] }}</div></section>
     @if ($report['sections']['expansion']['enabled'])
-        <section class="report-page report-chapter report-expansion-closing" id="report-section-expansion">
-            <div class="report-door-heading report-chapter-heading"><h1>Ampliación de tu mapa interior</h1></div>
+        <section class="report-page report-chapter report-expansion-closing" id="report-section-expansion" data-index-key="expansion">
+            <div class="report-door-heading report-chapter-heading"><h1>{{ $report['sections']['expansion']['number'] }} - {{ $report['sections']['expansion']['title'] }}</h1></div>
             @foreach ($report['expansion'] as $item)
                 <div class="report-block"><h2 class="report-block-title">{{ $item['title'] }}</h2><div class="report-block-body"><p>{{ $item['content'] }}</p><p>{{ $item['example'] }}</p><p>{{ $item['question'] }}</p></div></div>
             @endforeach
@@ -325,8 +328,8 @@
         </section>
     @endif
     @if ($report['sections']['technical']['enabled'])
-        <section class="report-page report-chapter report-last-page" id="report-section-technical">
-            <div class="report-door-heading report-chapter-heading"><h1>07. Datos de la carta</h1></div>
+        <section class="report-page report-chapter report-last-page" id="report-section-technical" data-index-key="technical">
+            <div class="report-door-heading report-chapter-heading"><h1>{{ $report['sections']['technical']['number'] }} - {{ $report['sections']['technical']['title'] }}</h1></div>
             <p>Nombre: {{ $report['name'] }}. Nacimiento facilitado: {{ $report['technical']['birth_date'] }}, a las {{ $report['technical']['birth_time'] }}, en {{ $report['technical']['place'] }}. La hora se interpreta como hora civil local.</p>
             <p>{{ $report['technical']['legal_time_note'] }}</p>
             <p>Coordenadas de referencia: {{ $report['technical']['coordinates'] }}. Zodiaco {{ $report['technical']['zodiac'] }}, posiciones geocéntricas y sistema de casas {{ $report['technical']['houses'] }}. Motor de cálculo: {{ $report['technical']['engine'] }}. Día juliano: {{ $report['technical']['julian_day'] }}.</p>

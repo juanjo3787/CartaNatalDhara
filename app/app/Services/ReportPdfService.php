@@ -45,35 +45,58 @@ class ReportPdfService
         $dompdf = $wrapper->getDomPDF();
         $renderedDoors = [];
         $doorStartPages = [];
+        $indexStartPages = [];
+        $indexPageLabels = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
             ->pluck('key')
             ->all();
+        $expectedIndexKeys = array_column($report['index'], 'key');
         $dompdf->setCallbacks([[
             'event' => 'begin_frame',
-            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages): void {
+            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels): void {
                 $node = $frame->get_node();
-                if (! $node instanceof \DOMElement || ! $node->hasAttribute('data-door-key')) {
+                if (! $node instanceof \DOMElement) {
                     return;
                 }
 
-                $door = $node->getAttribute('data-door-key');
-                if (isset($renderedDoors[$door])) {
-                    return;
+                if ($node->hasAttribute('data-door-key')) {
+                    $door = $node->getAttribute('data-door-key');
+                    if (! isset($renderedDoors[$door])) {
+                        $renderedDoors[$door] = true;
+                        $doorStartPages[$door] = $canvas->get_page_number();
+                    }
                 }
-                $renderedDoors[$door] = true;
 
-                $doorStartPages[$door] = $canvas->get_page_number();
+                if ($node->hasAttribute('data-index-key')) {
+                    $key = $node->getAttribute('data-index-key');
+                    $indexStartPages[$key] ??= $canvas->get_page_number();
+                }
+
+                if ($node->hasAttribute('data-index-page-label')) {
+                    $key = $node->getAttribute('data-index-page-label');
+                    [$x, $y] = $frame->get_position();
+                    $indexPageLabels[$key] ??= ['page' => $canvas->get_page_number(), 'x' => $x, 'y' => $y];
+                }
             },
         ]]);
         $dompdf->render();
         if (array_keys($doorStartPages) !== $expectedDoors) {
             throw new \RuntimeException('No se han paginado todas las puertas activas del informe.');
         }
+        if (array_keys($indexStartPages) !== $expectedIndexKeys || array_keys($indexPageLabels) !== $expectedIndexKeys) {
+            throw new \RuntimeException('No se pudieron determinar las páginas de todos los apartados del índice.');
+        }
         $canvas = $dompdf->getCanvas();
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
         $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
-        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header): void {
+        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels): void {
+            foreach ($indexPageLabels as $key => $label) {
+                if ($label['page'] === $pageNumber && isset($indexStartPages[$key])) {
+                    $pageCanvas->text($label['x'], $label['y'], (string) $indexStartPages[$key], $font, 8.5, [0.54, 0.47, 0.41]);
+                }
+            }
+
             if (in_array($pageNumber, [1, 2, 4], true)) {
                 return;
             }
@@ -93,6 +116,7 @@ class ReportPdfService
         Log::info('Phase 1 PDF rendered.', [
             'chart_id' => $chart->id,
             'pages' => $canvas->get_page_count(),
+            'index_pages' => $indexStartPages,
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);
 
