@@ -4,7 +4,7 @@ namespace App\Services;
 
 final class PdfPageGeometry
 {
-    public const VERSION = 8;
+    public const VERSION = 9;
 
     public const MARGIN_PT = 51.023622047244096;
 

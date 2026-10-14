@@ -8,6 +8,7 @@ use App\Services\ReportJobService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ProcessReportStep implements ShouldQueue
@@ -46,10 +47,33 @@ class ProcessReportStep implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        ReportJob::whereKey($this->reportJobId)->where('cursor', $this->cursor)->whereNotIn('status', ['completed', 'failed'])->update([
-            'status' => 'failed', 'active_chart_id' => null, 'completed_at' => now(),
-            'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : 'REPORT_STEP_FAILED',
-            'error_message' => 'No se pudo completar esta etapa. Puedes reintentar sin repetir las etapas guardadas.',
-        ]);
+        $job = ReportJob::whereKey($this->reportJobId)
+            ->where('cursor', $this->cursor)
+            ->whereNotIn('status', ['completed', 'failed'])
+            ->first(['id', 'chart_id', 'cursor', 'current_section']);
+        if (! $job) {
+            return;
+        }
+
+        $updated = ReportJob::whereKey($job->id)
+            ->where('cursor', $this->cursor)
+            ->whereNotIn('status', ['completed', 'failed'])
+            ->update([
+                'status' => 'failed', 'active_chart_id' => null, 'completed_at' => now(),
+                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : 'REPORT_STEP_FAILED',
+                'error_message' => 'No se pudo completar esta etapa. Puedes reintentar sin repetir las etapas guardadas.',
+            ]);
+
+        if ($updated) {
+            Log::error('Report generation step failed permanently.', [
+                'report_job_id' => $job->id,
+                'chart_id' => $job->chart_id,
+                'cursor' => $job->cursor,
+                'current_section' => $job->current_section,
+                'exception_class' => $exception ? $exception::class : null,
+                'exception_message' => $exception?->getMessage(),
+                'exception_code' => $exception?->getCode(),
+            ]);
+        }
     }
 }

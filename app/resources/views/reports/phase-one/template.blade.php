@@ -181,7 +181,7 @@
     .report-cover { display: block; position: relative; min-height: 0; height: 250mm; padding: 4mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
     .report-cover > div:first-child { display: block; }
     .report-worksheet { page-break-inside: avoid; }
-    .report-pdf-blank-page { height: 260mm; min-height: 0; padding: 0; border: 0; page-break-before: always; page-break-after: always; }
+    .report-pdf-blank-page { height: 260mm; min-height: 0; padding: 0; border: 0; page-break-inside: avoid; }
     .report-expansion-closing > h2 { margin-top: 2rem; }
     .report-expansion-closing > p { page-break-inside: avoid; }
     .report-expansion-closing > ol > li { page-break-inside: avoid; }
@@ -262,6 +262,7 @@
         </div>
         <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
+    @if ($pdf)<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>@endif
     <section class="report-page"><h1>Recorrido del dossier</h1><p>Este informe puede recorrerse por bloques. Cada apartado propone una pregunta y una forma de observarla en la experiencia cotidiana.</p><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong><span>{{ $item['summary'] }}</span></a></div>@endforeach</div></section>
     @if ($pdf)<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>@endif
     <section class="report-page"><h1>Tu primera lectura</h1><div class="report-gray">@foreach ($report['shared']['intro'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div><h2 class="report-section-title">Las cuatro puertas</h2><div class="report-gray">@foreach ($report['shared']['states'] as $paragraph)<p>{!! $paragraph !!}</p>@endforeach</div></section>

@@ -108,7 +108,7 @@ final class ReportStructureTest extends TestCase
         }
     }
 
-    public function test_pdf_blank_page_after_index_is_a_single_physical_page(): void
+    public function test_pdf_has_one_blank_page_after_cover_and_another_after_index(): void
     {
         $html = view('layouts.app', ['pdf' => true])->render();
         $template = file_get_contents(resource_path('views/reports/phase-one/template.blade.php'));
@@ -116,6 +116,7 @@ final class ReportStructureTest extends TestCase
         $css = Blade::render($style, ['pdf' => true]);
         $content = '<div class="report-document">'
             .'<section class="report-page report-cover"></section>'
+            .'<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>'
             .'<section class="report-page"><h1>Índice</h1></section>'
             .'<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>'
             .'<section class="report-page report-last-page"><h1>Comienzo del contenido</h1></section>'
@@ -124,7 +125,7 @@ final class ReportStructureTest extends TestCase
         $dompdf->loadHtml(str_replace('</body>', $css.$content.'</body>', $html));
         $dompdf->render();
 
-        $this->assertSame(4, $dompdf->getCanvas()->get_page_count());
+        $this->assertSame(5, $dompdf->getCanvas()->get_page_count());
         $this->assertStringContainsString('height: 260mm;', $css);
         $this->assertStringContainsString('page-break-after: always;', $css);
     }

@@ -164,11 +164,15 @@ class ReportPdfRefreshTest extends TestCase
             }
             if ($pdf) {
                 $indexPosition = strpos($html, 'Recorrido del dossier');
-                $blankPagePosition = strpos($html, 'report-pdf-blank-page');
+                $firstBlankPagePosition = strpos($html, 'report-pdf-blank-page');
+                $secondBlankPagePosition = strpos($html, 'report-pdf-blank-page', $firstBlankPagePosition + 1);
+                $coverPosition = strpos($html, 'Primer informe de la fase 1');
                 $contentPosition = strpos($html, 'Tu primera lectura');
-                $this->assertLessThan($blankPagePosition, $indexPosition);
-                $this->assertLessThan($contentPosition, $blankPagePosition);
-                $this->assertSame(1, substr_count($html, 'report-pdf-blank-page'));
+                $this->assertLessThan($firstBlankPagePosition, $coverPosition);
+                $this->assertLessThan($indexPosition, $firstBlankPagePosition);
+                $this->assertLessThan($secondBlankPagePosition, $indexPosition);
+                $this->assertLessThan($contentPosition, $secondBlankPagePosition);
+                $this->assertSame(2, substr_count($html, 'report-pdf-blank-page'));
             }
         }
     }

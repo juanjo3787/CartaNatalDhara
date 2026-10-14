@@ -13,6 +13,7 @@ use App\Services\ReportJobService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -131,6 +132,14 @@ class ReportJobTest extends TestCase
         $service->process($job);
         $saved = $job->drafts;
         $step = new ProcessReportStep($job->id, $job->cursor);
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(fn (string $message, array $context): bool => $message === 'Report generation step failed permanently.'
+                && $context['report_job_id'] === $job->id
+                && $context['chart_id'] === $job->chart_id
+                && $context['current_section'] === 'sol.sign'
+                && $context['exception_class'] === AiGenerationException::class
+                && $context['exception_message'] === 'Rate limited');
         try {
             $step->handle($service);
             $this->fail('Expected rate limit');
