@@ -121,6 +121,57 @@ class ReportPdfRefreshTest extends TestCase
             ->assertDontSee('data-natal-wheel');
     }
 
+    public function test_index_numbering_expansion_closure_technical_data_and_pdf_only_blank_page(): void
+    {
+        $chart = $this->savedChart();
+        $report = app(PhaseOneReportService::class)->build($chart);
+
+        $this->assertSame(
+            ['01', '02', '03', '04', '05', '06', '07'],
+            array_column($report['index'], 'number'),
+        );
+        $this->assertSame(
+            ['sol', 'luna', 'ascendente', 'descendente', 'practice', 'expansion', 'technical'],
+            array_column($report['index'], 'key'),
+        );
+        $this->assertCount(9, $report['expansion_closing']['paragraphs']);
+        $this->assertCount(12, $report['expansion_closing']['houses']);
+        $this->assertCount(12, $report['technical']['houses_table']);
+        $wheelImage = $chart->natal_wheel_image;
+
+        foreach ([false, true] as $pdf) {
+            $html = view('reports.phase-one.template', compact('chart', 'report', 'pdf', 'wheelImage'))->render();
+            $this->assertStringContainsString('href="#report-section-practice"', $html);
+            $this->assertStringContainsString('href="#report-section-expansion"', $html);
+            $this->assertStringContainsString('href="#report-section-technical"', $html);
+            $this->assertStringContainsString('05. Tu práctica de autoobservación', $html);
+            $this->assertStringContainsString('06. Ampliación de tu mapa interior', $html);
+            $this->assertStringContainsString('07. Datos de la carta', $html);
+            $this->assertStringContainsString('<strong>¿Y si el bloqueo que sientes', $html);
+            $this->assertStringContainsString('<strong>Ahora, la verdadera pregunta es:', $html);
+            $this->assertStringContainsString('Casa 12 — Inconsciente', $html);
+            $this->assertStringContainsString('Posiciones planetarias', $html);
+            $this->assertStringContainsString('Cúspides de casas', $html);
+            $this->assertSame($pdf, str_contains($html, 'report-pdf-blank-page'));
+            $practicePosition = strpos($html, '05. Tu práctica de autoobservación');
+            $expansionPosition = strpos($html, '06. Ampliación de tu mapa interior');
+            $technicalPosition = strpos($html, '07. Datos de la carta');
+            $this->assertLessThan($expansionPosition, $practicePosition);
+            $this->assertLessThan($technicalPosition, $expansionPosition);
+            foreach ($report['expansion_closing']['houses'] as $index => $house) {
+                $this->assertStringContainsString('Casa '.($index + 1).' — '.$house, $html);
+            }
+            if ($pdf) {
+                $indexPosition = strpos($html, 'Recorrido del dossier');
+                $blankPagePosition = strpos($html, 'report-pdf-blank-page');
+                $contentPosition = strpos($html, 'Tu primera lectura');
+                $this->assertLessThan($blankPagePosition, $indexPosition);
+                $this->assertLessThan($contentPosition, $blankPagePosition);
+                $this->assertSame(1, substr_count($html, 'report-pdf-blank-page'));
+            }
+        }
+    }
+
     public function test_dry_run_reports_missing_blocks_without_defaults_or_writes(): void
     {
         $ready = $this->savedChart();

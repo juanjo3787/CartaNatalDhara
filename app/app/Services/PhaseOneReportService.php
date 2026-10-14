@@ -126,13 +126,14 @@ final class PhaseOneReportService
             'luna' => ['title' => 'La Luna', 'summary' => 'Calidez, expresión y pertenencia', 'enabled' => true],
             'ascendente' => ['title' => 'El Ascendente', 'summary' => 'Ritmo, estabilidad y continuidad', 'enabled' => true],
             'descendente' => ['title' => 'El Descendente', 'summary' => 'Confianza, compromiso y autonomía', 'enabled' => true],
-            'expansion' => ['title' => 'Ampliación de tu mapa interior', 'summary' => 'Otros recursos y funciones de la carta', 'enabled' => $expansion !== []],
             'practice' => ['title' => 'Práctica personal', 'summary' => 'Autoobservación y registro cotidiano', 'enabled' => true],
+            'expansion' => ['title' => 'Ampliación de tu mapa interior', 'summary' => 'Otros recursos y funciones de la carta', 'enabled' => true],
             'technical' => ['title' => 'Datos de la carta', 'summary' => 'Posiciones, casas y horario verificado', 'enabled' => true],
         ];
         $index = [];
-        foreach (array_filter($sections, fn (array $section): bool => $section['enabled']) as $section) {
+        foreach (array_filter($sections, fn (array $section): bool => $section['enabled'], ARRAY_FILTER_USE_BOTH) as $key => $section) {
             $index[] = [
+                'key' => $key,
                 'number' => str_pad((string) (count($index) + 1), 2, '0', STR_PAD_LEFT),
                 'title' => $section['title'],
                 'summary' => $section['summary'],
@@ -172,6 +173,24 @@ final class PhaseOneReportService
                 ],
             ],
             'expansion' => $expansion,
+            'expansion_closing' => [
+                'paragraphs' => [
+                    ['text' => 'En el Informe 1 viste tu identidad. Aquí, en esta ampliación, has visto ahora dónde pide vivir.', 'emphasis' => false],
+                    ['text' => '¿Y si el bloqueo que sientes no es quién eres, sino en qué casa no te estás permitiendo habitar?', 'emphasis' => true],
+                    ['text' => 'Si al leer tu mapa interior hay una casa o un planeta que te ha removido más que los demás, ahí está la pista.', 'emphasis' => false],
+                    ['text' => 'No es casualidad. Es tu energía pidiendo ser colocada en su sitio, y entender por qué se ha quedado retenida ahí es lo que termina de revelar tu carta completa.', 'emphasis' => false],
+                    ['text' => 'Ya conoces tu identidad esencial. Quién eres, cómo sientes y cómo te vinculas.', 'emphasis' => false],
+                    ['text' => 'Ahora, la verdadera pregunta es: ¿dónde está pidiendo vivir todo eso?', 'emphasis' => true],
+                    ['text' => '¿En qué área de tu vida se está acumulando tu energía y en cuál se te está quedando bloqueada sin saber por qué?', 'emphasis' => false],
+                    ['text' => 'Cuando hayas integrado y buceado en tu Informe 1, puedes pedir esta extensión de la intensidad de tu vida.', 'emphasis' => false],
+                    ['text' => 'Pero primero conócete a ti mism@ para comenzar con bases a resolver las diferentes áreas de tu vida:', 'emphasis' => false],
+                ],
+                'houses_title' => 'LAS 12 CASAS DE TU MAPA INTERIOR',
+                'houses' => [
+                    'Identidad', 'Recursos', 'Comunicación', 'Hogar', 'Creatividad', 'Trabajo',
+                    'Pareja', 'Transformación', 'Expansión', 'Vocación', 'Proyectos', 'Inconsciente',
+                ],
+            ],
             'closing' => [
                 'paragraphs' => [
                     'Este recorrido permite distinguir necesidades que pueden aparecer juntas sin ser iguales. Tu voluntad puede buscar un acuerdo justo; tu emoción, calidez; tu manera de comenzar, una base concreta; tus vínculos, profundidad y coherencia. Escucharlas por separado ayuda a reunirlas con más libertad.',

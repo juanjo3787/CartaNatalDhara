@@ -74,7 +74,7 @@ class ReportPdfService
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
         $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
         $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header): void {
-            if ($pageNumber === 1) {
+            if (in_array($pageNumber, [1, 3], true)) {
                 return;
             }
             $width = $pageCanvas->get_width();
