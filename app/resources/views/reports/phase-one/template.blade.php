@@ -298,7 +298,7 @@
     @endforeach
     @if ($report['sections']['practice']['enabled'])
         <section class="report-page report-chapter" id="report-section-practice">
-            <div class="report-door-heading report-chapter-heading"><h1>05. Tu práctica de autoobservación</h1></div>
+            <div class="report-door-heading report-chapter-heading"><h1>Tu práctica de autoobservación</h1></div>
             <p>{{ $report['practice']['intro'] }}</p>
             <ol>@foreach ($report['practice']['weeks'] as $week)<li>{{ $week }}</li>@endforeach</ol>
             @foreach ($report['practice']['guidance'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach
@@ -308,7 +308,7 @@
     <section class="report-page report-chapter"><h1>Cierre de tu primera lectura</h1>@foreach ($report['closing']['paragraphs'] as $paragraph)<p>{{ $paragraph }}</p>@endforeach<h3>Preguntas de autoobservación</h3><ul>@foreach ($report['closing']['questions'] as $question)<li>{{ $question }}</li>@endforeach</ul><div class="report-note"><strong>Frase de integración</strong><br>{{ $report['closing']['phrase'] }}</div></section>
     @if ($report['sections']['expansion']['enabled'])
         <section class="report-page report-chapter report-expansion-closing" id="report-section-expansion">
-            <div class="report-door-heading report-chapter-heading"><h1>06. Ampliación de tu mapa interior</h1></div>
+            <div class="report-door-heading report-chapter-heading"><h1>Ampliación de tu mapa interior</h1></div>
             @foreach ($report['expansion'] as $item)
                 <div class="report-block"><h2 class="report-block-title">{{ $item['title'] }}</h2><div class="report-block-body"><p>{{ $item['content'] }}</p><p>{{ $item['example'] }}</p><p>{{ $item['question'] }}</p></div></div>
             @endforeach

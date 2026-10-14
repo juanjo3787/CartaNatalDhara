@@ -144,9 +144,11 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertStringContainsString('href="#report-section-practice"', $html);
             $this->assertStringContainsString('href="#report-section-expansion"', $html);
             $this->assertStringContainsString('href="#report-section-technical"', $html);
-            $this->assertStringContainsString('05. Tu práctica de autoobservación', $html);
-            $this->assertStringContainsString('06. Ampliación de tu mapa interior', $html);
+            $this->assertStringContainsString('<h1>Tu práctica de autoobservación</h1>', $html);
+            $this->assertStringContainsString('<h1>Ampliación de tu mapa interior</h1>', $html);
             $this->assertStringContainsString('07. Datos de la carta', $html);
+            $this->assertStringNotContainsString('<h1>05. Tu práctica de autoobservación</h1>', $html);
+            $this->assertStringNotContainsString('<h1>06. Ampliación de tu mapa interior</h1>', $html);
             $this->assertSame(3, substr_count($html, 'class="report-door-heading report-chapter-heading"><h1>'));
             $this->assertStringContainsString('<strong>¿Y si el bloqueo que sientes', $html);
             $this->assertStringContainsString('<strong>Ahora, la verdadera pregunta es:', $html);
@@ -154,8 +156,8 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertStringContainsString('Posiciones planetarias', $html);
             $this->assertStringContainsString('Cúspides de casas', $html);
             $this->assertSame($pdf, str_contains($html, 'report-pdf-blank-page'));
-            $practicePosition = strpos($html, '05. Tu práctica de autoobservación');
-            $expansionPosition = strpos($html, '06. Ampliación de tu mapa interior');
+            $practicePosition = strpos($html, '<h1>Tu práctica de autoobservación</h1>');
+            $expansionPosition = strpos($html, '<h1>Ampliación de tu mapa interior</h1>');
             $technicalPosition = strpos($html, '07. Datos de la carta');
             $this->assertLessThan($expansionPosition, $practicePosition);
             $this->assertLessThan($technicalPosition, $expansionPosition);
