@@ -312,11 +312,14 @@
             @foreach ($report['expansion'] as $item)
                 <div class="report-block"><h2 class="report-block-title">{{ $item['title'] }}</h2><div class="report-block-body"><p>{{ $item['content'] }}</p><p>{{ $item['example'] }}</p><p>{{ $item['question'] }}</p></div></div>
             @endforeach
+        </section>
+        <section class="report-page report-chapter report-expansion-offer">
+            <h2>{{ $report['expansion_closing']['title'] }}</h2>
             @foreach ($report['expansion_closing']['paragraphs'] as $paragraph)
                 <p>@if ($paragraph['emphasis'])<strong>{{ $paragraph['text'] }}</strong>@else{{ $paragraph['text'] }}@endif</p>
             @endforeach
             <h2>{{ $report['expansion_closing']['houses_title'] }}</h2>
-            <ol>@foreach ($report['expansion_closing']['houses'] as $house)<li>Casa {{ $loop->iteration }} — {{ $house }}</li>@endforeach</ol>
+            <ul>@foreach ($report['expansion_closing']['houses'] as $house)<li>Casa {{ $loop->iteration }} — {{ $house }}</li>@endforeach</ul>
         </section>
     @endif
     @if ($report['sections']['technical']['enabled'])

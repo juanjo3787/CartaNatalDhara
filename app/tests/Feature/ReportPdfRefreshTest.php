@@ -134,8 +134,21 @@ class ReportPdfRefreshTest extends TestCase
             ['sol', 'luna', 'ascendente', 'descendente', 'practice', 'expansion', 'technical'],
             array_column($report['index'], 'key'),
         );
-        $this->assertCount(9, $report['expansion_closing']['paragraphs']);
-        $this->assertCount(12, $report['expansion_closing']['houses']);
+        $this->assertCount(13, $report['expansion_closing']['paragraphs']);
+        $this->assertSame([
+            'Identidad y Personalidad',
+            'Recursos, Economía y Riquezas',
+            'Comunicación',
+            'Familia, Hogar y raíces',
+            'Creatividad',
+            'Trabajo y Salud',
+            'Pareja',
+            'Transformación y Miedos',
+            'Expansión, Viajes y espiritualidad',
+            'Vocación - Laboral',
+            'Amigos y Comunidad',
+            'Inconsciente',
+        ], $report['expansion_closing']['houses']);
         $this->assertCount(12, $report['technical']['houses_table']);
         $wheelImage = $chart->natal_wheel_image;
 
@@ -150,17 +163,25 @@ class ReportPdfRefreshTest extends TestCase
             $this->assertStringNotContainsString('<h1>05. Tu práctica de autoobservación</h1>', $html);
             $this->assertStringNotContainsString('<h1>06. Ampliación de tu mapa interior</h1>', $html);
             $this->assertSame(3, substr_count($html, 'class="report-door-heading report-chapter-heading"><h1>'));
-            $this->assertStringContainsString('<strong>¿Y si el bloqueo que sientes', $html);
-            $this->assertStringContainsString('<strong>Ahora, la verdadera pregunta es:', $html);
+            $this->assertStringContainsString('EN ESTE PLUS INFORMATIVO QUE TE OFREZCO', $html);
+            $this->assertStringContainsString('¿Y si el bloqueo que sientes no es quién eres', $html);
+            $this->assertStringContainsString('<h2>Las Doce Cartas de tu Mapa Interior</h2>', $html);
+            $this->assertStringContainsString('<strong>¿Hay algún área de tu vida en la que necesitas claridad?</strong>', $html);
             $this->assertStringContainsString('Casa 12 — Inconsciente', $html);
+            $this->assertStringContainsString('Casa 2 — Recursos, Economía y Riquezas', $html);
+            $this->assertStringContainsString('En el informe 2 con la profundización de tu Mapa Interior', $html);
+            $this->assertStringNotContainsString('LAS 12 CASAS DE TU MAPA INTERIOR', $html);
+            $this->assertStringNotContainsString('<strong>Ahora, la verdadera pregunta es:', $html);
             $this->assertStringContainsString('Posiciones planetarias', $html);
             $this->assertStringContainsString('Cúspides de casas', $html);
             $this->assertSame($pdf, str_contains($html, 'report-pdf-blank-page'));
             $practicePosition = strpos($html, '<h1>Tu práctica de autoobservación</h1>');
             $expansionPosition = strpos($html, '<h1>Ampliación de tu mapa interior</h1>');
+            $offerPosition = strpos($html, 'EN ESTE PLUS INFORMATIVO QUE TE OFREZCO');
             $technicalPosition = strpos($html, '07. Datos de la carta');
             $this->assertLessThan($expansionPosition, $practicePosition);
-            $this->assertLessThan($technicalPosition, $expansionPosition);
+            $this->assertLessThan($offerPosition, $expansionPosition);
+            $this->assertLessThan($technicalPosition, $offerPosition);
             foreach ($report['expansion_closing']['houses'] as $index => $house) {
                 $this->assertStringContainsString('Casa '.($index + 1).' — '.$house, $html);
             }
