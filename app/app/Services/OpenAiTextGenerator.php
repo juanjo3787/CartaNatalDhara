@@ -52,7 +52,7 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
         $isStructured = $responseFormat['type'] === 'json_schema';
         // Each call has its own deadline; report orchestration runs in the queue worker.
         $timeout = (int) ($isStructured ? config('ai.stage_timeout', 95) : config('ai.timeout', 90));
-        $maxTokens = (int) ($isStructured ? config('ai.sun_max_completion_tokens', 6000) : config('ai.door_max_completion_tokens', 4000));
+        $maxTokens = (int) ($isStructured ? config('ai.chapter_max_completion_tokens', 5000) : config('ai.door_max_completion_tokens', 4000));
         $model = (string) config('ai.model');
 
         $http = Http::baseUrl((string) config('ai.base_url'))
@@ -148,7 +148,6 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
             throw new AiGenerationException(AiGenerationException::STREAM_INTERRUPTED, 'La API de IA no devolvió contenido textual.');
         }
 
-        ReportTrace::raw($content, $meta);
         $decoded = json_decode($content, true);
         if (! is_array($decoded)) {
             Log::warning('OpenAI chat completion returned invalid JSON', $logPayload);
@@ -156,11 +155,6 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
         }
 
         Log::info('OpenAI chat completion succeeded', $logPayload);
-        $stateName = strtok($meta['stage'] ?? '', '_');
-        if (isset(ReportState::HEADINGS[$stateName])) {
-            ReportTrace::record('raw_response_decoded', $decoded[$stateName] ?? [], $meta + ['section_id' => ($meta['door'] ?? '').'.'.$stateName]);
-        }
-
         $decoded['_usage'] = $usage;
 
         return $decoded;

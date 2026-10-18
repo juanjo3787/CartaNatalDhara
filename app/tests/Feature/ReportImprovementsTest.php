@@ -8,6 +8,7 @@ use App\Models\Person;
 use App\Models\Place;
 use App\Models\ReportJob;
 use App\Models\User;
+use App\Services\InteriorMapMaster;
 use App\Services\ReportMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ class ReportImprovementsTest extends TestCase
         $birth = BirthData::create(['person_id' => $person->id, 'place_id' => $place->id, 'local_date' => '1990-01-01', 'local_time' => '12:00:00', 'timezone_identifier' => 'Europe/Madrid', 'utc_offset' => '+01:00', 'utc_datetime' => '1990-01-01 11:00:00']);
         $chart = Chart::create(['person_id' => $person->id, 'birth_data_id' => $birth->id, 'configuration' => [], 'snapshot' => [], 'engine_version' => 'fixture', 'status' => 'calculated']);
 
-        return ReportJob::create(['chart_id' => $chart->id, 'user_id' => User::factory()->create()->id, 'status' => $status, 'doors' => ['sol']]);
+        return ReportJob::create(['chart_id' => $chart->id, 'user_id' => User::factory()->create()->id, 'status' => $status, 'doors' => ['sol'], 'drafts' => ['_master_version' => InteriorMapMaster::VERSION, '_chart_fingerprint' => app(InteriorMapMaster::class)->fingerprint($chart)]]);
     }
 
     public function test_dismissal_persists_without_deleting_chart_job_or_pdf(): void

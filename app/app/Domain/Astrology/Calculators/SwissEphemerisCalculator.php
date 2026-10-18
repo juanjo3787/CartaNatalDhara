@@ -77,6 +77,7 @@ final class SwissEphemerisCalculator implements AstrologyCalculator
             positions: $this->buildPositions($rows),
             configuration: [
                 'zodiac' => 'tropical',
+                'reference' => 'geocentric',
                 'houses' => $birthData->houseSystem,
                 'engine' => 'swetest',
             ],

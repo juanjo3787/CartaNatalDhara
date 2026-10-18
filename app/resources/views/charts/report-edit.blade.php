@@ -3,13 +3,7 @@
 @section('title', 'Editar informe Fase 1 - ' . $report['name'])
 
 @php
-    $blockTitles = [
-        'intro' => 'Tu primera lectura', 'states' => 'Estados de expresión', 'conclusions' => 'Conclusiones importantes',
-        'shared_intro' => 'Función y posición', 'shared_states' => 'Estados de expresión', 'shared_conclusions' => 'Conclusiones',
-        'function' => 'Función y posición', 'sign' => 'Qué necesita este signo', 'house' => 'La casa y el territorio de experiencia',
-        'ruler' => 'El regente y su posición', 'integration' => 'Integración de las piezas', 'harmony' => 'Expresión Armónica',
-        'deficit' => 'Expresión Des-Armónica por defecto', 'excess' => 'Expresión Des-Armónica por exceso', 'harmonization' => 'Armonización e integración final', 'closing' => 'Preguntas y frases de integración',
-    ];
+    $blockTitles = ['intro' => 'Tu primera lectura'] + \App\Services\InteriorMapMaster::TITLES + \App\Services\InteriorMapMaster::INTEGRATION_TITLES;
 @endphp
 
 @section('content')
@@ -52,7 +46,7 @@
         @method('PUT')
 
         <section class="editor-section">
-            <h2>Texto compartido del dossier</h2>
+            <h2>Introducción e integración del mapa interior</h2>
             @foreach ($editable['shared'] as $block => $content)
                     <div class="editor-block"><label for="shared-{{ $block }}">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</label><div id="toolbar-shared-{{ $block }}" class="quill-toolbar"><span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button></span><span class="ql-formats"><button class="ql-link"></button><button class="ql-clean"></button></span></div><div id="shared-{{ $block }}" class="rich-editor" data-rich-editor>{!! old('shared.' . $block, $content) !!}</div><textarea name="shared[{{ $block }}]" data-editor-value="shared-{{ $block }}" hidden></textarea></div>
             @endforeach
@@ -60,7 +54,7 @@
 
         @foreach ($report['doors'] as $door)
             <section class="editor-section">
-                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small><button type="button" class="generate-door-ai" data-report-job-url="{{ route('reports.jobs.store', $chart) }}" data-doors='@json([$door["key"]])'  data-door="{{ $door['key'] }}" style="margin-top:.75rem; padding:.55rem .8rem; font-size:.78rem;">Generar esta puerta con IA</button></h2>
+                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small></h2>
                 @foreach ($editable['doors'][$door['key']] as $block => $content)
                     <div class="editor-block"><label for="{{ $door['key'] }}-{{ $block }}">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</label><div id="toolbar-{{ $door['key'] }}-{{ $block }}" class="quill-toolbar"><span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button></span><span class="ql-formats"><button class="ql-link"></button><button class="ql-clean"></button></span></div><div id="{{ $door['key'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! old('doors.' . $door['key'] . '.' . $block, $content) !!}</div><textarea name="doors[{{ $door['key'] }}][{{ $block }}]" data-editor-value="{{ $door['key'] }}-{{ $block }}" hidden></textarea></div>
                 @endforeach

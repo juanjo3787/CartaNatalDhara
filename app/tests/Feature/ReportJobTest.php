@@ -2,97 +2,60 @@
 
 namespace Tests\Feature;
 
-use App\Exceptions\AiGenerationException;
 use App\Jobs\ProcessReportStep;
-use App\Models\BirthData;
-use App\Models\Chart;
-use App\Models\Person;
-use App\Models\Place;
+use App\Models\ReportJob;
 use App\Models\User;
+use App\Services\InteriorMapMaster;
 use App\Services\ReportJobService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Tests\Fixtures\InteriorMapFixture;
 use Tests\TestCase;
-use Tests\Unit\SunGenerationPipelineTest;
 
-class ReportJobTest extends TestCase
+final class ReportJobTest extends TestCase
 {
-    use RefreshDatabase;
+    use InteriorMapFixture, RefreshDatabase;
 
-    private function chart(): Chart
-    {
-        $person = Person::create(['alias' => 'Regression', 'full_name' => 'Regression Reader']);
-        $place = Place::create(['city' => 'Madrid', 'country' => 'ES', 'latitude' => 40.4, 'longitude' => -3.7, 'timezone_identifier' => 'Europe/Madrid']);
-        $birth = BirthData::create(['person_id' => $person->id, 'place_id' => $place->id, 'local_date' => '1990-01-01', 'local_time' => '12:00:00', 'timezone_identifier' => 'Europe/Madrid', 'utc_offset' => '+01:00', 'utc_datetime' => '1990-01-01 11:00:00']);
-        $snapshot = ['houses' => []];
-        foreach (range(1, 12) as $house) {
-            $snapshot['houses'][$house] = ['longitude' => ($house - 1) * 30, 'sign' => 'aries', 'degrees' => 0, 'minutes' => 0, 'seconds' => 0];
-        }
-        foreach (['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'ascendant', 'descendant'] as $point) {
-            $snapshot[$point] = ['longitude' => 185, 'sign' => 'libra', 'degrees' => 5, 'minutes' => 0, 'seconds' => 0];
-        }
-        $chart = Chart::create(['person_id' => $person->id, 'birth_data_id' => $birth->id, 'configuration' => [], 'snapshot' => $snapshot, 'engine_version' => 'fixture', 'status' => 'calculated']);
-        $chart->update(['natal_wheel_image' => 'data:image/jpeg;base64,'.base64_encode(file_get_contents(__DIR__.'/../Fixtures/wheel.jpg'))]);
-
-        return $chart;
-
-    }
-
-    public function test_http_only_enqueues_and_deduplicates_and_restricts_job_access(): void
+    public function test_http_enqueues_deduplicates_and_restricts_access_without_calling_ai(): void
     {
         Http::preventStrayRequests();
         $chart = $this->chart();
-        $user = User::factory()->create();
-        $this->actingAs($user);
+        $this->actingAs(User::factory()->create());
         $url = route('reports.jobs.store', $chart);
-        $first = $this->postJson($url)->assertStatus(202)->assertJsonPath('status', 'queued');
-        $this->postJson($url)->assertStatus(202)->assertJsonPath('job_id', $first->json('job_id'));
+        $first = $this->postJson($url, ['doors' => ['sol']])->assertAccepted();
+        $this->postJson($url)->assertAccepted()->assertJsonPath('job_id', $first->json('job_id'));
+        $job = ReportJob::findOrFail($first->json('job_id'));
+        $this->assertSame(InteriorMapMaster::DOORS, $job->doors);
         $this->assertDatabaseCount('report_jobs', 1);
         $this->assertDatabaseCount('jobs', 1);
-        $this->assertDatabaseCount('interpretations', 0);
         Http::assertNothingSent();
-        $this->deleteJson(route('charts.destroy', $chart))->assertStatus(409);
-        $this->getJson($first->json('status_url'))->assertOk();
-        $this->getJson(route('reports.jobs.index'))->assertOk()->assertJsonCount(1);
-        $this->get('/up')->assertOk();
+        $this->deleteJson(route('charts.destroy', $chart))->assertConflict();
         $this->actingAs(User::factory()->create())->getJson($first->json('status_url'))->assertForbidden();
-        $this->postJson($url)->assertStatus(409);
     }
 
-    public function test_report_job_persists_the_png_wheel_image_sent_by_the_browser(): void
-    {
-        $chart = $this->chart();
-        $user = User::factory()->create();
-        $this->actingAs($user);
-        $wheelImage = 'data:image/png;base64,'.base64_encode("\x89PNG\r\n\x1a\nwheel-image");
-
-        $this->postJson(route('reports.jobs.store', $chart), ['wheel_image' => $wheelImage])
-            ->assertStatus(202);
-
-        $this->assertSame($wheelImage, $chart->fresh()->natal_wheel_image);
-    }
-
-    public function test_worker_completes_report_and_pdf_from_persisted_steps_without_http_session(): void
+    public function test_worker_generates_five_chapters_and_a_real_pdf_without_historical_input(): void
     {
         config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
         Storage::fake('local');
         Http::preventStrayRequests();
         Http::fake(function ($request) {
-            $this->assertSame(1, DB::transactionLevel(), 'Only the test isolation transaction may be open during OpenAI');
             $input = json_decode($request['messages'][1]['content'], true);
+            $this->assertArrayNotHasKey('person', $input);
+            $this->assertStringNotContainsString('Pastora', $request['messages'][0]['content'].$request['messages'][1]['content']);
+            if ($input['chapter'] === 'integration') {
+                $this->assertSame(InteriorMapMaster::DOORS, array_keys($input['current_report']));
+            } else {
+                $this->assertArrayNotHasKey('current_report', $input);
+            }
 
-            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode(SunGenerationPipelineTest::sample($input['stage'], $input['door']))]]], 'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 20, 'total_tokens' => 30]]);
+            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode(self::chapter($input['chapter']))]]], 'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 20]]);
         });
         $chart = $this->chart();
         $snapshot = $chart->snapshot;
-        $chart->update(['report_is_stale' => true]);
-        $job = app(ReportJobService::class)->start($chart, User::factory()->create()->id, ['sol', 'luna', 'ascendente', 'descendente']);
-        auth()->logout();
-        for ($i = 0; $i < 100; $i++) {
+        $job = app(ReportJobService::class)->start($chart, User::factory()->create()->id, InteriorMapMaster::DOORS);
+        for ($i = 0; $i < 12; $i++) {
             $queued = Queue::connection('reports')->pop('reports');
             if (! $queued) {
                 break;
@@ -105,62 +68,42 @@ class ReportJobTest extends TestCase
         $this->assertSame(100, $job->progress);
         $this->assertNull($job->active_chart_id);
         $this->assertFalse($chart->fresh()->report_is_stale);
-        $this->assertCount(4, $job->drafts);
-        $this->assertSame(44, $chart->interpretations()->where('ai_assisted', true)->count());
         $this->assertSame($snapshot, $chart->fresh()->snapshot);
-        Storage::disk('local')->assertExists($chart->fresh()->phase_one_pdf);
-        Http::assertSentCount(88);
-        $this->assertSame(88, DB::table('report_metrics')->where('report_job_id', $job->id)->where('kind', 'ai')->where('outcome', 'success')->count());
-        $this->assertSame(93, DB::table('report_metrics')->where('report_job_id', $job->id)->where('kind', 'step')->where('outcome', 'success')->count());
+        $this->assertDatabaseCount('interpretations', 56);
+        $this->assertStringStartsWith('%PDF-', Storage::disk('local')->get($chart->fresh()->phase_one_pdf));
+        $integration = $chart->reportGenerations()->where('ai_assisted', true)->whereNull('door')->firstOrFail();
+        $this->actingAs(User::findOrFail($job->user_id))->get(route('charts.report.history', $chart))
+            ->assertOk()->assertSee('Integración');
+        $this->get(route('charts.report.prompts', [$chart, $integration]))
+            ->assertOk()->assertSee('Integración')->assertSee('único prompt maestro');
+        Http::assertSentCount(5);
         (new ProcessReportStep($job->id, 1))->handle(app(ReportJobService::class));
-        Http::assertSentCount(88);
+        Http::assertSentCount(5);
     }
 
-    public function test_failed_stage_keeps_draft_and_retry_resumes_only_pending_stage(): void
+    public function test_obsolete_jobs_cannot_be_retried(): void
     {
-        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
-        $rateLimited = true;
-        Http::fake(function ($request) use (&$rateLimited) {
-            $input = json_decode($request['messages'][1]['content'], true);
-            if ($input['stage'] === 'sign' && $rateLimited) {
-                return Http::response(['error' => ['message' => 'Rate limited']], 429);
-            }
+        $job = ReportJob::create(['chart_id' => $this->chart()->id, 'user_id' => User::factory()->create()->id, 'doors' => ['sol'], 'status' => 'failed']);
+        $this->actingAs(User::findOrFail($job->user_id))->postJson(route('reports.jobs.retry', $job))->assertConflict();
+        $this->assertDatabaseCount('jobs', 0);
+    }
 
-            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode(SunGenerationPipelineTest::sample($input['stage'], $input['door']))]]]]);
-        });
-        $job = app(ReportJobService::class)->start($this->chart(), User::factory()->create()->id, ['sol']);
-        $service = app(ReportJobService::class);
-        $service->process($job);
-        $service->process($job);
-        $saved = $job->drafts;
-        $step = new ProcessReportStep($job->id, $job->cursor);
-        Log::shouldReceive('error')
-            ->once()
-            ->withArgs(fn (string $message, array $context): bool => $message === 'Report generation step failed permanently.'
-                && $context['report_job_id'] === $job->id
-                && $context['chart_id'] === $job->chart_id
-                && $context['current_section'] === 'sol.sign'
-                && $context['exception_class'] === AiGenerationException::class
-                && $context['exception_message'] === 'Rate limited');
-        try {
-            $step->handle($service);
-            $this->fail('Expected rate limit');
-        } catch (AiGenerationException $error) {
-            $step->failed($error);
-        }
-        $job->refresh();
-        $this->assertSame('failed', $job->status);
-        $this->assertSame($saved, $job->drafts);
-        $cursor = $job->cursor;
-        $service->retry($job);
-        $this->assertSame($cursor, $job->cursor);
-        $this->assertSame($saved, $job->drafts);
-        $this->assertSame([60, 180, 540], $step->backoff());
-        $rateLimited = false;
-        $step->handle($service);
-        $job->refresh();
-        $this->assertSame($cursor + 1, $job->cursor);
-        $this->assertSame($saved['sol']['completed']['function'], $job->drafts['sol']['completed']['function']);
-        Http::assertSentCount(3);
+    public function test_changed_birth_data_require_full_regeneration_not_pdf_only(): void
+    {
+        $chart = $this->chart();
+        $chart->update(['report_is_stale' => true]);
+        $this->actingAs(User::factory()->create())->postJson(route('charts.report.validate', $chart))->assertConflict();
+        $this->assertDatabaseCount('jobs', 0);
+    }
+
+    public function test_failed_job_cannot_resume_after_the_chart_changes(): void
+    {
+        $chart = $this->chart();
+        $user = User::factory()->create();
+        $job = app(ReportJobService::class)->start($chart, $user->id, InteriorMapMaster::DOORS);
+        $job->update(['status' => 'failed', 'active_chart_id' => null]);
+        $chart->person->update(['full_name' => 'New synthetic name']);
+        $this->actingAs($user)->postJson(route('reports.jobs.retry', $job))->assertConflict();
+        $this->assertSame('failed', $job->fresh()->status);
     }
 }

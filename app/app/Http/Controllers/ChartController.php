@@ -157,6 +157,12 @@ class ChartController extends Controller
 
     public function downloadReport(Chart $chart, PhaseOneReportService $reportService)
     {
+        if ($chart->report_is_stale) {
+            return redirect()->route('charts.show', $chart)->with('error', 'Los datos han cambiado. Vuelve a generar el Informe I completo.');
+        }
+        if (! $reportService->build($chart)['complete']) {
+            return redirect()->route('charts.report', $chart)->with('error', 'Genera el nuevo Informe I antes de descargarlo.');
+        }
         if (! $chart->report_is_stale && $chart->phase_one_pdf && str_ends_with($chart->phase_one_pdf, '-v'.PdfPageGeometry::VERSION.'.pdf') && Storage::disk('local')->exists($chart->phase_one_pdf)) {
             return response()->streamDownload(function () use ($chart) {
                 echo Storage::disk('local')->get($chart->phase_one_pdf);
@@ -212,7 +218,7 @@ class ChartController extends Controller
             'local_time' => ['required', 'date_format:H:i'],
             'time_source' => ['required', 'in:document,family,estimated,unknown'],
             'time_precision' => ['required', 'in:exact,approximate,unknown'],
-            'houses' => [Rule::requiredIf($person === null), Rule::in(['placidus', 'koch', 'equal', 'whole_sign', 'regiomontanus', 'campanus', 'porphyry', 'morinus', 'topocentric'])],
+            'houses' => [Rule::requiredIf($person === null), Rule::in(['placidus'])],
         ];
     }
 
@@ -407,8 +413,12 @@ class ChartController extends Controller
         return view('charts.person-history', ['chart' => $chart, 'changes' => PersonChangeLog::where('person_id', $chart->person_id)->latest()->get()]);
     }
 
-    public function editReport(Chart $chart, PhaseOneReportService $reportService): View
+    public function editReport(Chart $chart, PhaseOneReportService $reportService): View|RedirectResponse
     {
+        if ($chart->report_is_stale || ! $reportService->build($chart)['complete']) {
+            return redirect()->route('charts.report', $chart)->with('error', 'Genera el Informe I con los datos actuales antes de editarlo.');
+        }
+
         return view('charts.report-edit', [
             'chart' => $chart,
             'report' => $reportService->build($chart),

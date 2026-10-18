@@ -15,7 +15,7 @@ class ReportPdfService
         if (! $chart->natal_wheel_image) {
             throw new \RuntimeException('Falta la rueda astrológica para generar el PDF.');
         }
-        $report = app(PhaseOneReportService::class)->build($chart);
+        $report = app(PhaseOneReportService::class)->build($chart, storedOnly: true);
         $pdf = $this->render($chart, $report, $chart->natal_wheel_image);
         $path = 'pdfs/'.$chart->id.'/job-'.$jobId.'-v'.PdfPageGeometry::VERSION.'.pdf';
         if (! Storage::disk('local')->put($path, $pdf)) {

@@ -17,6 +17,9 @@ final class ReportPdfRefreshService
     {
         return DB::transaction(function () use ($chart, $dryRun): array {
             $chart = Chart::whereKey($chart->id)->lockForUpdate()->firstOrFail();
+            if ($chart->report_is_stale) {
+                throw new RuntimeException('Los datos han cambiado. Regenera el Informe I completo antes de actualizar su PDF.');
+            }
             if (ReportJob::where('active_chart_id', $chart->id)->exists()) {
                 throw new RuntimeException('Hay una generación activa. Espera a que termine.');
             }
@@ -60,21 +63,7 @@ final class ReportPdfRefreshService
         if (! $chart->person || ! $chart->birthData?->place || ! $chart->birthData->local_date || ! $chart->birthData->local_time) {
             throw new RuntimeException('Faltan datos guardados de la persona, nacimiento o lugar.');
         }
-        $snapshot = $chart->snapshot ?? [];
-        foreach (['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'ascendant', 'descendant'] as $point) {
-            foreach (['longitude', 'sign', 'degrees', 'minutes', 'seconds'] as $field) {
-                if (! isset($snapshot[$point][$field])) {
-                    throw new RuntimeException('Falta el dato astrológico guardado: '.$point.'.'.$field);
-                }
-            }
-        }
-        foreach (range(1, 12) as $house) {
-            foreach (['longitude', 'sign', 'degrees', 'minutes', 'seconds'] as $field) {
-                if (! isset($snapshot['houses'][$house][$field])) {
-                    throw new RuntimeException('Falta el dato de la casa guardada: '.$house.'.'.$field);
-                }
-            }
-        }
+        app(InteriorMapMaster::class)->facts($chart);
         $wheel = (string) $chart->natal_wheel_image;
         if (! preg_match('#^data:image/(?:jpeg|png);base64,(.+)$#s', $wheel, $match)) {
             throw new RuntimeException('Falta una imagen guardada de la rueda en formato PNG o JPEG.');

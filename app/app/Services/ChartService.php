@@ -11,7 +11,7 @@ use App\Models\Chart;
 /**
  * Orquesta el calculo de una carta natal a partir de un registro BirthData
  * ya persistido (con su Place asociado) y guarda el resultado como snapshot
- * inmutable en la tabla charts.
+ * actualizado en la tabla charts.
  */
 final class ChartService
 {
@@ -59,6 +59,9 @@ final class ChartService
 
     public function calculateSnapshotFor(BirthData $birthData, string $utcDateTime, string $houseSystem = 'placidus'): ChartSnapshot
     {
+        if ($houseSystem !== 'placidus') {
+            throw new \RuntimeException('El nuevo protocolo de Sarana Veda utiliza exclusivamente casas Placidus.');
+        }
         $place = $birthData->place;
         [$utcDate, $utcTime] = explode(' ', $utcDateTime);
 

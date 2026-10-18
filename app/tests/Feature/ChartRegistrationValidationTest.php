@@ -48,9 +48,9 @@ class ChartRegistrationValidationTest extends TestCase
 
     public function test_duplicate_alias_is_rejected(): void
     {
-        Person::create(['alias' => 'Pastora']);
+        Person::create(['alias' => 'Alias duplicado']);
 
-        $response = $this->post('/charts', $this->validRegistration(['alias' => 'Pastora']));
+        $response = $this->post('/charts', $this->validRegistration(['alias' => 'Alias duplicado']));
 
         $response->assertSessionHasErrors('alias');
         $this->assertStringContainsString(
@@ -61,11 +61,11 @@ class ChartRegistrationValidationTest extends TestCase
 
     public function test_duplicate_full_name_is_rejected_when_provided(): void
     {
-        Person::create(['alias' => 'Pastora', 'full_name' => 'Pastora Garcia']);
+        Person::create(['alias' => 'Alias duplicado', 'full_name' => 'Persona sintética duplicada']);
 
         $response = $this->post('/charts', $this->validRegistration([
-            'alias' => 'Pastora nueva',
-            'full_name' => 'Pastora Garcia',
+            'alias' => 'Alias nuevo',
+            'full_name' => 'Persona sintética duplicada',
         ]));
 
         $response->assertSessionHasErrors('full_name');
@@ -103,7 +103,7 @@ class ChartRegistrationValidationTest extends TestCase
         $updatedSnapshot = new ChartSnapshot(
             '2026-10-18',
             ['sun' => ['longitude' => 20]],
-            ['zodiac' => 'tropical', 'houses' => 'koch'],
+            ['zodiac' => 'tropical', 'houses' => 'placidus'],
         );
         $calculator = $this->mock(AstrologyCalculator::class);
         $calculator->shouldReceive('calculate')->twice()->andReturn($initialSnapshot, $updatedSnapshot);
@@ -117,14 +117,14 @@ class ChartRegistrationValidationTest extends TestCase
             'local_date' => '16/06/1990',
             'local_time' => '15:30',
             'latitude' => '41.000000',
-            'houses' => 'koch',
+            'houses' => 'placidus',
         ]));
 
         $response->assertRedirect(route('charts.show', $chart))
             ->assertSessionHas('success', 'Carta natal recalculada. Los cambios no actualizan el informe automáticamente; vuelve a regenerarlo.');
         $chart->refresh();
         $this->assertSame($updatedSnapshot->positions, $chart->snapshot);
-        $this->assertSame('koch', $chart->configuration['houses']);
+        $this->assertSame('placidus', $chart->configuration['houses']);
         $this->assertTrue($chart->report_is_stale);
         $this->assertNull($chart->phase_one_pdf);
         $this->assertSame('1990-06-16', $chart->birthData->fresh()->local_date->format('Y-m-d'));
@@ -136,6 +136,13 @@ class ChartRegistrationValidationTest extends TestCase
         $response = $this->post('/charts', $this->validRegistration(['houses' => 'alcabitius']));
 
         $response->assertSessionHasErrors('houses');
+    }
+
+    public function test_new_protocol_rejects_other_previously_supported_house_systems(): void
+    {
+        $this->post('/charts', $this->validRegistration(['houses' => 'koch']))
+            ->assertSessionHasErrors('houses');
+        $this->assertDatabaseCount('charts', 0);
     }
 
     public function test_coordinates_are_rounded_before_storage_and_calculation(): void

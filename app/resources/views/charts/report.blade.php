@@ -24,9 +24,11 @@
     </style>
         <nav class="report-action-bar" aria-label="Acciones del informe">
             <form id="regenerate-report-form" data-report-job method="POST" action="{{ route('charts.report.regenerate', $chart) }}">@csrf<button class="report-action report-action-primary" type="submit">{{ $chart->report_is_stale ? 'Volver a generar el informe' : 'Regenerar informe' }}</button></form>
+        @if ($report['complete'] && ! $chart->report_is_stale)
         <form id="validate-report-form" data-report-job method="POST" action="{{ route('charts.report.validate', $chart) }}">@csrf<input type="hidden" name="wheel_image" data-wheel-image-input><button class="report-action report-action-validate" type="submit">Validar y guardar PDF</button></form>
         <a class="report-action" href="{{ route('charts.report.download', $chart) }}">Descargar PDF</a>
         <a class="report-action report-action-primary" href="{{ route('charts.report.edit', $chart) }}">Editar informe</a>
+        @endif
         <a class="report-action" href="{{ route('charts.show', $chart) }}">Volver a la carta</a>
     </nav>
 @endsection
