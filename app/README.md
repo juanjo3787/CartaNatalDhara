@@ -106,6 +106,12 @@ migracion **no borra personas ni informes**. La limpieza del NAS debe ser una
 operacion separada confirmada, con workers detenidos y conservando `users`,
 credenciales y migraciones.
 
+La imagen Docker crea los directorios de ejecucion de Laravel antes de ejecutar
+los scripts de Composer y asignar permisos. `storage` puede no existir en un clon
+limpio porque sus archivos generados estan excluidos del contexto de build; no
+deben copiarse informes ni caches antiguos para resolverlo. Los volumenes
+persistentes del NAS se preparan por separado en `deploy.sh`.
+
 ## Pruebas
 
 Desde `app`, con dependencias existentes:
