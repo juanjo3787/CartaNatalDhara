@@ -63,16 +63,16 @@
                         @else
                             <span class="chart-status-badge">{{ ucfirst($chart->status) }}</span>
                         @endif
-                        @if ($chart->interpretations->contains('phase', 'fase-1'))
-                            <span class="chart-status-badge report">Informe generado</span>
+                        @if ($chart->report_is_stale || $chart->interpretations->contains('phase', 'fase-1'))
+                            <span class="chart-status-badge report">{{ $chart->report_is_stale ? 'Informe pendiente de regenerar' : 'Informe generado' }}</span>
                         @endif
                     </div>
                 </td>
                 <td style="vertical-align: middle;">{{ $chart->created_at->format('d/m/Y H:i') }}</td>
                 <td style="text-align: center; vertical-align: middle;">
                     <div style="display: flex; justify-content: center; align-items: center; gap: .45rem;">
-                        @if ($chart->interpretations->contains('phase', 'fase-1'))
-                            <a class="file-download-action" href="{{ route('charts.report.download', $chart) }}" title="Descarga Informe Carta Natal Fase 1" aria-label="Descarga Informe Carta Natal Fase 1">
+                        @if ($chart->report_is_stale || $chart->interpretations->contains('phase', 'fase-1'))
+                            <a class="file-download-action" href="{{ route($chart->report_is_stale ? 'charts.report' : 'charts.report.download', $chart) }}" title="{{ $chart->report_is_stale ? 'Informe pendiente de regenerar' : 'Descargar Informe Carta Natal Fase 1' }}" aria-label="{{ $chart->report_is_stale ? 'Informe pendiente de regenerar' : 'Descargar Informe Carta Natal Fase 1' }}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                     <path d="M6 2.75h8l4 4V21.25H6z" />
                                     <path d="M14 2.75v4h4M12 10v6m0 0-2.5-2.5M12 16l2.5-2.5" />

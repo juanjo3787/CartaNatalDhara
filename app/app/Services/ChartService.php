@@ -37,6 +37,26 @@ final class ChartService
         ]);
     }
 
+    public function recalculate(Chart $chart, ?string $houseSystem = null): Chart
+    {
+        $chart->loadMissing('birthData.place');
+        $houseSystem ??= $chart->configuration['houses'] ?? 'placidus';
+        $snapshot = $this->calculateSnapshotFor(
+            $chart->birthData,
+            $chart->birthData->utc_datetime->format('Y-m-d H:i:s'),
+            $houseSystem,
+        );
+
+        $chart->forceFill([
+            'configuration' => $snapshot->configuration,
+            'engine_version' => 'swetest',
+            'snapshot' => $snapshot->positions,
+            'status' => 'calculated',
+        ])->save();
+
+        return $chart;
+    }
+
     public function calculateSnapshotFor(BirthData $birthData, string $utcDateTime, string $houseSystem = 'placidus'): ChartSnapshot
     {
         $place = $birthData->place;

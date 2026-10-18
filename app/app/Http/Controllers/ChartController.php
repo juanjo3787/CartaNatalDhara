@@ -18,6 +18,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -156,10 +157,10 @@ class ChartController extends Controller
 
     public function downloadReport(Chart $chart, PhaseOneReportService $reportService)
     {
-        if ($chart->phase_one_pdf && str_ends_with($chart->phase_one_pdf, '-v'.PdfPageGeometry::VERSION.'.pdf') && Storage::disk('local')->exists($chart->phase_one_pdf)) {
+        if (! $chart->report_is_stale && $chart->phase_one_pdf && str_ends_with($chart->phase_one_pdf, '-v'.PdfPageGeometry::VERSION.'.pdf') && Storage::disk('local')->exists($chart->phase_one_pdf)) {
             return response()->streamDownload(function () use ($chart) {
                 echo Storage::disk('local')->get($chart->phase_one_pdf);
-            }, 'carta-natal-fase-1-'.$chart->id.'.pdf', [
+            }, $this->reportDownloadFilename($chart), [
                 'Content-Type' => 'application/pdf',
             ]);
         }
@@ -295,36 +296,80 @@ class ChartController extends Controller
         $validated['local_date'] = \DateTime::createFromFormat('d/m/Y', $validated['local_date'])->format('Y-m-d');
         $normalized = $normalizer->normalize($validated);
         $person = $chart->person;
-        $changes = [];
-        foreach (['alias', 'full_name', 'notes'] as $field) {
-            $old = (string) ($person->{$field} ?? '');
-            $new = (string) ($validated[$field] ?? '');
-            if ($old !== $new) {
-                $changes[] = [$field, $old, $new];
-            }
-        }
-        $person->update(['alias' => $validated['alias'], 'full_name' => $validated['full_name'] ?? null, 'notes' => $validated['notes'] ?? null]);
-
         $place = $chart->birthData->place;
-        foreach (['city', 'country', 'latitude', 'longitude', 'timezone_identifier'] as $field) {
-            $old = (string) ($place->{$field} ?? '');
-            $new = (string) $validated[$field];
-            if ($old !== $new) {
-                $changes[] = ['place.'.$field, $old, $new];
-            }
-        }
-        $place->update(array_intersect_key($validated, array_flip(['city', 'country', 'latitude', 'longitude', 'timezone_identifier'])));
-        $chart->birthData->update([
+        $birthData = $chart->birthData;
+        $personUpdates = ['alias' => $validated['alias'], 'full_name' => $validated['full_name'] ?? null, 'notes' => $validated['notes'] ?? null];
+        $placeUpdates = array_intersect_key($validated, array_flip(['city', 'country', 'latitude', 'longitude', 'timezone_identifier']));
+        $birthDataUpdates = [
             'local_date' => $normalized->localDate, 'local_time' => $normalized->localTime,
             'timezone_identifier' => $normalized->timezoneIdentifier, 'utc_offset' => $normalized->utcOffset,
             'utc_datetime' => $normalized->utcDatetime, 'time_source' => $normalized->timeSource, 'time_precision' => $normalized->timePrecision,
-        ]);
+        ];
+        $changes = [];
+        $houseSystem = $validated['houses'] ?? ($chart->configuration['houses'] ?? 'placidus');
+        $oldHouseSystem = $chart->configuration['houses'] ?? 'placidus';
+        $astrologyChanged = $houseSystem !== $oldHouseSystem;
+        if ($astrologyChanged) {
+            $changes[] = ['chart.house_system', (string) $oldHouseSystem, (string) $houseSystem];
+        }
+        foreach ($personUpdates as $field => $new) {
+            $old = (string) ($person->{$field} ?? '');
+            if ($old !== (string) ($new ?? '')) {
+                $changes[] = [$field, $old, (string) ($new ?? '')];
+            }
+        }
+        foreach ($placeUpdates as $field => $new) {
+            $old = (string) ($place->{$field} ?? '');
+            if ($old !== (string) $new) {
+                $changes[] = ['place.'.$field, $old, (string) $new];
+                $astrologyChanged = $astrologyChanged || in_array($field, ['latitude', 'longitude', 'timezone_identifier'], true);
+            }
+        }
+        foreach ($birthDataUpdates as $field => $new) {
+            $old = match ($field) {
+                'local_date' => $birthData->local_date?->format('Y-m-d') ?? '',
+                'local_time' => substr((string) $birthData->local_time, 0, 5),
+                default => (string) ($birthData->{$field} ?? ''),
+            };
+            $newValue = in_array($field, ['local_time'], true) ? substr((string) $new, 0, 5) : (string) $new;
+            if ($old !== $newValue) {
+                $changes[] = ['birth_data.'.$field, $old, (string) $new];
+                $astrologyChanged = $astrologyChanged || in_array($field, ['local_date', 'local_time', 'timezone_identifier', 'utc_datetime'], true);
+            }
+        }
+        $reportInputsChanged = array_filter($changes, static fn (array $change): bool => $change[0] !== 'notes') !== [];
 
-        foreach ($changes as [$field, $old, $new]) {
-            PersonChangeLog::create(['person_id' => $person->id, 'chart_id' => $chart->id, 'field' => $field, 'old_value' => $old, 'new_value' => $new]);
+        DB::transaction(function () use ($chart, $person, $personUpdates, $place, $placeUpdates, $birthData, $birthDataUpdates, $changes, $astrologyChanged, $reportInputsChanged, $houseSystem): void {
+            Chart::whereKey($chart->id)->lockForUpdate()->firstOrFail();
+            abort_if(ReportJob::where('active_chart_id', $chart->id)->exists(), 409, 'Espera a que termine la generación antes de modificar esta carta.');
+            $hasReport = $chart->phase_one_pdf !== null || $chart->interpretations()->where('phase', 'fase-1')->exists();
+            $person->update($personUpdates);
+            $place->update($placeUpdates);
+            $birthData->update($birthDataUpdates);
+
+            if ($astrologyChanged) {
+                app(ChartService::class)->recalculate($chart, $houseSystem);
+            }
+            if ($reportInputsChanged) {
+                $chart->forceFill([
+                    'phase_one_pdf' => null,
+                    'phase_one_pdf_generated_at' => null,
+                    'report_is_stale' => $hasReport || $chart->report_is_stale,
+                ])->save();
+            }
+            foreach ($changes as [$field, $old, $new]) {
+                PersonChangeLog::create(['person_id' => $person->id, 'chart_id' => $chart->id, 'field' => $field, 'old_value' => $old, 'new_value' => $new]);
+            }
+        });
+
+        $message = $astrologyChanged
+            ? 'Carta natal recalculada.'
+            : 'Datos de registro actualizados.';
+        if ($reportInputsChanged) {
+            $message .= ' Los cambios no actualizan el informe automáticamente; vuelve a regenerarlo.';
         }
 
-        return redirect()->route('charts.index')->with('success', 'Datos de registro actualizados.');
+        return redirect()->route('charts.show', $chart)->with('success', $message);
     }
 
     public function reportHistory(Chart $chart): View
@@ -405,8 +450,28 @@ class ChartController extends Controller
     public function destroy(Chart $chart): RedirectResponse
     {
         abort_if(ReportJob::where('active_chart_id', $chart->id)->exists(), 409, 'Espera a que termine la generación antes de eliminar esta carta.');
-        $chart->delete();
+        DB::transaction(function () use ($chart): void {
+            $personId = $chart->person_id;
+            $chart->delete();
+
+            $person = Person::query()->whereKey($personId)->lockForUpdate()->first();
+            if ($person && ! $person->charts()->exists()) {
+                $person->delete();
+            }
+        });
 
         return redirect()->route('charts.index')->with('success', 'La carta natal ha sido eliminada.');
+    }
+
+    private function reportDownloadFilename(Chart $chart): string
+    {
+        $chart->loadMissing('person');
+        $name = trim((string) ($chart->person->full_name ?: $chart->person->alias));
+        $name = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '-', $name);
+        $name = preg_replace('/[\x00-\x1F\x7F]/', '', $name) ?? '';
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+        $name = trim($name, ". \t\n\r\0\x0B");
+
+        return 'Informe I - '.($name !== '' ? $name : 'Carta natal '.$chart->id).'.pdf';
     }
 }

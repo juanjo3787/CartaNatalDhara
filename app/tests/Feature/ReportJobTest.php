@@ -89,6 +89,7 @@ class ReportJobTest extends TestCase
         });
         $chart = $this->chart();
         $snapshot = $chart->snapshot;
+        $chart->update(['report_is_stale' => true]);
         $job = app(ReportJobService::class)->start($chart, User::factory()->create()->id, ['sol', 'luna', 'ascendente', 'descendente']);
         auth()->logout();
         for ($i = 0; $i < 100; $i++) {
@@ -103,6 +104,7 @@ class ReportJobTest extends TestCase
         $this->assertSame('completed', $job->status);
         $this->assertSame(100, $job->progress);
         $this->assertNull($job->active_chart_id);
+        $this->assertFalse($chart->fresh()->report_is_stale);
         $this->assertCount(4, $job->drafts);
         $this->assertSame(44, $chart->interpretations()->where('ai_assisted', true)->count());
         $this->assertSame($snapshot, $chart->fresh()->snapshot);

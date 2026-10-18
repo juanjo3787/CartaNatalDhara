@@ -17,6 +17,7 @@ class Chart extends Model
         'status',
         'phase_one_pdf',
         'phase_one_pdf_generated_at',
+        'report_is_stale',
         'natal_wheel_image',
     ];
 
@@ -24,6 +25,7 @@ class Chart extends Model
         'configuration' => 'array',
         'snapshot' => 'array',
         'phase_one_pdf_generated_at' => 'datetime',
+        'report_is_stale' => 'boolean',
     ];
 
     public function person(): BelongsTo

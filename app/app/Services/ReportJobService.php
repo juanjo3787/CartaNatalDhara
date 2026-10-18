@@ -94,7 +94,10 @@ class ReportJobService
                 $reportService->persistGeneratedContent($chart, $report);
             }
         } elseif ($step['status'] === 'generating_pdf') {
-            app(ReportPdfService::class)->store($chart, $job->id);
+            $allDoors = ['sol', 'luna', 'ascendente', 'descendente'];
+            $completeReport = count($job->doors) === count($allDoors)
+                && array_diff($allDoors, $job->doors) === [];
+            app(ReportPdfService::class)->store($chart, $job->id, $completeReport);
         }
         DB::transaction(function () use ($job, $steps): void {
             $next = $job->cursor + 1;

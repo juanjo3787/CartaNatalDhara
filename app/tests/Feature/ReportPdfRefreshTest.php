@@ -89,8 +89,12 @@ class ReportPdfRefreshTest extends TestCase
                 $this->assertStringContainsString('data-section-id="'.$door.'.harmonization"', $html);
             }
         }
-        $this->actingAs(User::factory()->create())->get(route('charts.report.download', $chart))
+        $download = $this->actingAs(User::factory()->create())->get(route('charts.report.download', $chart))
             ->assertOk()->assertStreamedContent(Storage::disk('local')->get($result['path']));
+        $this->assertStringContainsString(
+            'Informe I - Persona de prueba.pdf',
+            $download->headers->get('Content-Disposition'),
+        );
         $this->assertDatabaseCount('report_jobs', 0);
         $this->assertDatabaseCount('report_generations', 1);
         Http::assertNothingSent();

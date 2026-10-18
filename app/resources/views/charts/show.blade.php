@@ -63,6 +63,14 @@
 @endphp
 
 @section('content')
+    @if (session('success'))
+        <div class="p-message p-message-success" role="status" aria-live="polite">{{ session('success') }}</div>
+    @endif
+    @if ($chart->report_is_stale)
+        <div class="p-message p-message-error" role="alert" aria-live="polite">
+            Los datos de esta carta han cambiado. El informe anterior ya no está actualizado; vuelve a generar el informe para reflejar los nuevos datos.
+        </div>
+    @endif
     <div class="toolbar">
         <span class="badge">Carta natal</span>
     </div>
@@ -70,7 +78,7 @@
     <h1>Carta de {{ $chart->person->alias }}</h1>
     <form method="POST" action="{{ route('reports.jobs.store', $chart) }}" data-report-job>
         @csrf
-        <button type="submit">Generar informe en segundo plano</button>
+        <button type="submit">{{ $chart->report_is_stale ? 'Volver a generar el informe' : 'Generar informe en segundo plano' }}</button>
     </form>
 
     <style>

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportPdfService
 {
-    public function store(Chart $chart, int $jobId): void
+    public function store(Chart $chart, int $jobId, bool $completeReport = true): void
     {
         if (! $chart->natal_wheel_image) {
             throw new \RuntimeException('Falta la rueda astrológica para generar el PDF.');
@@ -21,8 +21,12 @@ class ReportPdfService
         if (! Storage::disk('local')->put($path, $pdf)) {
             throw new \RuntimeException('PDF storage failed.');
         }
-        DB::transaction(function () use ($chart, $path, $pdf): void {
-            $chart->update(['phase_one_pdf' => $path, 'phase_one_pdf_generated_at' => now()]);
+        DB::transaction(function () use ($chart, $path, $pdf, $completeReport): void {
+            $chart->update([
+                'phase_one_pdf' => $path,
+                'phase_one_pdf_generated_at' => now(),
+                'report_is_stale' => $completeReport ? false : $chart->report_is_stale,
+            ]);
             ReportGeneration::updateOrCreate(['chart_id' => $chart->id, 'filename' => $path], ['report_type' => 'fase-1', 'size_bytes' => strlen($pdf), 'checksum' => hash('sha256', $pdf)]);
         });
     }
