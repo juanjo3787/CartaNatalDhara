@@ -67,6 +67,8 @@ final class ReportGenerationIntegrationTest extends TestCase
         $pdf = view('reports.phase-one.template', compact('chart', 'report') + ['pdf' => true])->render();
         $results = [];
         foreach ([$web, $pdf] as $html) {
+            $this->assertSame(1, substr_count($html, 'ESTADOS DE CADA PUERTA: Cómo reconocer armonía, defecto y exceso'));
+            $this->assertSame(1, substr_count($html, 'puede que hayas notado que no respondes siempre'));
             $dom = new \DOMDocument;
             @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
             $xpath = new \DOMXPath($dom);

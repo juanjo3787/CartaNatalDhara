@@ -205,7 +205,13 @@ class ReportPdfRefreshTest extends TestCase
                 $this->assertLessThan($indexPosition, $firstBlankPagePosition);
                 $this->assertLessThan($secondBlankPagePosition, $indexPosition);
                 $this->assertLessThan($contentPosition, $secondBlankPagePosition);
-                $this->assertSame(2, substr_count($html, 'report-pdf-blank-page'));
+                $this->assertSame(3, substr_count($html, 'report-pdf-blank-page'));
+                $this->assertStringContainsString('data-report-blank-page="9"', $html);
+                $conclusionsPosition = strpos($html, 'Conclusiones importantes para tu lectura');
+                $blankPagePosition = strpos($html, 'data-report-blank-page="9"');
+                $firstDoorPosition = strpos($html, '<h1>01 - El Sol</h1>');
+                $this->assertLessThan($blankPagePosition, $conclusionsPosition);
+                $this->assertLessThan($firstDoorPosition, $blankPagePosition);
                 $this->assertSame(7, substr_count($html, 'data-index-page-label='));
             } else {
                 $this->assertStringNotContainsString('data-index-page-label=', $html);

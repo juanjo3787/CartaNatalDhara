@@ -119,13 +119,31 @@ final class ReportStructureTest extends TestCase
             .'<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>'
             .'<section class="report-page"><h1>Índice</h1></section>'
             .'<section class="report-page report-pdf-blank-page" aria-hidden="true"></section>'
-            .'<section class="report-page report-last-page"><h1>Comienzo del contenido</h1></section>'
+            .'<section class="report-page"><h1>Página 5</h1></section>'
+            .'<section class="report-page"><h1>Página 6</h1></section>'
+            .'<section class="report-page"><h1>Página 7</h1></section>'
+            .'<section class="report-page"><h1>Página 8</h1></section>'
+            .'<section class="report-page report-pdf-blank-page" aria-hidden="true" data-report-blank-page="9"></section>'
+            .'<section class="report-page report-last-page" data-after-blank-page="true"><h1>Página 10</h1></section>'
             .'</div>';
         $dompdf = new Dompdf;
         $dompdf->loadHtml(str_replace('</body>', $css.$content.'</body>', $html));
+        $blankPages = [];
+        $followingPage = null;
+        $dompdf->setCallbacks([['event' => 'begin_frame', 'f' => static function ($frame, $canvas) use (&$blankPages, &$followingPage): void {
+            $node = $frame->get_node();
+            if ($node instanceof \DOMElement && $node->hasAttribute('data-report-blank-page')) {
+                $blankPages[] = $canvas->get_page_number();
+            }
+            if ($node instanceof \DOMElement && $node->hasAttribute('data-after-blank-page')) {
+                $followingPage = $canvas->get_page_number();
+            }
+        }]]);
         $dompdf->render();
 
-        $this->assertSame(5, $dompdf->getCanvas()->get_page_count());
+        $this->assertSame(10, $dompdf->getCanvas()->get_page_count());
+        $this->assertSame([9], array_values(array_unique($blankPages)));
+        $this->assertSame(10, $followingPage);
         $this->assertStringContainsString('height: 260mm;', $css);
         $this->assertStringContainsString('page-break-after: always;', $css);
     }

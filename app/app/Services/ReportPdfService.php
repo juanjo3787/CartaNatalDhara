@@ -47,6 +47,7 @@ class ReportPdfService
         $doorStartPages = [];
         $indexStartPages = [];
         $indexPageLabels = [];
+        $blankPages = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
             ->pluck('key')
@@ -54,10 +55,14 @@ class ReportPdfService
         $expectedIndexKeys = array_column($report['index'], 'key');
         $dompdf->setCallbacks([[
             'event' => 'begin_frame',
-            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels): void {
+            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$blankPages): void {
                 $node = $frame->get_node();
                 if (! $node instanceof \DOMElement) {
                     return;
+                }
+
+                if ($node->hasAttribute('data-report-blank-page')) {
+                    $blankPages[] = $canvas->get_page_number();
                 }
 
                 if ($node->hasAttribute('data-door-key')) {
@@ -95,7 +100,7 @@ class ReportPdfService
         $canvas = $dompdf->getCanvas();
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
         $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
-        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels): void {
+        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels, $blankPages): void {
             foreach ($indexPageLabels as $key => $label) {
                 if ($label['page'] === $pageNumber && isset($indexStartPages[$key])) {
                     $pageText = (string) $indexStartPages[$key];
@@ -111,7 +116,7 @@ class ReportPdfService
                 }
             }
 
-            if (in_array($pageNumber, [1, 2, 4], true)) {
+            if ($pageNumber === 1 || in_array($pageNumber, $blankPages, true)) {
                 return;
             }
             $width = $pageCanvas->get_width();
