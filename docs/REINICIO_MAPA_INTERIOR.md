@@ -1,10 +1,11 @@
-# Reinicio local — ASTROLOGIA SARANA VEDA
+# Reinicio local y MySQL — ASTROLOGIA SARANA VEDA
 
 ## Estado y alcance
 
 Se ha ejecutado la activacion **en el codigo local** del nuevo Informe I y el
-borrado local confirmado. No se ha desplegado este cambio ni se ha limpiado
-produccion. **El reinicio total del sistema no esta completado.**
+borrado local confirmado. Tras una autorizacion adicional expresa, tambien se ha
+limpiado la base MySQL del NAS. El despliegue y los archivos persistentes del NAS
+no se han verificado en esta operacion. **El reinicio total del sistema no esta completado.**
 
 No se ha generado ningun informe personal nuevo. Las verificaciones emplearon
 datos sinteticos, SQLite aislado y respuestas de IA simuladas.
@@ -32,6 +33,46 @@ datos sinteticos, SQLite aislado y respuestas de IA simuladas.
 Las eliminaciones de archivos versionados estan en el diff local. Todavia se
 pueden recuperar del historial Git: este trabajo **no reescribio el historial**.
 No se crearon copias de seguridad de los datos borrados.
+
+## Borrado de MySQL ejecutado con autorizacion adicional
+
+Se comprobo la conexion efectiva a `cartaNatalDhara` en el NAS antes de borrar.
+Todas las tablas eran InnoDB y no habia generaciones activas ni trabajos en cola.
+Se ejecuto una transaccion con bloqueo temporal de tablas, sin desactivar claves
+foraneas, sin eliminar tablas y sin modificar sus secuencias de identificadores.
+Se verifico el vaciado antes del commit y mediante una segunda conexion despues.
+
+| Datos eliminados | Filas |
+|---|---:|
+| Personas | 15 |
+| Nacimientos | 15 |
+| Lugares | 15 |
+| Cartas | 10 |
+| Interpretaciones | 491 |
+| Plantillas guardadas | 192 |
+| Historial de generaciones | 325 |
+| Trabajos de informes | 20 |
+| Metricas de informes | 1619 |
+| Trabajos fallidos de cola | 2 |
+| Sesiones anteriores | 3 |
+
+Tambien se comprobaron y vaciaron las tablas de trabajos en cola, lotes,
+historiales de cambios personales, cache y bloqueos de cache, que ya estaban
+vacias. Todas las tablas de contenido quedaron con cero filas.
+
+Se conservaron **sin cambios** la cuenta de acceso (una fila), sus credenciales,
+las 24 filas de migraciones y la tabla de recuperacion de contrasenas. Se
+compararon en memoria sus contenidos antes y despues, sin publicarlos ni guardar
+una copia. El esquema se conserva y el nuevo maestro puede crear sus plantillas
+genericas cuando se genere el primer informe nuevo.
+
+Las sesiones anteriores se invalidaron. Una sesion nueva aparecio tras el
+borrado por actividad normal del sitio; esto no repoblo personas, cartas ni
+interpretaciones. Puede ser necesario volver a iniciar sesion.
+
+El borrado MySQL **no elimina los PDF fisicos**, registros del servidor, binlogs,
+replicas ni copias de seguridad. No se ha creado un respaldo de los datos borrados
+en esta operacion.
 
 ## Elementos conservados y activos
 
@@ -119,14 +160,15 @@ de produccion**, no una certificacion de reinicio total ni de un informe real.
 
 | Recurso | Estado / acceso necesario |
 |---|---|
-| MySQL/MariaDB del NAS | No borrado. Acceder al gestor de base de datos o SSH del NAS; confirmar el alcance antes de limpiar personas, nacimientos, lugares, cartas, interpretaciones, plantillas, historiales, trabajos, metricas, sesiones y colas. Conservar usuarios, credenciales y migraciones. |
+| MySQL/MariaDB del NAS | Borrado autorizado ejecutado y verificado: contenido historico vacio; cuenta, credenciales y migraciones intactas. Binlogs, replicas y backups quedan fuera de esta operacion. |
 | PDF y trazas del almacenamiento persistente del NAS | No borrados. Revisar el volumen de almacenamiento de la aplicacion en el NAS, con workers detenidos. |
-| Codigo e imagen activos en produccion | No actualizados. Desplegar estos cambios, migrar y reiniciar workers despues de revisar y confirmar la operacion de produccion. |
+| Codigo e imagen activos en produccion | Despliegue no ejecutado ni verificado por esta operacion. Confirmar imagen actual y workers antes de generar. |
 | Git local y GitHub | Los archivos retirados permanecen en commits anteriores. Limpiar el historial exige una operacion separada coordinada con los otros clones. |
 | Snapshots y copias del NAS, imagenes Docker antiguas | No inspeccionados ni borrados. Revisar Snapshot Replication/Hyper Backup y Container Manager. |
 | Descargas Word/PDF, papelera y otros equipos/clones | Fuera del alcance local confirmado. Revisar y borrar manualmente donde se guardaron. |
 | Proveedor de IA y conversaciones anteriores | No accesibles para borrado desde este trabajo. Gestionar retencion y datos en las plataformas correspondientes. |
 
-No confundir la ausencia de dependencias historicas en el nuevo generador con la
-eliminacion fisica de todos esos recursos. No usar el sistema de produccion como
-una base vacia hasta completar y verificar su limpieza autorizada.
+No confundir la ausencia de dependencias historicas en el nuevo generador ni el
+vaciado de sus tablas MySQL con la eliminacion fisica de todos esos recursos.
+La base de personas y cartas esta vacia; la limpieza de los archivos y copias
+pendientes sigue siendo necesaria para declarar un reinicio total.

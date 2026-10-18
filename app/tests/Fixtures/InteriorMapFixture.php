@@ -30,18 +30,25 @@ trait InteriorMapFixture
         $titles = $chapter === 'integration' ? InteriorMapMaster::INTEGRATION_TITLES : InteriorMapMaster::TITLES;
         $content = [];
         foreach (array_keys($titles) as $index => $key) {
-            $text = $chapter.' '.$key.' '.implode(' ', array_map(static fn ($i) => 'observación'.$index.'x'.$i, range(1, $chapter === 'integration' ? 73 : 64)));
+            $text = $chapter.' '.$key.' '.implode(' ', array_map(static fn ($i) => 'observación'.$index.'x'.$i, range(1, $chapter === 'integration' ? 73 : 46)));
             $content[$key] = [$text];
         }
         if ($chapter === 'integration') {
-            $content['themes'] = [
-                'Tema primero. '.str_repeat('Elección consciente y cuidado disponible. ', 38),
-                'Tema segundo. '.str_repeat('Comenzar despacio y escuchar necesidades. ', 38),
-                'Tema tercero. '.str_repeat('Acordar los límites con claridad. ', 38),
-            ];
+            $content['themes'] = array_map(static fn (string $theme): array => [
+                'title' => 'Tema '.$theme,
+                'paragraphs' => [$theme.' '.str_repeat('Elección consciente y cuidado disponible. ', 30)],
+                'work_points' => ['Reconocer lo que necesitas.', 'Expresar una preferencia propia.', 'Acordar un siguiente paso.'],
+                'question' => '¿Qué quieres cuidar en esta situación?',
+            ], ['primero', 'segundo', 'tercero']);
         } else {
             $opposite = ['sol' => 'Capricornio', 'luna' => 'Géminis', 'ascendente' => 'Libra', 'descendente' => 'Aries'][$chapter];
             $content['opposite'][0] .= ' '.$opposite;
+            $content['summary'] = array_map(static fn (string $label): string => $label.': '.$chapter.' '.str_repeat('Una cualidad que puedes observar. ', 3), ['DON', 'NECESIDAD', 'SOMBRA', 'RECURSO']);
+            foreach (InteriorMapMaster::LIST_BLOCKS as $block) {
+                if (isset($content[$block])) {
+                    $content[$block] = array_map(static fn (array $words): string => implode(' ', $words), array_chunk(explode(' ', $content[$block][0]), 10));
+                }
+            }
         }
 
         return $content;

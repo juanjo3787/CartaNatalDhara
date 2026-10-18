@@ -87,7 +87,7 @@ final class InteriorMapMasterTest extends TestCase
     public function test_duplicate_paragraphs_are_not_accepted_as_a_complete_report(): void
     {
         $content = self::chapter('sol');
-        $content['practice'][] = $content['harmony'][0];
+        $content['practice'][] = $content['function'][0];
         $this->expectExceptionMessage('repite un párrafo');
         (new InteriorMapMaster)->assertNoDuplicateParagraphs([$content]);
     }
@@ -102,5 +102,39 @@ final class InteriorMapMasterTest extends TestCase
             $facts = $master->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => $snapshot]));
             $this->assertSame(InteriorMapMaster::SIGNS[$signs[($index + 6) % 12]], $facts['sol']['opposite']);
         }
+    }
+
+    public function test_integration_rejects_a_theme_without_its_work_points(): void
+    {
+        $content = self::chapter('integration');
+        unset($content['themes'][0]['work_points']);
+        $this->expectExceptionMessage('Cada tema requiere');
+        (new InteriorMapMaster)->validate($content, true);
+    }
+
+    public function test_integration_facts_are_checked_inside_nested_theme_paragraphs(): void
+    {
+        $master = new InteriorMapMaster;
+        $facts = $master->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => self::snapshot()]));
+        $content = self::chapter('integration');
+        $content['themes'][0]['paragraphs'][] = 'Tu Sol en Libra describe tu identidad.';
+        $this->expectExceptionMessage('contradice una posición canónica');
+        $master->validateFacts($content, $facts, null);
+    }
+
+    public function test_summary_requires_all_four_labels(): void
+    {
+        $content = self::chapter('sol');
+        $content['summary'][0] = 'Una síntesis sin distinguir el don.';
+        $this->expectExceptionMessage('La síntesis requiere');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public function test_integration_rejects_unstructured_themes(): void
+    {
+        $content = self::chapter('integration');
+        $content['themes'] = 'Un bloque sin temas diferenciados.';
+        $this->expectExceptionMessage('lista no vacía');
+        (new InteriorMapMaster)->validate($content, true);
     }
 }

@@ -33,7 +33,7 @@ final class PhaseOneAiGenerationService
             'chapter' => $chapter,
             'ASTROLOGICAL_FACTS' => $facts,
             'sections' => $integration ? InteriorMapMaster::INTEGRATION_TITLES : InteriorMapMaster::TITLES,
-            'word_budget' => $integration ? '800–1050 palabras; themes contiene 3–5 temas diferenciados, preguntas y acciones.' : '780–1050 palabras. En opposite nombra el signo opuesto indicado y explica recursos y clave de integración; en los estados usa listas breves expresadas como párrafos.',
+            'word_budget' => $integration ? '800–1050 palabras; themes contiene 3–5 objetos con título, desarrollo, puntos de trabajo y pregunta propios.' : '780–1050 palabras entre todas las secciones. Reserva unas 200 palabras al opuesto y su integración. Alterna desarrollo y listas; la síntesis tiene cuatro entradas: DON, NECESIDAD, SOMBRA y RECURSO.',
         ];
         if ($integration) {
             foreach (InteriorMapMaster::DOORS as $door) {

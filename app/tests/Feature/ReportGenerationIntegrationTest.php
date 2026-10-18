@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Person;
 use App\Models\User;
+use App\Services\PdfPageGeometry;
 use App\Services\PhaseOneManualSaveService;
 use App\Services\PhaseOneReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,12 +42,19 @@ final class ReportGenerationIntegrationTest extends TestCase
             $this->assertStringNotContainsString('El regente y su posición', $html);
             $this->assertStringNotContainsString('data-report-blank-page="9"', $html);
             $this->assertStringContainsString('#f8dfcc', $html);
+            $this->assertStringContainsString('Las características de Cáncer', $html);
+            $this->assertStringContainsString('Tu opuesto complementario Capricornio', $html);
+            $this->assertStringContainsString('Inicio de la casa 7', $html);
+            $this->assertStringContainsString('<h3>Tema primero</h3>', $html);
+            $this->assertStringContainsString('<h4>Puntos de trabajo</h4><ul><li>', $html);
+            $this->assertStringContainsString('<strong>DON:</strong>', $html);
         }
         $editable = $service->editableContent($chart);
         $chart->update(['phase_one_pdf' => 'obsolete.pdf']);
         app(PhaseOneManualSaveService::class)->save($chart, $editable['shared'], $editable['doors']);
         $this->assertNull($chart->fresh()->phase_one_pdf);
         $this->assertTrue($service->build($chart->fresh(), storedOnly: true)['complete']);
+        $this->assertSame($editable['shared']['themes'], $service->editableContent($chart->fresh())['shared']['themes']);
         $this->actingAs(User::factory()->create())->get(route('charts.report.edit', $chart))->assertOk()->assertSee('Tu opuesto complementario');
     }
 
@@ -66,7 +74,7 @@ final class ReportGenerationIntegrationTest extends TestCase
         Storage::fake('local');
         $chart = $this->chart();
         $this->saveChapters($chart);
-        $path = 'pdfs/'.$chart->id.'/job-1-v15.pdf';
+        $path = 'pdfs/'.$chart->id.'/job-1-v'.PdfPageGeometry::VERSION.'.pdf';
         Storage::disk('local')->put($path, '%PDF-synthetic');
         $chart->update(['phase_one_pdf' => $path]);
         $response = $this->actingAs(User::factory()->create())->get(route('charts.report.download', $chart))->assertOk();

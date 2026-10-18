@@ -69,7 +69,7 @@ final class ReportJobTest extends TestCase
         $this->assertNull($job->active_chart_id);
         $this->assertFalse($chart->fresh()->report_is_stale);
         $this->assertSame($snapshot, $chart->fresh()->snapshot);
-        $this->assertDatabaseCount('interpretations', 56);
+        $this->assertDatabaseCount('interpretations', 4 * count(InteriorMapMaster::TITLES) + count(InteriorMapMaster::INTEGRATION_TITLES));
         $this->assertStringStartsWith('%PDF-', Storage::disk('local')->get($chart->fresh()->phase_one_pdf));
         $integration = $chart->reportGenerations()->where('ai_assisted', true)->whereNull('door')->firstOrFail();
         $this->actingAs(User::findOrFail($job->user_id))->get(route('charts.report.history', $chart))

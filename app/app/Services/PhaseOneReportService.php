@@ -43,8 +43,20 @@ final class PhaseOneReportService
             $index[] = ['key' => $key, 'number' => $number, 'title' => $title, 'summary' => $question];
             $doors[] = [
                 'key' => $key, 'title' => $title, 'question' => $question,
-                'subtitle' => $facts[$key]['sign'].' · Casa '.$facts[$key]['house'],
-                'position' => $facts[$key]['sign'].' · Casa '.$facts[$key]['house'],
+                'subtitle' => $facts[$key]['sign'].' · '.(in_array($key, ['ascendente', 'descendente'], true) ? 'Inicio de la casa ' : 'Casa ').$facts[$key]['house'],
+                'position' => $facts[$key]['sign'].' · '.(in_array($key, ['ascendente', 'descendente'], true) ? 'Inicio de la casa ' : 'Casa ').$facts[$key]['house'],
+                'block_titles' => array_replace(InteriorMapMaster::TITLES, [
+                    'function' => 'Qué representa '.($key === 'luna' ? 'la Luna y qué se trabaja desde ella' : 'el '.ucfirst($key).' y qué se trabaja desde él'),
+                    'sign_traits' => 'Las características de '.$facts[$key]['sign'],
+                    'house_topics' => 'Qué representa la casa '.$facts[$key]['house'],
+                    'house' => 'Qué añade la casa '.$facts[$key]['house'],
+                    'opposite' => 'Tu opuesto complementario '.$facts[$key]['opposite'],
+                    'opposite_traits' => 'Las características que aporta '.$facts[$key]['opposite'],
+                    'summary' => match ($key) {
+                        'sol' => 'Tu mapa solar', 'luna' => 'Tu mapa lunar',
+                        default => 'Tu mapa del '.ucfirst($key),
+                    },
+                ]),
                 'blocks' => $blocks,
             ];
         }
@@ -71,7 +83,7 @@ final class PhaseOneReportService
 
         return [
             'report_schema_version' => InteriorMapMaster::VERSION,
-            'prompt_version' => 'interior-map-1',
+            'prompt_version' => 'interior-map-2',
             'name' => $name, 'shared' => ['intro' => $intro],
             'doors' => $doors, 'sections' => $sections, 'index' => $index,
             'integration' => $integration, 'complete' => $missing === [], 'facts' => $facts,
@@ -90,7 +102,8 @@ final class PhaseOneReportService
             'Este mapa propone una lectura simbólica para explorar tu experiencia. Sus descripciones son posibilidades que puedes reconocer, matizar o descartar, no una prueba científica de personalidad ni una predicción.',
             'El signo describe una forma de expresar una función; la casa señala el ámbito de la vida donde puede manifestarse. El opuesto complementario aporta recursos para ampliar tu respuesta, sin sustituir tu signo ni suponer que tengas planetas en él.',
             'Recorreremos identidad y voluntad con el Sol, necesidades emocionales con la Luna, comienzo con el Ascendente y encuentro con el Descendente. Al final reuniremos sus preguntas en una práctica de integración.',
-            'Armonía significa disponibilidad, flexibilidad y medida. Por defecto cuesta acceder a una cualidad; por exceso esa cualidad domina y pierde flexibilidad. No son juicios ni etiquetas: puedes reconocer respuestas distintas según la situación.',
+            'En cada puerta encontrarás tres formas de expresión. En armonía, la cualidad se vive con equilibrio y flexibilidad. Por defecto cuesta acceder a ella o expresarla. Por exceso ocupa demasiado espacio y se vuelve rígida.',
+            '«Por defecto» significa aquí por falta de expresión. Puedes pasar de un extremo al otro según la situación. Son referencias para observarte, no etiquetas que te definan.',
         ];
     }
 
@@ -128,10 +141,32 @@ final class PhaseOneReportService
                 );
                 $chart->interpretations()->updateOrCreate(
                     ['phase' => 'fase-1', 'door' => $door, 'block' => $block],
-                    ['template_id' => $template->id, 'content' => implode('', array_map(static fn (string $text): string => '<p>'.e($text).'</p>', $paragraphs)), 'ai_assisted' => $assisted, 'rulers_used' => []],
+                    ['template_id' => $template->id, 'content' => $this->renderBlock($block, $paragraphs), 'ai_assisted' => $assisted, 'rulers_used' => []],
                 );
             }
             $chart->update(['phase_one_pdf' => null, 'phase_one_pdf_generated_at' => null]);
         });
+    }
+
+    private function renderBlock(string $block, array $items): string
+    {
+        if ($block === 'themes') {
+            return implode('', array_map(fn (array $theme): string => '<h3>'.e($theme['title']).'</h3>'
+                .$this->renderBlock('paragraphs', $theme['paragraphs'])
+                .'<h4>Puntos de trabajo</h4>'.$this->renderBlock('work_points', $theme['work_points'])
+                .'<h4>Pregunta</h4><p>'.e($theme['question']).'</p>', $items));
+        }
+        if (in_array($block, InteriorMapMaster::LIST_BLOCKS, true)) {
+            return '<ul>'.implode('', array_map(static fn (string $text): string => '<li>'.e($text).'</li>', $items)).'</ul>';
+        }
+        if ($block === 'summary') {
+            return implode('', array_map(static function (string $text): string {
+                $parts = explode(':', $text, 2);
+
+                return count($parts) === 2 ? '<p><strong>'.e($parts[0]).':</strong> '.e(trim($parts[1])).'</p>' : '<p>'.e($text).'</p>';
+            }, $items));
+        }
+
+        return implode('', array_map(static fn (string $text): string => '<p>'.e($text).'</p>', $items));
     }
 }
