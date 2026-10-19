@@ -74,4 +74,110 @@ trait InteriorMapFixture
             app(PhaseOneReportService::class)->storeChapter($chart, $chapter === 'integration' ? null : $chapter, self::chapter($chapter));
         }
     }
+
+    private function referenceChapters(): array
+    {
+        $path = base_path('../docs/plantilla_Mapa_Interior_Pastora_Maria_Villarreal_Muniz.docx');
+        if (! is_file($path)) {
+            $this->markTestSkipped('The retained editorial reference is not available.');
+        }
+        $archive = new \PharData($path, 0, null, \Phar::ZIP);
+        $document = new \DOMDocument;
+        $document->loadXML($archive['word/document.xml']->getContent());
+        $xpath = new \DOMXPath($document);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+        $chapters = [];
+        $chapter = null;
+        $block = null;
+        $theme = -1;
+        $themeField = null;
+        foreach ($xpath->query('//w:body/w:p') as $paragraph) {
+            $text = '';
+            foreach ($xpath->query('.//w:t', $paragraph) as $run) {
+                $text .= $run->textContent;
+            }
+            $style = $xpath->evaluate('string(w:pPr/w:pStyle/@w:val)', $paragraph);
+            if ($style === 'Heading1' && preg_match('/^([1-5])\./u', $text, $match)) {
+                $chapter = [...InteriorMapMaster::DOORS, 'integration'][(int) $match[1] - 1];
+                $chapters[$chapter] = [];
+                $block = null;
+
+                continue;
+            }
+            if ($chapter === null || trim($text) === '') {
+                continue;
+            }
+            if ($chapter === 'integration') {
+                if (str_starts_with($style, 'Heading')) {
+                    if ($text === 'Qué se trabaja en este apartado') {
+                        $block = 'purpose';
+                    } elseif ($text === 'Tu práctica de integración') {
+                        $block = 'practice';
+                    } elseif ($text === 'Pregunta esencial') {
+                        $block = 'essential_question';
+                    } elseif ($text === 'Puntos de trabajo') {
+                        if ($theme < 0) {
+                            $block = 'work_points';
+                        } else {
+                            $themeField = 'work_points';
+                        }
+                    } elseif ($text === 'Pregunta') {
+                        $themeField = 'question';
+                    } else {
+                        $block = 'themes';
+                        $theme++;
+                        $chapters[$chapter]['themes'][$theme] = ['title' => $text, 'paragraphs' => [], 'work_points' => [], 'question' => ''];
+                        $themeField = 'paragraphs';
+                    }
+
+                    continue;
+                }
+                if ($block === 'themes') {
+                    if ($themeField === 'question') {
+                        $chapters[$chapter]['themes'][$theme]['question'] = $text;
+                    } else {
+                        $chapters[$chapter]['themes'][$theme][$themeField][] = $text;
+                    }
+                } elseif ($block !== null) {
+                    $chapters[$chapter][$block][] = $text;
+                }
+
+                continue;
+            }
+            if (str_starts_with($style, 'Heading')) {
+                $block = match (true) {
+                    str_starts_with($text, 'Qué representa el '), str_starts_with($text, 'Qué representa la Luna') => 'function',
+                    $text === 'Pregunta de entrada' => 'entry_question',
+                    str_starts_with($text, 'Las características de ') => 'sign_traits',
+                    str_starts_with($text, 'Qué añade la casa'), str_starts_with($text, 'Qué representa la casa') => 'house_topics',
+                    $text === 'Expresión armónica' => 'harmony',
+                    $text === 'Expresión desarmónica por defecto' => 'deficit',
+                    $text === 'Expresión desarmónica por exceso' => 'excess',
+                    $text === 'Pregunta para distinguirlas' => 'distinction_question',
+                    str_starts_with($text, 'Tu opuesto complementario'), $text === 'Qué es y para qué sirve' => 'opposite',
+                    str_starts_with($text, 'Las características que aporta') => 'opposite_traits',
+                    $text === 'Clave de integración' => 'integration_key',
+                    $text === 'Un ejemplo cotidiano' => 'example',
+                    str_starts_with($text, 'Tu mapa ') => 'summary',
+                    $text === 'Pregunta esencial' => 'essential_question',
+                    $text === 'Práctica' => 'practice',
+                    default => $block,
+                };
+
+                continue;
+            }
+            if ($block === null || str_ends_with($text, ':')) {
+                continue;
+            }
+            if ($style !== 'ListBullet') {
+                $block = match ($block) {
+                    'sign_traits' => 'sign', 'house_topics' => 'house',
+                    'opposite_traits' => 'opposite_application', default => $block,
+                };
+            }
+            $chapters[$chapter][$block][] = $text;
+        }
+
+        return $chapters;
+    }
 }

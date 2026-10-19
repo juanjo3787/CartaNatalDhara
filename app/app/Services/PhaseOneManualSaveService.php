@@ -34,10 +34,22 @@ final class PhaseOneManualSaveService
             foreach ($doors as $door => $blocks) {
                 $plain = array_map(fn ($html) => [$this->plainText($html)], $blocks);
                 try {
+                    foreach (['harmony', 'deficit', 'excess'] as $state) {
+                        preg_match_all('/<li\b[^>]*>(.*?)<\/li>/isu', $blocks[$state], $items);
+                        if (count($items[1]) !== 5 || count(array_filter($items[1], fn ($item) => trim($this->plainText($item)) !== '')) !== 5) {
+                            throw new \RuntimeException('Cada estado debe conservar una lista de cinco comportamientos.');
+                        }
+                    }
+                    $master->validateEditorialMethod($plain);
                     $master->validateFacts($plain, $facts, $door);
                 } catch (\RuntimeException $exception) {
                     throw ValidationException::withMessages(['doors' => $exception->getMessage()]);
                 }
+            }
+            try {
+                $master->validateEditorialMethod(['integration' => array_map($this->plainText(...), $shared)]);
+            } catch (\RuntimeException $exception) {
+                throw ValidationException::withMessages(['shared' => $exception->getMessage()]);
             }
             $words = $master->wordCount(['text' => array_map($this->plainText(...), array_values($texts))]);
             abort_if($words < 4000 || $words > 5500, 422, 'El Informe I debe conservar una extensión de 4000–5500 palabras.');

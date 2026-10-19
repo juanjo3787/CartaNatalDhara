@@ -48,6 +48,9 @@ final class ReportGenerationIntegrationTest extends TestCase
             $this->assertStringContainsString('<h3>Tema primero</h3>', $html);
             $this->assertStringContainsString('<h4>Puntos de trabajo</h4><ul><li>', $html);
             $this->assertStringContainsString('<strong>DON:</strong>', $html);
+            $this->assertStringNotContainsString('>Cómo se expresa en esta puerta</h2>', $html);
+            $this->assertStringNotContainsString('>Cómo integrar estas cualidades</h2>', $html);
+            $this->assertStringNotContainsString('>Puntos de integración y preguntas</h2>', $html);
         }
         $editable = $service->editableContent($chart);
         $chart->update(['phase_one_pdf' => 'obsolete.pdf']);
@@ -93,5 +96,15 @@ final class ReportGenerationIntegrationTest extends TestCase
         $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
             ->assertSessionHasErrors('doors');
         $this->assertSame($previous, app(PhaseOneReportService::class)->editableContent($chart->fresh())['doors']['sol']['sign']);
+    }
+
+    public function test_manual_edit_cannot_remove_a_required_behaviour(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $editable = app(PhaseOneReportService::class)->editableContent($chart);
+        $editable['doors']['sol']['deficit'] = '<ul>'.str_repeat('<li>Una conducta concreta.</li>', 4).'</ul>';
+        $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
+            ->assertSessionHasErrors('doors');
     }
 }

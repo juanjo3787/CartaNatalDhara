@@ -137,4 +137,45 @@ final class InteriorMapMasterTest extends TestCase
         $this->expectExceptionMessage('lista no vacía');
         (new InteriorMapMaster)->validate($content, true);
     }
+
+    public function test_each_state_requires_exactly_five_behaviours_in_schema_and_validation(): void
+    {
+        $master = new InteriorMapMaster;
+        foreach (['harmony', 'deficit', 'excess'] as $state) {
+            $this->assertSame(5, $master->schema()['properties'][$state]['minItems']);
+            $this->assertSame(5, $master->schema()['properties'][$state]['maxItems']);
+            foreach ([4, 6] as $count) {
+                $content = self::chapter('sol');
+                $content[$state] = array_fill(0, $count, 'Reconocer una necesidad y expresarla con claridad.');
+                try {
+                    $master->validate($content);
+                    $this->fail('An invalid state count was accepted.');
+                } catch (\RuntimeException $exception) {
+                    $this->assertStringContainsString('exactamente cinco', $exception->getMessage());
+                }
+            }
+        }
+    }
+
+    public function test_general_function_cannot_start_with_a_sign_interpretation(): void
+    {
+        $content = self::chapter('sol');
+        $content['function'][0] = 'El Sol en Cáncer explica cómo te expresas.';
+        $this->expectExceptionMessage('función general');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public function test_element_framework_and_technical_jargon_are_rejected(): void
+    {
+        foreach (['Fuego: actuar con iniciativa.', 'El elemento tierra organiza tu experiencia.', 'Alquimia emocional', 'Impulso ariano', 'Mecanismos operativos', 'Indicadores de validación'] as $text) {
+            $content = self::chapter('sol');
+            $content['sign'][] = $text;
+            try {
+                (new InteriorMapMaster)->validate($content);
+                $this->fail('An obsolete writing framework was accepted.');
+            } catch (\RuntimeException $exception) {
+                $this->assertStringContainsString('ajeno al método', $exception->getMessage());
+            }
+        }
+    }
 }

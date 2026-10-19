@@ -226,6 +226,25 @@
             box-shadow: 4px 4px 0 rgba(122, 86, 61, .12);
         }
     }
+    .report-reading .report-block { margin: 10pt 0 12pt; }
+    .report-reading .report-block-body { padding-top: 0; }
+    .report-reading p { margin-top: 0; margin-bottom: 6pt; }
+    .report-reading ul, .report-reading ol { margin-top: 4pt; margin-bottom: 8pt; line-height: 1.48; }
+    .report-reading h2 { margin-top: 8pt; margin-bottom: 6pt; }
+    .report-reading h3 { margin-top: 9pt; margin-bottom: 4pt; }
+    .report-reading h4 { margin-top: 7pt; margin-bottom: 4pt; }
+    .report-reading .report-door-heading { margin-bottom: 12pt; padding-bottom: 8pt; }
+    .report-reading .report-gray { margin: 8pt 0; }
+    .report-reading .report-index-item { padding-top: 5pt; padding-bottom: 5pt; margin-bottom: 5pt; }
+    @if ($pdf)
+    .report-page.report-reading { padding-left: 0; padding-right: 0; }
+    .report-reading .report-block { margin: 6pt 0 8pt; }
+    .report-reading p { margin-bottom: 4pt; line-height: 1.35; }
+    .report-reading ul, .report-reading ol { margin-top: 3pt; margin-bottom: 5pt; line-height: 1.35; }
+    .report-reading h2 { margin-top: 5pt; margin-bottom: 4pt; padding: 5pt 10pt; }
+    .report-reading h3 { margin-top: 6pt; margin-bottom: 3pt; }
+    .report-reading h4 { margin-top: 5pt; margin-bottom: 3pt; }
+    @endif
 </style>
 
 <div class="report-document">
@@ -259,8 +278,7 @@
         </div>
         <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
-    <section class="report-page"><h1>Recorrido de tu mapa interior</h1><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong><span>{{ $item['summary'] }}</span></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">00</span>@endif</div>@endforeach</div></section>
-    <section class="report-page"><h1>Tu primera lectura</h1><div class="report-gray">
+    <section class="report-page report-reading"><h1>Tu primera lectura</h1><div class="report-gray">
         @foreach ($report['shared']['intro'] as $paragraph)
             @if (str_starts_with(trim($paragraph), '<p>'))
                 {!! $paragraph !!}
@@ -270,18 +288,30 @@
         @endforeach
     </div>
         <table class="report-table report-doors-table"><tr><th>Puerta</th><th>Posición</th><th>Pregunta</th></tr>@foreach ($report['doors'] as $door)<tr><td>{{ ucfirst($door['key']) }}</td><td>{{ $door['position'] }}</td><td>{{ $door['question'] }}</td></tr>@endforeach</table>
+        <h3>Recorrido de tu mapa interior</h3><div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">00</span>@endif</div>@endforeach</div>
         @unless ($report['complete'])<div class="report-note">Este Informe I todavía no está generado. Genera las cuatro puertas para obtener una interpretación individual, sin utilizar informes anteriores.</div>@endunless
     </section>
     @foreach ($report['doors'] as $door)
         @continue(!($report['sections'][$door['key']]['enabled'] ?? false))
-        <section class="report-page report-door" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}">
+        <section class="report-page report-door report-reading" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}">
             <div class="report-door-heading"><h1>{{ $report['sections'][$door['key']]['number'] }} - {{ $report['sections'][$door['key']]['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
-            @foreach ($door['blocks'] as $block => $paragraphs)
-                    <div class="report-block" data-section-id="{{ $door['key'] }}.{{ $block }}">
-                        <h2 class="report-block-title">{{ $door['block_titles'][$block] }}</h2>
-                        @if ($block === 'opposite')<h3>Qué es y para qué sirve</h3>@endif
+            @foreach (\App\Services\InteriorMapMaster::DOOR_GROUPS as $group => $blocks)
+                @continue(!isset($door['blocks'][$group]))
+                    <div class="report-block">
+                        @if (in_array($group, ['entry_question', 'distinction_question', 'example', 'essential_question', 'practice'], true))
+                            <h3>{{ $door['block_titles'][$group] }}</h3>
+                        @else
+                            <h2 class="report-block-title">{{ $door['block_titles'][$group] }}</h2>
+                        @endif
+                        @if ($group === 'opposite')<h3>Qué es y para qué sirve</h3>@endif
+                        @if ($group === 'deficit')<p>Cuando cuesta acceder a las cualidades de {{ $report['facts'][$door['key']]['sign'] }}, puede aparecer:</p>@endif
+                        @if ($group === 'excess')<p>Cuando estas cualidades ocupan demasiado espacio y pierden flexibilidad, puede aparecer:</p>@endif
+                        @foreach ($blocks as $block)
+                        @continue(!isset($door['blocks'][$block]))
+                        <div data-section-id="{{ $door['key'] }}.{{ $block }}">
+                        @if (in_array($block, ['opposite_traits', 'integration_key'], true))<h3>{{ $door['block_titles'][$block] }}</h3>@endif
                         <div class="report-block-body">
-                            @foreach ((array) $paragraphs as $paragraph)
+                            @foreach ((array) $door['blocks'][$block] as $paragraph)
                                 @php($trimmedParagraph = trim($paragraph))
                                 @if (preg_match('/^<(?:p|h3|h4|ol|ul)(?:\s|>)/', $trimmedParagraph))
                                     {!! $trimmedParagraph !!}
@@ -290,14 +320,20 @@
                                 @endif
                             @endforeach
                         </div>
+                        </div>
+                        @endforeach
                     </div>
             @endforeach
         </section>
     @endforeach
-    <section class="report-page report-chapter report-last-page" id="report-section-integration" data-index-key="integration">
+    <section class="report-page report-chapter report-last-page report-reading" id="report-section-integration" data-index-key="integration">
         <div class="report-door-heading"><h1>5 - La integración de tus cuatro puertas</h1></div>
         @foreach ($report['integration'] as $block => $paragraphs)
-            <div class="report-block"><h2 class="report-block-title">{{ \App\Services\InteriorMapMaster::INTEGRATION_TITLES[$block] }}</h2><div class="report-block-body">@foreach ($paragraphs as $paragraph){!! $paragraph !!}@endforeach</div></div>
+            <div class="report-block">
+                @if ($block === 'work_points')<h4>Puntos de trabajo</h4>
+                @elseif ($block !== 'themes')<h2 class="report-block-title">{{ \App\Services\InteriorMapMaster::INTEGRATION_TITLES[$block] }}</h2>@endif
+                <div class="report-block-body">@foreach ($paragraphs as $paragraph){!! $paragraph !!}@endforeach</div>
+            </div>
         @endforeach
     </section>
 </div>

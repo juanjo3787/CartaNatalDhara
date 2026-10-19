@@ -48,7 +48,7 @@ final class PhaseOneReportService
                 'block_titles' => array_replace(InteriorMapMaster::TITLES, [
                     'function' => 'Qué representa '.($key === 'luna' ? 'la Luna y qué se trabaja desde ella' : 'el '.ucfirst($key).' y qué se trabaja desde él'),
                     'sign_traits' => 'Las características de '.$facts[$key]['sign'],
-                    'house_topics' => 'Qué representa la casa '.$facts[$key]['house'],
+                    'house_topics' => (in_array($key, ['ascendente', 'descendente'], true) ? 'Qué representa la casa ' : 'Qué añade la casa ').$facts[$key]['house'],
                     'house' => 'Qué añade la casa '.$facts[$key]['house'],
                     'opposite' => 'Tu opuesto complementario '.$facts[$key]['opposite'],
                     'opposite_traits' => 'Las características que aporta '.$facts[$key]['opposite'],
@@ -83,7 +83,7 @@ final class PhaseOneReportService
 
         return [
             'report_schema_version' => InteriorMapMaster::VERSION,
-            'prompt_version' => 'interior-map-2',
+            'prompt_version' => 'interior-map-3',
             'name' => $name, 'shared' => ['intro' => $intro],
             'doors' => $doors, 'sections' => $sections, 'index' => $index,
             'integration' => $integration, 'complete' => $missing === [], 'facts' => $facts,

@@ -7,7 +7,7 @@ use RuntimeException;
 
 final class InteriorMapMaster
 {
-    public const VERSION = 101;
+    public const VERSION = 102;
 
     public const DOORS = ['sol', 'luna', 'ascendente', 'descendente'];
 
@@ -49,13 +49,35 @@ final class InteriorMapMaster
 
     public const LIST_BLOCKS = ['sign_traits', 'house_topics', 'harmony', 'deficit', 'excess', 'opposite_traits', 'work_points'];
 
+    public const DOOR_GROUPS = [
+        'function' => ['function'],
+        'entry_question' => ['entry_question'],
+        'sign_traits' => ['sign_traits', 'sign'],
+        'house_topics' => ['house_topics', 'house'],
+        'harmony' => ['harmony'],
+        'deficit' => ['deficit'],
+        'excess' => ['excess'],
+        'distinction_question' => ['distinction_question'],
+        'opposite' => ['opposite', 'opposite_traits', 'opposite_application', 'integration_key'],
+        'example' => ['example'],
+        'summary' => ['summary'],
+        'essential_question' => ['essential_question'],
+        'practice' => ['practice'],
+    ];
+
     public function systemPrompt(): string
     {
         return <<<'PROMPT'
 Eres la redactora del Informe I — Mapa interior de ASTROLOGÍA SARANA VEDA.
-Este es el único prompt maestro activo. Sigue una estructura breve y desarrollada, no el dossier histórico.
+Este es el único prompt maestro activo. El método del Word de referencia es obligatorio; no inventes otro sistema interpretativo.
+La referencia contiene unas 4600 palabras en 16 páginas. Conserva esa profundidad y densidad narrativa, sin rellenar ni abreviar en fichas.
 Escribe en español claro, cercano y respetuoso, para quien no sabe astrología. Usa segunda persona sin deducir género del nombre.
 Desarrolla una lectura acompañada: explica qué se observa, para qué puede servir y cómo reconocerlo en una situación cotidiana.
+Usa relaciones, emociones, decisiones, familia, hábitos, descanso y experiencias personales. No conviertas todas las puertas en consejos laborales.
+No organices ninguna interpretación mediante Fuego, Tierra, Aire, Agua o Éter. Describe cualidades propias del signo, no un esquema de elementos.
+Evita «alquimia emocional», «impulso ariano», «mecanismos operativos», «indicadores de validación» y expresiones similares.
+No uses métricas, porcentajes, puntuaciones, indicadores, objetivos de rendimiento ni sistemas de productividad para describir la vida interior.
+Prefiere «puedes reconocer», «quizá», «si esto resuena contigo» y preguntas abiertas. No afirmes «eres así», «siempre haces» o un destino inevitable.
 Alterna párrafos cortos con listas de cualidades y conductas concretas. Evita el tono de diagnóstico, las consignas y los párrafos abstractos.
 La lectura es simbólica, no una prueba científica, diagnóstico ni predicción. Las posibilidades pueden reconocerse, matizarse o descartarse.
 Utiliza exclusivamente los datos verificados y ASTROLOGICAL_FACTS de esta solicitud: tropical, geocéntrico y Placidus.
@@ -73,20 +95,32 @@ Géminis–Sagitario, Cáncer–Capricornio, Leo–Acuario, Virgo–Piscis. Dist
 La integración conjunta contiene de tres a cinco temas específicos de las cuatro posiciones actuales, con puntos de trabajo,
 preguntas y práctica que distinga qué quiero, qué siento, cómo comienzo y qué necesito acordar.
 No copies temas del ejemplo Word ni resumas simplemente las cuatro puertas.
-En function desarrolla el significado y el trabajo personal de la puerta en tres o cuatro párrafos breves.
-sign_traits contiene cinco o seis cualidades, una por elemento; sign las aplica a la función en dos o tres párrafos.
+En function desarrolla PRIMERO y por separado la función general y el trabajo personal de la puerta en tres o cuatro párrafos breves.
+Todavía no nombres ningún signo, elemento ni posición particular de casa. Puedes explicar en general para qué sirven signo y casa.
+En Ascendente y Descendente puedes explicar su relación general con el inicio de las casas 1 y 7, respectivamente.
+Después de function y entry_question, desarrolla el signo y luego la casa, sin mezclar sus listas de características.
+sign_traits contiene cinco o seis cualidades, una por entrada; sign las aplica a la función en dos o tres párrafos.
 house_topics contiene cuatro o cinco ámbitos; house explica su relación con la posición actual sin deducir biografía.
-harmony, deficit y excess contienen cuatro o cinco conductas observables cada uno, una por elemento, sin preámbulos dentro de la lista.
+harmony, deficit y excess contienen EXACTAMENTE CINCO comportamientos cotidianos cada uno, uno por entrada, sin preámbulos dentro de la lista.
+Defecto significa que falta expresión de una cualidad del signo, no que esa cualidad esté exagerada ni que exista un defecto moral.
+Exceso significa que la cualidad ocupa demasiado espacio: por ejemplo, buscar acuerdos puede volverse adaptación continua para evitar incomodar.
+No pongas esa adaptación continua como falta de capacidad para cooperar. Describe por separado ausencia de cooperación y cooperación sin límites propios.
 opposite explica qué aporta el opuesto a esta función y para qué sirve explorarlo, en tres o cuatro párrafos.
+Sigue este orden: qué es el opuesto, qué tema comparte con el signo, para qué sirve explorarlo y cómo pueden convivir ambas cualidades.
 opposite_traits enumera cuatro o cinco recursos. opposite_application desarrolla cómo usarlos y qué ocurre si el recurso se vuelve rígido.
+Termina opposite_application con una situación personal reconocible; integrar el opuesto no significa sustituir el signo ni convertirse en otra persona.
 integration_key es una frase personal breve. example plantea una situación hipotética y una respuesta posible, sin afirmar que haya sucedido.
 summary contiene exactamente cuatro frases con los prefijos DON:, NECESIDAD:, SOMBRA: y RECURSO:, en ese orden.
-entry_question, distinction_question y essential_question contienen una pregunta abierta cada una; practice propone una acción observable.
+entry_question, distinction_question y essential_question contienen una pregunta abierta cada una; practice invita a observar, expresar o probar algo sencillo.
+La práctica puede ser reconocer una emoción, pedir cuidado, revisar una costumbre o expresar un límite; nunca un protocolo de medición.
 En la integración, purpose explica cómo escuchar necesidades simultáneas y work_points enumera cuatro objetivos concretos.
 Cada elemento de themes es un objeto con title, paragraphs, work_points y question: un título propio, dos a cuatro párrafos,
 tres a cinco puntos de trabajo y una pregunta. Relaciona al menos dos puertas en cada tema; incluye una situación hipotética
 con necesidades diferentes y una respuesta posible. No impongas los temas ni las posiciones de una persona de ejemplo.
-La práctica final recorre hechos, deseo, emoción, ritmo y acuerdo, y termina eligiendo un paso posible.
+La integración explora cómo conviven necesidades distintas: querer acercarte y necesitar espacio, cuidar y necesitar cuidado, conservar y cambiar.
+Desarrolla esos temas según las posiciones actuales. Explica sus matices antes de los puntos de trabajo; no hagas una lista de tareas de productividad.
+La práctica final invita a recordar una situación, reconocer qué querías, qué sentías, qué necesitabas y qué quedó sin atender.
+Puede cerrar con «En ese momento intenté cuidar…», «Lo que dejé pendiente fue…» y «Ahora puedo dar este paso…».
 Explica conceptos generales solo una vez. Usa párrafos breves y listas cuando ayuden; no repitas la ficha característica/pauta/ejemplo por punto.
 El informe completo tiene entre 4000 y 5500 palabras, incluida su introducción. No rellenes ni repitas para alcanzar extensión.
 No añadas capítulos de regentes, aspectos planetarios, otros planetas, doce casas, ampliaciones comerciales ni cuotas del modelo antiguo.
@@ -173,6 +207,16 @@ PROMPT;
         foreach (array_keys($integration ? self::INTEGRATION_TITLES : self::TITLES) as $key) {
             $properties[$key] = ['type' => 'array', 'items' => ['type' => 'string']];
         }
+        if (! $integration) {
+            foreach (['harmony', 'deficit', 'excess'] as $key) {
+                $properties[$key]['minItems'] = 5;
+                $properties[$key]['maxItems'] = 5;
+                $properties[$key]['description'] = 'Exactamente cinco comportamientos cotidianos distintos, uno por entrada.';
+            }
+            $properties['function']['description'] = 'Función general de la puerta, antes de nombrar el signo o la casa particular de la persona.';
+            $properties['summary']['minItems'] = 4;
+            $properties['summary']['maxItems'] = 4;
+        }
         if ($integration) {
             $properties['themes'] = [
                 'type' => 'array', 'minItems' => 3, 'maxItems' => 5,
@@ -232,12 +276,18 @@ PROMPT;
             }
         }
         if (! $integration) {
+            foreach (['harmony', 'deficit', 'excess'] as $state) {
+                if (count($content[$state]) !== 5) {
+                    throw new RuntimeException('Cada estado requiere exactamente cinco comportamientos cotidianos.');
+                }
+            }
             foreach (['DON:', 'NECESIDAD:', 'SOMBRA:', 'RECURSO:'] as $index => $prefix) {
                 if (count($content['summary']) !== 4 || ! str_starts_with($content['summary'][$index], $prefix)) {
                     throw new RuntimeException('La síntesis requiere DON, NECESIDAD, SOMBRA y RECURSO en ese orden.');
                 }
             }
         }
+        $this->validateEditorialMethod($content);
         $words = $this->wordCount($content);
         $minimum = $integration ? 800 : 780;
         $maximum = $integration ? 1050 : 1050;
@@ -249,6 +299,20 @@ PROMPT;
     public function wordCount(array $content): int
     {
         return preg_match_all('/[\p{L}\p{N}]+(?:[’\'-][\p{L}\p{N}]+)*/u', implode(' ', $this->texts($content)));
+    }
+
+    public function validateEditorialMethod(array $content): void
+    {
+        $text = implode(' ', $this->texts($content));
+        if (preg_match('/alquimia emocional|impulso ariano|mecanismos operativos|indicadores de validación|\b(?:KPI|KPIs)\b|\b(?:Fuego|Tierra|Aire|Agua|Éter)\s*[:—–]|\belemento\s+(?:de\s+)?(?:fuego|tierra|aire|agua|éter)\b/ui', $text)) {
+            throw new RuntimeException('El contenido introduce jerga o un esquema de elementos ajeno al método del Word.');
+        }
+        if (isset($content['function'])) {
+            $signs = implode('|', array_values(self::SIGNS));
+            if (preg_match('/\b(?:'.$signs.')\b/ui', implode(' ', $content['function']))) {
+                throw new RuntimeException('La función general debe explicarse antes de introducir el signo particular.');
+            }
+        }
     }
 
     private function validateText(mixed $text): void
