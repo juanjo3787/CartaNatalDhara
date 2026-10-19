@@ -74,7 +74,11 @@ capitulo no supera la validacion, la cola aplica sus reintentos con espera; la
 barra conserva el porcentaje hasta que ese capitulo sea valido. Cada peticion
 incluye objetivos de palabras por seccion (no por parrafo). El motivo del rechazo
 se conserva como feedback para corregir la siguiente respuesta y se muestra en
-el aviso de progreso. No se persiste ni acepta el capitulo invalido, no se amplian
+el aviso de progreso. El borrador rechazado se guarda temporalmente en ese mismo
+trabajo junto al motivo; el siguiente intento recibe ese borrador y los recuentos
+reales total y por seccion para editarlo, en vez de generar otro texto a ciegas.
+Se elimina el borrador rechazado al aceptar el capitulo corregido. Nunca se usa
+como interpretacion publicada ni como entrada de otros trabajos. No se amplian
 los limites y no se hacen llamadas adicionales fuera de los reintentos de cola.
 Al agotarlos, se informa del motivo y se permite reintentar la etapa pendiente.
 Desplegar cambios del generador exige recrear tambien el worker, no solo la web.

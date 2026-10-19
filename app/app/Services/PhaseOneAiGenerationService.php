@@ -52,6 +52,16 @@ final class PhaseOneAiGenerationService
         if (is_string($feedback) && $feedback !== '') {
             $input['previous_validation_error'] = $feedback;
             $input['retry_instruction'] = 'La respuesta anterior fue rechazada por este motivo. Corrígelo explícitamente en una nueva respuesta completa que respete el esquema y el presupuesto total. No repitas la misma distribución de extensión.';
+            $candidate = $job->drafts['_validation_candidate'][$chapter] ?? null;
+            if (is_array($candidate)) {
+                $input['revision_candidate'] = $candidate;
+                $input['measured_word_count'] = $this->master->wordCount($candidate);
+                foreach ($candidate as $section => $paragraphs) {
+                    $input['measured_section_words'][$section] = $this->master->wordCount([$section => $paragraphs]);
+                }
+                $input['revision_target_words'] = array_sum($input['section_word_targets']);
+                $input['retry_instruction'] = 'Edita revision_candidate en vez de empezar otro desarrollo. El recuento medido por la aplicación es el correcto. Ajusta cada sección a section_word_targets; reduce las secciones que se exceden y amplía las insuficientes sin repetir ideas. Conserva todas las secciones, cinco conductas por estado y los datos canónicos. Entrega solo el JSON completo corregido, sin comentarios sobre la revisión.';
+            }
         }
         if ($integration) {
             foreach (InteriorMapMaster::DOORS as $door) {
@@ -80,6 +90,7 @@ final class PhaseOneAiGenerationService
         } catch (RuntimeException $exception) {
             $drafts = $job->drafts ?? [];
             $drafts['_validation_feedback'][$chapter] = $exception->getMessage();
+            $drafts['_validation_candidate'][$chapter] = $result;
             $job->update(['drafts' => $drafts]);
             throw new ReportContentValidationException($exception->getMessage(), previous: $exception);
         }
@@ -87,6 +98,7 @@ final class PhaseOneAiGenerationService
             $this->reports->storeChapter($chart, $integration ? null : $chapter, $result);
             $drafts = array_replace($job->drafts ?? [], [$chapter => $result]);
             unset($drafts['_validation_feedback'][$chapter]);
+            unset($drafts['_validation_candidate'][$chapter]);
             $job->update(['drafts' => $drafts]);
             $this->recordGeneration($chart, $integration ? null : $chapter, $system, $user, $usage);
         });

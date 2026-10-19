@@ -120,11 +120,21 @@ final class ReportJobTest extends TestCase
             $content = self::chapter('sol');
             if (++$calls === 1) {
                 $this->assertArrayNotHasKey('previous_validation_error', $input);
+                $this->assertArrayNotHasKey('revision_candidate', $input);
                 $content['practice'][] = str_repeat('palabra ', 400);
             } else {
                 $this->assertStringContainsString('Extensión de capítulo inválida', $input['previous_validation_error']);
                 $this->assertStringContainsString('1050', $input['previous_validation_error']);
                 $this->assertArrayHasKey('retry_instruction', $input);
+                $expected = self::chapter('sol');
+                $expected['practice'][] = str_repeat('palabra ', 400);
+                $this->assertSame($expected, $input['revision_candidate']);
+                $master = new InteriorMapMaster;
+                $this->assertSame($master->wordCount($expected), $input['measured_word_count']);
+                $this->assertSame($input['measured_word_count'], array_sum($input['measured_section_words']));
+                $this->assertSame($master->wordCount(['practice' => $expected['practice']]), $input['measured_section_words']['practice']);
+                $this->assertSame(915, $input['revision_target_words']);
+                $this->assertStringContainsString('780–1050', $request['messages'][0]['content']);
             }
 
             return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode($content)]]]]);
@@ -144,6 +154,7 @@ final class ReportJobTest extends TestCase
         $this->assertSame(11, $job->progress);
         $this->assertSame('CONTENT_VALIDATION_FAILED', $job->error_code);
         $this->assertArrayHasKey('sol', $job->drafts['_validation_feedback']);
+        $this->assertArrayHasKey('sol', $job->drafts['_validation_candidate']);
         $this->assertDatabaseCount('interpretations', 0);
         $this->actingAs(User::findOrFail($job->user_id))->getJson(route('reports.jobs.show', $job))
             ->assertOk()->assertJsonPath('error_message', $job->error_message);
@@ -153,6 +164,7 @@ final class ReportJobTest extends TestCase
         $this->assertSame(2, $job->cursor);
         $this->assertNull($job->error_message);
         $this->assertArrayNotHasKey('sol', $job->drafts['_validation_feedback']);
+        $this->assertArrayNotHasKey('sol', $job->drafts['_validation_candidate']);
         $this->assertArrayHasKey('sol', $job->drafts);
         $this->assertDatabaseCount('interpretations', count(InteriorMapMaster::TITLES));
         Http::assertSentCount(2);
