@@ -19,6 +19,41 @@ test('report progress is rendered outside the filtered content card at body leve
     assert.equal(layout.split("@include('reports.jobs-progress')").length - 1, 1);
 });
 
+test('a running report shows validation retry details instead of an indefinite generic wait', async () => {
+    class Element {
+        constructor(tag) { this.tag = tag; this.children = []; this.style = {}; }
+        append(child) { this.children.push(child); }
+        replaceChildren() { this.children = []; }
+        setAttribute() {}
+    }
+    const panel = new Element('aside');
+    let ready;
+    const job = {
+        job_id: 24, report_id: 15, status: 'generating_sun', message: 'Generando Sol', progress: 11,
+        error_message: 'El capítulo no superó la validación: 1228 palabras. Se reintentará con instrucciones de corrección.',
+    };
+    const source = fs.readFileSync(require('node:path').join(__dirname, '../../resources/views/reports/jobs-progress.blade.php'), 'utf8')
+        .split('<script>')[1].split('</script>')[0]
+        .replace("@json(route('reports.jobs.index'))", "'/reports/jobs'");
+    vm.runInNewContext(source, {
+        document: {
+            addEventListener: (_, fn) => ready = fn,
+            getElementById: () => panel,
+            querySelector: () => ({content: 'csrf-fixture'}),
+            querySelectorAll: () => [],
+            createElement: tag => new Element(tag),
+        },
+        window: {},
+        setTimeout() {},
+        fetch: async () => ({ok: true, json: async () => [job]}),
+    });
+    ready();
+    await new Promise(setImmediate);
+    const row = panel.children[0];
+    assert.ok(row.children.some(child => child.textContent === job.error_message));
+    assert.ok(!row.children.some(child => child.textContent === 'Puedes navegar o cerrar esta página.'));
+});
+
 test('dismiss hides immediately, rejects stale polls and restores a failed dismissal', async () => {
     class Element {
         constructor(tag) { this.tag = tag; this.children = []; this.style = {}; this.attributes = {}; }

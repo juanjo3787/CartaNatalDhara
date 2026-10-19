@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Exceptions\AiGenerationException;
+use App\Exceptions\ReportContentValidationException;
 use App\Models\ReportJob;
 use App\Services\ReportJobService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -42,7 +43,20 @@ class ProcessReportStep implements ShouldQueue
         if (! $job || $job->cursor !== $this->cursor || in_array($job->status, ['completed', 'failed'], true)) {
             return;
         }
-        $service->process($job);
+        try {
+            $service->process($job);
+        } catch (ReportContentValidationException $exception) {
+            $job->update([
+                'error_code' => 'CONTENT_VALIDATION_FAILED',
+                'error_message' => 'El capítulo no superó la validación: '.$exception->getMessage().' Se reintentará con instrucciones de corrección.',
+            ]);
+            Log::warning('Report chapter validation failed; retry will use correction feedback.', [
+                'report_job_id' => $job->id,
+                'current_section' => $job->current_section,
+                'validation_error' => $exception->getMessage(),
+            ]);
+            throw $exception;
+        }
     }
 
     public function failed(?Throwable $exception): void
@@ -60,8 +74,10 @@ class ProcessReportStep implements ShouldQueue
             ->whereNotIn('status', ['completed', 'failed'])
             ->update([
                 'status' => 'failed', 'active_chart_id' => null, 'completed_at' => now(),
-                'error_code' => $exception instanceof AiGenerationException ? $exception->errorCode : 'REPORT_STEP_FAILED',
-                'error_message' => 'No se pudo completar esta etapa. Puedes reintentar sin repetir las etapas guardadas.',
+                'error_code' => $exception instanceof ReportContentValidationException ? 'CONTENT_VALIDATION_FAILED' : ($exception instanceof AiGenerationException ? $exception->errorCode : 'REPORT_STEP_FAILED'),
+                'error_message' => $exception instanceof ReportContentValidationException
+                    ? 'El capítulo no superó la validación: '.$exception->getMessage().' Puedes reintentar sin repetir las etapas guardadas.'
+                    : 'No se pudo completar esta etapa. Puedes reintentar sin repetir las etapas guardadas.',
             ]);
 
         if ($updated) {

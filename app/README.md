@@ -69,6 +69,16 @@ El proceso usa cinco llamadas estructuradas (cuatro puertas y una integracion),
 mas preparacion, validacion, montaje y PDF. La cola `reports` debe tener un
 worker activo. No genera en una peticion HTTP larga.
 
+El 11% indica que la preparacion termino y se esta generando el Sol. Si un
+capitulo no supera la validacion, la cola aplica sus reintentos con espera; la
+barra conserva el porcentaje hasta que ese capitulo sea valido. Cada peticion
+incluye objetivos de palabras por seccion (no por parrafo). El motivo del rechazo
+se conserva como feedback para corregir la siguiente respuesta y se muestra en
+el aviso de progreso. No se persiste ni acepta el capitulo invalido, no se amplian
+los limites y no se hacen llamadas adicionales fuera de los reintentos de cola.
+Al agotarlos, se informa del motivo y se permite reintentar la etapa pendiente.
+Desplegar cambios del generador exige recrear tambien el worker, no solo la web.
+
 Siempre se regeneran las cuatro puertas y su integracion juntas. Una peticion
 antigua de generacion individual se convierte en regeneracion completa para
 evitar mezclar textos de trabajos distintos.

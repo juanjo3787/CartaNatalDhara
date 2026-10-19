@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\AiTextGenerator;
 use App\Contracts\StructuredAiTextGenerator;
+use App\Exceptions\ReportContentValidationException;
 use App\Models\Chart;
 use App\Models\ReportGeneration;
 use App\Models\ReportJob;
@@ -34,7 +35,24 @@ final class PhaseOneAiGenerationService
             'ASTROLOGICAL_FACTS' => $facts,
             'sections' => $integration ? InteriorMapMaster::INTEGRATION_TITLES : InteriorMapMaster::TITLES,
             'word_budget' => $integration ? '800–1050 palabras; themes contiene 3–5 objetos con título, desarrollo reflexivo, puntos de trabajo y pregunta propios. Explora necesidades que conviven, sin métricas ni productividad.' : '780–1050 palabras entre todas las secciones, con una densidad semejante al Word. Función general primero, sin signo particular. Después signo y casa separados. Exactamente cinco comportamientos por estado. Reserva unas 200 palabras al opuesto y su integración. Cierre: DON, NECESIDAD, SOMBRA, RECURSO, pregunta esencial y práctica sencilla.',
+            'section_word_targets' => $integration ? [
+                'purpose' => 75, 'work_points' => 45, 'themes' => 690,
+                'practice' => 75, 'essential_question' => 15,
+            ] : [
+                'function' => 120, 'entry_question' => 12, 'sign_traits' => 35,
+                'sign' => 75, 'house_topics' => 30, 'house' => 60,
+                'harmony' => 70, 'deficit' => 70, 'excess' => 70,
+                'distinction_question' => 14, 'opposite' => 90, 'opposite_traits' => 30,
+                'opposite_application' => 65, 'integration_key' => 15,
+                'example' => 65, 'summary' => 45, 'essential_question' => 14, 'practice' => 35,
+            ],
+            'length_instruction' => 'Los objetivos son palabras TOTALES por sección, sumando todas sus entradas, no palabras por párrafo o elemento. Apunta a unas 900 palabras en todo el capítulo y comprueba el total antes de entregar. Mantén todas las secciones y conductas solicitadas con frases concisas.',
         ];
+        $feedback = $job->drafts['_validation_feedback'][$chapter] ?? null;
+        if (is_string($feedback) && $feedback !== '') {
+            $input['previous_validation_error'] = $feedback;
+            $input['retry_instruction'] = 'La respuesta anterior fue rechazada por este motivo. Corrígelo explícitamente en una nueva respuesta completa que respete el esquema y el presupuesto total. No repitas la misma distribución de extensión.';
+        }
         if ($integration) {
             foreach (InteriorMapMaster::DOORS as $door) {
                 $input['current_report'][$door] = $job->drafts[$door] ?? throw new RuntimeException('Falta una puerta del trabajo actual para integrar.');
@@ -55,12 +73,21 @@ final class PhaseOneAiGenerationService
         ]);
         $usage = $result['_usage'] ?? [];
         unset($result['_usage']);
-        $this->master->validate($result, $integration);
-        $this->master->validateFacts($result, $facts, $integration ? null : $chapter);
-        $this->master->assertNoDuplicateParagraphs([$result]);
+        try {
+            $this->master->validate($result, $integration);
+            $this->master->validateFacts($result, $facts, $integration ? null : $chapter);
+            $this->master->assertNoDuplicateParagraphs([$result]);
+        } catch (RuntimeException $exception) {
+            $drafts = $job->drafts ?? [];
+            $drafts['_validation_feedback'][$chapter] = $exception->getMessage();
+            $job->update(['drafts' => $drafts]);
+            throw new ReportContentValidationException($exception->getMessage(), previous: $exception);
+        }
         DB::transaction(function () use ($chart, $chapter, $integration, $result, $job, $system, $user, $usage): void {
             $this->reports->storeChapter($chart, $integration ? null : $chapter, $result);
-            $job->update(['drafts' => array_replace($job->drafts ?? [], [$chapter => $result])]);
+            $drafts = array_replace($job->drafts ?? [], [$chapter => $result]);
+            unset($drafts['_validation_feedback'][$chapter]);
+            $job->update(['drafts' => $drafts]);
             $this->recordGeneration($chart, $integration ? null : $chapter, $system, $user, $usage);
         });
     }

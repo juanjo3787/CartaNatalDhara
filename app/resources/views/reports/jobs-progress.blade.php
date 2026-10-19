@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             button.onclick = () => send(job.retry_url, {}).catch(showError); actions.append(button);
             const error = document.createElement('span'); error.textContent = job.error_message; row.append(error);
         } else {
-            const hint = document.createElement('span'); hint.textContent = 'Puedes navegar o cerrar esta página.'; row.append(hint);
+            const hint = document.createElement('span'); hint.textContent = job.error_message || 'Puedes navegar o cerrar esta página.'; row.append(hint);
         }
         if (close) actions.append(close);
         if (actions.children.length) row.append(actions);
