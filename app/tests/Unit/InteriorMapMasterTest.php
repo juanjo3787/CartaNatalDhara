@@ -15,7 +15,9 @@ final class InteriorMapMasterTest extends TestCase
     {
         $chart = new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => self::snapshot()]);
         $facts = (new InteriorMapMaster)->facts($chart);
-        $this->assertSame(['sign' => 'Cáncer', 'house' => 4, 'longitude' => 95.0, 'opposite' => 'Capricornio'], $facts['sol']);
+        $this->assertSame(['sign' => 'Cáncer', 'house' => 4, 'longitude' => 95.0, 'opposite' => 'Capricornio'], array_intersect_key($facts['sol'], array_flip(['sign', 'house', 'longitude', 'opposite'])));
+        $this->assertSame([['planet' => 'moon', 'sign' => 'Sagitario', 'house' => 9]], $facts['sol']['rulers']['traditional']);
+        $this->assertSame($facts['sol']['rulers']['traditional'], $facts['sol']['rulers']['modern']);
         $this->assertSame('Sagitario', $facts['luna']['sign']);
         $this->assertSame(1, $facts['ascendente']['house']);
         $this->assertSame(7, $facts['descendente']['house']);
@@ -26,6 +28,47 @@ final class InteriorMapMasterTest extends TestCase
         $chart = new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => []]);
         $this->expectExceptionMessage('Falta la cúspide');
         (new InteriorMapMaster)->facts($chart);
+    }
+
+    public function test_modern_rulers_are_included_with_their_verified_positions(): void
+    {
+        $snapshot = self::snapshot();
+        $snapshot['sun'] = ['longitude' => 215, 'sign' => 'scorpio'];
+        $facts = (new InteriorMapMaster)->facts(new Chart([
+            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
+            'snapshot' => $snapshot,
+        ]));
+
+        $this->assertSame([['planet' => 'mars', 'sign' => 'Capricornio', 'house' => 10]], $facts['sol']['rulers']['traditional']);
+        $this->assertSame([
+            ['planet' => 'mars', 'sign' => 'Capricornio', 'house' => 10],
+            ['planet' => 'pluto', 'sign' => 'Escorpio', 'house' => 8],
+        ], $facts['sol']['rulers']['modern']);
+    }
+
+    public function test_missing_ruler_positions_are_rejected_instead_of_invented(): void
+    {
+        $snapshot = self::snapshot();
+        unset($snapshot['venus']);
+        $this->expectExceptionMessage('Falta la posición verificada del regente venus');
+        (new InteriorMapMaster)->facts(new Chart([
+            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
+            'snapshot' => $snapshot,
+        ]));
+    }
+
+    public function test_inconsistent_ruler_placements_are_rejected(): void
+    {
+        $master = new InteriorMapMaster;
+        $facts = $master->facts(new Chart([
+            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
+            'snapshot' => self::snapshot(),
+        ]));
+        $content = self::chapter('sol');
+        $content['sign'][] = 'Venus está en Aries, casa I.';
+
+        $this->expectExceptionMessage('posición verificada de un regente');
+        $master->validateFacts($content, $facts, 'sol');
     }
 
     public function test_non_placidus_protocol_is_rejected(): void
@@ -52,7 +95,7 @@ final class InteriorMapMasterTest extends TestCase
             $total += $master->wordCount($content);
         }
         $this->assertGreaterThanOrEqual(4000, $total);
-        $this->assertLessThanOrEqual(5500, $total + 200);
+        $this->assertLessThanOrEqual(6200, $total + 200);
         $this->assertArrayNotHasKey('ruler', $master->schema()['properties']);
         $this->assertSame(array_keys(InteriorMapMaster::TITLES), $master->schema()['required']);
         $this->assertStringNotContainsString('Pastora', $master->systemPrompt());
@@ -64,6 +107,15 @@ final class InteriorMapMasterTest extends TestCase
         $content['ruler'] = ['Old content'];
         $this->expectExceptionMessage('exactamente las secciones');
         (new InteriorMapMaster)->validate($content);
+    }
+
+    public function test_chapter_can_use_the_expanded_word_budget_for_developed_examples(): void
+    {
+        $content = self::chapter('sol');
+        $content['practice'][] = str_repeat('palabra ', 250);
+
+        (new InteriorMapMaster)->validate($content);
+        $this->assertGreaterThan(1050, (new InteriorMapMaster)->wordCount($content));
     }
 
     public function test_chapter_word_cap_is_enforced(): void

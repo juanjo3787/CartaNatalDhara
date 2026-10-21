@@ -34,7 +34,6 @@
 
     <table style="border-collapse: collapse; width: 100%;">
         <tr>
-            <th style="vertical-align: middle;">#</th>
             <th style="vertical-align: middle;">Persona</th>
             <th style="vertical-align: middle;">Estado</th>
             <th style="vertical-align: middle;">Fecha de cálculo</th>
@@ -42,7 +41,6 @@
         </tr>
         @forelse ($charts as $chart)
             <tr>
-                <td style="vertical-align: middle;">{{ $chart->id }}</td>
                 <td style="vertical-align: middle;">
                     <a href="{{ route('charts.show', $chart) }}">
                         @if ($chart->person->full_name)
@@ -95,7 +93,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="5">Todavía no hay cartas calculadas.</td></tr>
+            <tr><td colspan="4">Todavía no hay cartas calculadas.</td></tr>
         @endforelse
     </table>
 

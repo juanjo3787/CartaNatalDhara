@@ -18,7 +18,11 @@ trait InteriorMapFixture
         foreach (range(1, 12) as $house) {
             $snapshot['houses'][$house] = ['longitude' => ($house - 1) * 30, 'sign' => $signs[$house - 1], 'degrees' => 0, 'minutes' => 0, 'seconds' => 0];
         }
-        foreach (['sun' => 95, 'moon' => 245, 'ascendant' => 0, 'descendant' => 180, 'midheaven' => 270] as $point => $longitude) {
+        foreach ([
+            'sun' => 95, 'moon' => 245, 'mercury' => 65, 'venus' => 215, 'mars' => 275,
+            'jupiter' => 345, 'saturn' => 305, 'uranus' => 245, 'neptune' => 275, 'pluto' => 215,
+            'ascendant' => 0, 'descendant' => 180, 'midheaven' => 270,
+        ] as $point => $longitude) {
             $snapshot[$point] = ['longitude' => $longitude, 'sign' => $signs[(int) floor($longitude / 30)], 'degrees' => $longitude % 30, 'minutes' => 0, 'seconds' => 0];
         }
 
