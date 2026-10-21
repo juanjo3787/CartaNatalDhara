@@ -120,7 +120,7 @@ final class ReportJobTest extends TestCase
         Http::fake(function ($request) use (&$calls) {
             $input = json_decode($request['messages'][1]['content'], true);
             $this->assertSame(array_keys(InteriorMapMaster::TITLES), array_keys($input['section_word_targets']));
-            $this->assertSame(1065, array_sum($input['section_word_targets']));
+            $this->assertSame(1300, array_sum($input['section_word_targets']));
             $content = self::chapter('sol');
             if (++$calls === 1) {
                 $this->assertArrayNotHasKey('previous_validation_error', $input);
@@ -128,7 +128,7 @@ final class ReportJobTest extends TestCase
                 $content['practice'][] = str_repeat('palabra ', 400);
             } else {
                 $this->assertStringContainsString('Extensión de capítulo inválida', $input['previous_validation_error']);
-                $this->assertStringContainsString('1200', $input['previous_validation_error']);
+                $this->assertStringContainsString('1400', $input['previous_validation_error']);
                 $this->assertArrayHasKey('retry_instruction', $input);
                 $expected = self::chapter('sol');
                 $expected['practice'][] = str_repeat('palabra ', 400);
@@ -137,8 +137,8 @@ final class ReportJobTest extends TestCase
                 $this->assertSame($master->wordCount($expected), $input['measured_word_count']);
                 $this->assertSame($input['measured_word_count'], array_sum($input['measured_section_words']));
                 $this->assertSame($master->wordCount(['practice' => $expected['practice']]), $input['measured_section_words']['practice']);
-                $this->assertSame(1065, $input['revision_target_words']);
-                $this->assertStringContainsString('780–1200', $request['messages'][0]['content']);
+                $this->assertSame(1300, $input['revision_target_words']);
+                $this->assertStringContainsString('780–1400', $request['messages'][0]['content']);
             }
 
             return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode($content)]]]]);
@@ -178,12 +178,12 @@ final class ReportJobTest extends TestCase
     {
         $job = app(ReportJobService::class)->start($this->chart(), User::factory()->create()->id, InteriorMapMaster::DOORS);
         app(ReportJobService::class)->process($job);
-        (new ProcessReportStep($job->id, 1))->failed(new ReportContentValidationException('Extensión de capítulo inválida: 1328 palabras; se requieren 780–1200.'));
+        (new ProcessReportStep($job->id, 1))->failed(new ReportContentValidationException('Extensión de capítulo inválida: 1428 palabras; se requieren 780–1400.'));
         $job->refresh();
         $this->assertSame('failed', $job->status);
         $this->assertNull($job->active_chart_id);
         $this->assertSame('CONTENT_VALIDATION_FAILED', $job->error_code);
-        $this->assertStringContainsString('1328 palabras', $job->error_message);
+        $this->assertStringContainsString('1428 palabras', $job->error_message);
         $this->assertDatabaseCount('interpretations', 0);
     }
 }

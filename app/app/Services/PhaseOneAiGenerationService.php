@@ -34,17 +34,17 @@ final class PhaseOneAiGenerationService
             'chapter' => $chapter,
             'ASTROLOGICAL_FACTS' => $facts,
             'sections' => $integration ? InteriorMapMaster::INTEGRATION_TITLES : InteriorMapMaster::TITLES,
-            'word_budget' => $integration ? '800–1050 palabras; themes contiene 3–5 objetos con título, desarrollo reflexivo, puntos de trabajo y pregunta propios. Explora necesidades que conviven, sin métricas ni productividad.' : '780–1200 palabras entre todas las secciones, con la profundidad explicativa del Word. Función general primero, sin signo particular. Después signo, casa y regentes verificados. Exactamente cinco comportamientos desarrollados por estado, con ejemplos y pautas. Reserva espacio suficiente al opuesto y su integración. Cierre: DON, NECESIDAD, SOMBRA, RECURSO, pregunta esencial y práctica sencilla.',
+            'word_budget' => $integration ? '800–1050 palabras; themes contiene 3–5 objetos con título, desarrollo reflexivo, puntos de trabajo y pregunta propios. Explora necesidades que conviven, sin métricas ni productividad.' : '780–1400 palabras entre todas las secciones, con la profundidad explicativa del Word. Función general primero, sin signo particular. Después signo, casa y regentes verificados. Exactamente cinco comportamientos desarrollados por estado, con ejemplos y pautas. Reserva espacio suficiente al opuesto y su integración. Cierre: DON, NECESIDAD, SOMBRA, RECURSO, pregunta esencial y práctica sencilla.',
             'section_word_targets' => $integration ? [
                 'purpose' => 75, 'work_points' => 45, 'themes' => 690,
                 'practice' => 75, 'essential_question' => 15,
             ] : [
-                'function' => 120, 'entry_question' => 12, 'sign_traits' => 35,
-                'sign' => 75, 'house_topics' => 30, 'house' => 60,
-                'harmony' => 120, 'deficit' => 120, 'excess' => 120,
-                'distinction_question' => 14, 'opposite' => 90, 'opposite_traits' => 30,
-                'opposite_application' => 65, 'integration_key' => 15,
-                'example' => 65, 'summary' => 45, 'essential_question' => 14, 'practice' => 35,
+                'function' => 145, 'entry_question' => 12, 'sign_traits' => 40,
+                'sign' => 90, 'house_topics' => 35, 'house' => 75,
+                'harmony' => 150, 'deficit' => 150, 'excess' => 150,
+                'distinction_question' => 14, 'opposite' => 115, 'opposite_traits' => 35,
+                'opposite_application' => 85, 'integration_key' => 15,
+                'example' => 85, 'summary' => 50, 'essential_question' => 14, 'practice' => 40,
             ],
             'length_instruction' => 'Los objetivos son palabras TOTALES por sección, sumando todas sus entradas, no palabras por párrafo o elemento. Apunta al total de section_word_targets y comprueba el recuento antes de entregar. Desarrolla cada conducta con una situación concreta y una pauta breve; no reduzcas las explicaciones a etiquetas.',
         ];
@@ -113,8 +113,8 @@ final class PhaseOneAiGenerationService
             $words += $this->master->wordCount($content);
         }
         $this->master->assertNoDuplicateParagraphs(array_intersect_key($job->drafts, array_flip([...InteriorMapMaster::DOORS, 'integration'])));
-        if ($words < 4000 || $words > 6200) {
-            throw new RuntimeException("El informe tiene {$words} palabras; el modelo aprobado requiere 4000–6200.");
+        if ($words < 4000 || $words > 7000) {
+            throw new RuntimeException("El informe tiene {$words} palabras; el modelo aprobado requiere 4000–7000.");
         }
         $this->reports->build($job->chart, storedOnly: true);
     }

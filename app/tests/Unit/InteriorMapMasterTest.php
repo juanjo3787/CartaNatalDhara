@@ -95,7 +95,7 @@ final class InteriorMapMasterTest extends TestCase
             $total += $master->wordCount($content);
         }
         $this->assertGreaterThanOrEqual(4000, $total);
-        $this->assertLessThanOrEqual(6200, $total + 200);
+        $this->assertLessThanOrEqual(7000, $total + 200);
         $this->assertArrayNotHasKey('ruler', $master->schema()['properties']);
         $this->assertSame(array_keys(InteriorMapMaster::TITLES), $master->schema()['required']);
         $this->assertStringNotContainsString('Pastora', $master->systemPrompt());
@@ -112,18 +112,29 @@ final class InteriorMapMasterTest extends TestCase
     public function test_chapter_can_use_the_expanded_word_budget_for_developed_examples(): void
     {
         $content = self::chapter('sol');
-        $content['practice'][] = str_repeat('palabra ', 250);
+        $content['practice'][] = str_repeat('palabra ', 475);
 
         (new InteriorMapMaster)->validate($content);
-        $this->assertGreaterThan(1050, (new InteriorMapMaster)->wordCount($content));
+        $this->assertGreaterThan(1200, (new InteriorMapMaster)->wordCount($content));
+        $this->assertLessThanOrEqual(1400, (new InteriorMapMaster)->wordCount($content));
     }
 
     public function test_chapter_word_cap_is_enforced(): void
     {
         $content = self::chapter('sol');
-        $content['practice'][] = str_repeat('palabra ', 400);
+        $content['practice'][] = str_repeat('palabra ', 650);
         $this->expectExceptionMessage('Extensión de capítulo inválida');
         (new InteriorMapMaster)->validate($content);
+    }
+
+    public function test_chapter_with_1279_words_passes_validation(): void
+    {
+        $content = self::chapter('sol');
+        $currentWords = (new InteriorMapMaster)->wordCount($content);
+        $content['practice'][] = str_repeat('palabra ', 1279 - $currentWords);
+
+        (new InteriorMapMaster)->validate($content);
+        $this->assertSame(1279, (new InteriorMapMaster)->wordCount($content));
     }
 
     public function test_wrong_canonical_claim_in_narrative_is_rejected(): void
