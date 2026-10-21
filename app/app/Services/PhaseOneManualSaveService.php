@@ -52,7 +52,11 @@ final class PhaseOneManualSaveService
                 throw ValidationException::withMessages(['shared' => $exception->getMessage()]);
             }
             $words = $master->wordCount(['text' => array_map($this->plainText(...), array_values($texts))]);
-            abort_if($words < 4000 || $words > 7000, 422, 'El Informe I debe conservar una extensión de 4000–7000 palabras.');
+            abort_if(
+                $words < InteriorMapMaster::REPORT_MIN_WORDS || $words > InteriorMapMaster::REPORT_MAX_WORDS,
+                422,
+                'El Informe I debe conservar una extensión de '.InteriorMapMaster::REPORT_MIN_WORDS.'–'.InteriorMapMaster::REPORT_MAX_WORDS.' palabras.',
+            );
             $chart->interpretations()->where('phase', 'fase-1')->delete();
             $saved = 0;
 
