@@ -436,12 +436,29 @@ PROMPT;
             if (! preg_match('/\b'.preg_quote($facts[$door]['opposite'], '/').'\b/ui', $opposite)) {
                 throw new RuntimeException('El apartado complementario no identifica el opuesto calculado.');
             }
-            preg_match_all('/\bcasa\s+([IVX]+|\d{1,2})\b/ui', implode(' ', [...($content['house_topics'] ?? []), ...$content['house']]), $houses);
-            $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+            $houseText = implode(' ', [...($content['house_topics'] ?? []), ...$content['house']]);
+            foreach (['traditional', 'modern'] as $tradition) {
+                foreach ($facts[$door]['rulers'][$tradition] ?? [] as $ruler) {
+                    $planet = preg_quote(self::PLANETS[$ruler['planet']], '/');
+                    preg_match_all(
+                        '/\b'.$planet.'\b[^.!?]{0,120}?\bcasa\s+([IVX]+|\d{1,2})\b/ui',
+                        $houseText,
+                        $rulerHouseClaims,
+                        PREG_SET_ORDER | PREG_OFFSET_CAPTURE,
+                    );
+                    foreach ($rulerHouseClaims as $claim) {
+                        $house = $claim[1][0];
+                        $number = $this->houseNumber($house);
+                        if ($number !== $ruler['house']) {
+                            throw new RuntimeException('El texto contradice la casa verificada de un regente: '.$claim[0][0]);
+                        }
+                        $houseText = substr_replace($houseText, str_repeat(' ', strlen($claim[0][0])), $claim[0][1], strlen($claim[0][0]));
+                    }
+                }
+            }
+            preg_match_all('/\bcasa\s+([IVX]+|\d{1,2})\b/ui', $houseText, $houses);
             foreach ($houses[1] as $house) {
-                $romanIndex = array_search(strtoupper($house), $roman, true);
-                $number = ctype_digit($house) ? (int) $house : ($romanIndex === false ? 0 : $romanIndex + 1);
-                if ($number !== $facts[$door]['house']) {
+                if ($this->houseNumber($house) !== $facts[$door]['house']) {
                     throw new RuntimeException('El texto contradice la casa calculada.');
                 }
             }
@@ -513,5 +530,13 @@ PROMPT;
         }
 
         return $facts;
+    }
+
+    private function houseNumber(string $house): int
+    {
+        $roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        $romanIndex = array_search(strtoupper($house), $roman, true);
+
+        return ctype_digit($house) ? (int) $house : ($romanIndex === false ? 0 : $romanIndex + 1);
     }
 }

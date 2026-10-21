@@ -71,6 +71,33 @@ final class InteriorMapMasterTest extends TestCase
         $master->validateFacts($content, $facts, 'sol');
     }
 
+    public function test_house_of_the_current_door_ruler_is_not_mistaken_for_the_door_house(): void
+    {
+        $master = new InteriorMapMaster;
+        $facts = $master->facts(new Chart([
+            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
+            'snapshot' => self::snapshot(),
+        ]));
+        $content = self::chapter('sol');
+        $content['house'] = ['La Luna, regente de Cáncer, está situada en casa IX.'];
+
+        $this->assertNull($master->validateFacts($content, $facts, 'sol'));
+    }
+
+    public function test_incorrect_house_of_the_current_door_ruler_is_rejected(): void
+    {
+        $master = new InteriorMapMaster;
+        $facts = $master->facts(new Chart([
+            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
+            'snapshot' => self::snapshot(),
+        ]));
+        $content = self::chapter('sol');
+        $content['house'] = ['La Luna, regente de Cáncer, está situada en casa VIII.'];
+
+        $this->expectExceptionMessage('casa verificada de un regente');
+        $master->validateFacts($content, $facts, 'sol');
+    }
+
     public function test_non_placidus_protocol_is_rejected(): void
     {
         $this->expectExceptionMessage('requiere zodiaco tropical');
