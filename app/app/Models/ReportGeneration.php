@@ -27,4 +27,13 @@ class ReportGeneration extends Model
     {
         return $this->belongsTo(Chart::class);
     }
+
+    public function getChapterLabelAttribute(): string
+    {
+        return $this->door ? ucfirst($this->door) : match ($this->filename) {
+            'natal-universal-opposites' => 'Opuestos complementarios',
+            'natal-universal-audit' => 'Auditoría conjunta',
+            default => 'Integración',
+        };
+    }
 }

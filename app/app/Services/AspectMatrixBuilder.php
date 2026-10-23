@@ -64,38 +64,45 @@ final class AspectMatrixBuilder
             for ($secondIndex = $firstIndex + 1; $secondIndex < count($points); $secondIndex++) {
                 $firstPoint = $points[$firstIndex];
                 $secondPoint = $points[$secondIndex];
-                $difference = $this->normalize($firstPoint['longitude'] - $secondPoint['longitude']);
-                $separation = min($difference, 360 - $difference);
-                $pairMatches = [];
-
-                foreach (self::ASPECT_DEFINITIONS as $aspect) {
-                    $orb = abs($separation - $aspect['angle']);
-                    if ($orb <= $maximumOrb) {
-                        $pairMatches[] = [
-                            'key' => $aspect['key'],
-                            'label' => $aspect['label'],
-                            'glyph' => $aspect['glyph'],
-                            'orb' => round($orb, 1),
-                        ];
-                    }
-                }
-
-                $matches[$firstPoint['key'].'|'.$secondPoint['key']] = $pairMatches;
+                $matches[$firstPoint['key'].'|'.$secondPoint['key']] = array_map(
+                    static fn (array $aspect): array => array_intersect_key($aspect, array_flip(['key', 'label', 'glyph', 'orb'])),
+                    $this->between($firstPoint['longitude'], $secondPoint['longitude'], $maximumOrb),
+                );
             }
         }
 
         return ['points' => $points, 'matches' => $matches];
     }
 
-    private function formatLongitude(float $longitude): string
+    public function between(float $first, float $second, float $maximumOrb = 6.0): array
+    {
+        $difference = $this->normalize($first - $second);
+        $separation = min($difference, 360 - $difference);
+        $matches = [];
+        foreach (self::ASPECT_DEFINITIONS as $aspect) {
+            $orb = abs($separation - $aspect['angle']);
+            if ($orb <= $maximumOrb) {
+                $matches[] = [
+                    ...$aspect,
+                    'orb' => round($orb, 1),
+                    'exact_orb' => $orb,
+                    'separation' => $separation,
+                ];
+            }
+        }
+
+        return $matches;
+    }
+
+    public function formatLongitude(float $longitude): string
     {
         $signs = ['Aries', 'Tauro', 'Géminis', 'Cáncer', 'Leo', 'Virgo', 'Libra', 'Escorpio', 'Sagitario', 'Capricornio', 'Acuario', 'Piscis'];
-        $signIndex = min(11, (int) floor($longitude / 30));
-        $withinSign = $longitude - ($signIndex * 30);
-        $degrees = (int) floor($withinSign);
-        $minutesWithFraction = ($withinSign - $degrees) * 60;
-        $minutes = (int) floor($minutesWithFraction);
-        $seconds = round(($minutesWithFraction - $minutes) * 60, 1);
+        $tenths = (int) round($this->normalize($longitude) * 36000) % 12960000;
+        $signIndex = intdiv($tenths, 1080000);
+        $withinSign = $tenths % 1080000;
+        $degrees = intdiv($withinSign, 36000);
+        $minutes = intdiv($withinSign % 36000, 600);
+        $seconds = ($withinSign % 600) / 10;
 
         return sprintf('%s %d° %d\' %s"', $signs[$signIndex], $degrees, $minutes, number_format($seconds, 1, '.', ''));
     }

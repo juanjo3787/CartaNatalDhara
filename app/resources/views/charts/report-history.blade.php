@@ -12,7 +12,7 @@
 <tr>
 	<td>{{ $generation->created_at->format('d/m/Y H:i:s') }}</td>
 	<td>{{ $generation->ai_assisted ? 'IA' : 'PDF' }}</td>
-	<td>{{ $generation->ai_assisted ? ucfirst($generation->door ?? 'integración') . ' / ' . $generation->ai_model : $generation->filename }}</td>
+	<td>{{ $generation->ai_assisted ? $generation->chapter_label . ' / ' . $generation->ai_model : $generation->filename }}</td>
 	<td>{{ $generation->ai_assisted ? number_format($generation->total_tokens ?? 0) : '-' }}</td>
 	<td>{{ $generation->ai_assisted ? number_format((float) $generation->cost_subtotal, 8, ',', '.') . ' ' . $generation->cost_currency : '-' }}</td>
 	<td>{{ $generation->ai_assisted ? number_format((float) $generation->tax_amount, 8, ',', '.') . ' ' . $generation->cost_currency . ' (' . $generation->tax_rate . '%)' : '-' }}</td>

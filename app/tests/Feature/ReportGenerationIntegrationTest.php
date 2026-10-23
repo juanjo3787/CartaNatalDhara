@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Person;
 use App\Models\User;
+use App\Services\InteriorMapMaster;
 use App\Services\PdfPageGeometry;
 use App\Services\PhaseOneManualSaveService;
 use App\Services\PhaseOneReportService;
@@ -37,28 +38,26 @@ final class ReportGenerationIntegrationTest extends TestCase
         $report = $service->build($chart, storedOnly: true);
         foreach ([false, true] as $pdf) {
             $html = view('reports.phase-one.template', compact('chart', 'report', 'pdf'))->render();
-            $this->assertSame(1, substr_count($html, 'data-section-id="sol.harmony"'));
-            $this->assertSame(1, substr_count($html, 'data-index-key="integration"'));
-            $this->assertStringNotContainsString('El regente y su posición', $html);
+            $this->assertSame(1, substr_count($html, 'data-section-id="sol.concepts"'));
+            $this->assertSame(1, substr_count($html, 'data-index-key="opposites"'));
+            $this->assertStringContainsString('BLOQUE I — Sol natal', $html);
+            $this->assertStringContainsString('BLOQUE V — Opuestos complementarios', $html);
             $this->assertStringNotContainsString('data-report-blank-page="9"', $html);
             $this->assertStringContainsString('#f8dfcc', $html);
-            $this->assertStringContainsString('Las características de Cáncer', $html);
-            $this->assertStringContainsString('Tu opuesto complementario Capricornio', $html);
             $this->assertStringContainsString('Inicio de la casa 7', $html);
-            $this->assertStringContainsString('<h3>Tema primero</h3>', $html);
-            $this->assertStringContainsString('<h4>Puntos de trabajo</h4><ul><li>', $html);
-            $this->assertStringContainsString('<strong>DON:</strong>', $html);
-            $this->assertStringNotContainsString('>Cómo se expresa en esta puerta</h2>', $html);
-            $this->assertStringNotContainsString('>Cómo integrar estas cualidades</h2>', $html);
-            $this->assertStringNotContainsString('>Puntos de integración y preguntas</h2>', $html);
+            $this->assertStringContainsString('<h3>Concepto sol 1</h3><h4>Característica sol 1 1</h4><p>', $html);
+            $this->assertStringNotContainsString('Tu primera lectura', $html);
+            $this->assertStringNotContainsString('<strong>DON:</strong>', $html);
+            $this->assertStringNotContainsString('Expresión desarmónica', $html);
+            $this->assertStringNotContainsString('La integración de tus cuatro puertas', $html);
         }
         $editable = $service->editableContent($chart);
         $chart->update(['phase_one_pdf' => 'obsolete.pdf']);
         app(PhaseOneManualSaveService::class)->save($chart, $editable['shared'], $editable['doors']);
         $this->assertNull($chart->fresh()->phase_one_pdf);
         $this->assertTrue($service->build($chart->fresh(), storedOnly: true)['complete']);
-        $this->assertSame($editable['shared']['themes'], $service->editableContent($chart->fresh())['shared']['themes']);
-        $this->actingAs(User::factory()->create())->get(route('charts.report.edit', $chart))->assertOk()->assertSee('Tu opuesto complementario');
+        $this->assertSame($editable['shared']['concepts'], $service->editableContent($chart->fresh())['shared']['concepts']);
+        $this->actingAs(User::factory()->create())->get(route('charts.report.edit', $chart))->assertOk()->assertSee('Opuestos complementarios')->assertSee('ql-header', false);
     }
 
     public function test_last_chart_deletion_removes_person_and_allows_name_reuse(): void
@@ -91,20 +90,60 @@ final class ReportGenerationIntegrationTest extends TestCase
         $chart = $this->chart();
         $this->saveChapters($chart);
         $editable = app(PhaseOneReportService::class)->editableContent($chart);
-        $previous = $editable['doors']['sol']['sign'];
-        $editable['doors']['sol']['sign'] .= '<p>Tu Sol en Libra expresa tu identidad.</p>';
+        $previous = $editable['doors']['sol']['concepts'];
+        $editable['doors']['sol']['concepts'] .= '<p>Tu Sol en Libra expresa tu identidad.</p>';
         $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
             ->assertSessionHasErrors('doors');
-        $this->assertSame($previous, app(PhaseOneReportService::class)->editableContent($chart->fresh())['doors']['sol']['sign']);
+        $this->assertSame($previous, app(PhaseOneReportService::class)->editableContent($chart->fresh())['doors']['sol']['concepts']);
     }
 
-    public function test_manual_edit_cannot_remove_a_required_behaviour(): void
+    public function test_manual_edit_cannot_replace_explanations_with_a_list(): void
     {
         $chart = $this->chart();
         $this->saveChapters($chart);
         $editable = app(PhaseOneReportService::class)->editableContent($chart);
-        $editable['doors']['sol']['deficit'] = '<ul>'.str_repeat('<li>Una conducta concreta.</li>', 4).'</ul>';
+        $editable['doors']['sol']['concepts'] = '<h3>Concepto</h3><ul><li>Amable</li><li>Sensible</li></ul>';
         $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
             ->assertSessionHasErrors('doors');
+    }
+
+    public function test_manual_edit_checks_block_v_and_cross_block_duplicates_before_saving(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $service = app(PhaseOneReportService::class);
+        $original = $service->editableContent($chart);
+        $editable = $original;
+        $editable['shared']['concepts'] .= '<p>Plutón está en Aries.</p>';
+        $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
+            ->assertSessionHasErrors('shared');
+        $editable = $original;
+        $editable['shared']['concepts'] = $original['doors']['sol']['concepts'];
+        $this->put(route('charts.report.save', $chart), $editable)->assertSessionHasErrors('doors');
+        $this->assertSame($original, $service->editableContent($chart->fresh()));
+    }
+
+    public function test_birth_time_uncertainty_is_provided_without_inventing_precision(): void
+    {
+        $chart = $this->chart();
+        $chart->birthData->update(['time_precision' => 'approximate', 'time_source' => 'estimated']);
+        $facts = app(InteriorMapMaster::class)->facts($chart);
+        $this->assertTrue($facts['technical']['angles_houses_conditional']);
+        $this->assertSame('estimated', $facts['technical']['time_source']);
+        $chart->birthData->update(['time_precision' => 'exact', 'time_source' => 'document']);
+        $this->assertFalse(app(InteriorMapMaster::class)->facts($chart)['technical']['angles_houses_conditional']);
+    }
+
+    public function test_editor_preserves_inline_emphasis_and_removes_html_attributes(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $service = app(PhaseOneReportService::class);
+        $editable = $service->editableContent($chart);
+        $editable['doors']['sol']['concepts'] .= '<p onclick="invalid()"><strong>Un matiz propio</strong> conserva su énfasis.</p>';
+        app(PhaseOneManualSaveService::class)->save($chart, $editable['shared'], $editable['doors']);
+        $saved = $service->editableContent($chart->fresh())['doors']['sol']['concepts'];
+        $this->assertStringContainsString('<p><strong>Un matiz propio</strong> conserva su énfasis.</p>', $saved);
+        $this->assertStringNotContainsString('onclick', $saved);
     }
 }

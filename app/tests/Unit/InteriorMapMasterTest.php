@@ -3,7 +3,9 @@
 namespace Tests\Unit;
 
 use App\Models\Chart;
+use App\Services\AspectMatrixBuilder;
 use App\Services\InteriorMapMaster;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Fixtures\InteriorMapFixture;
 
@@ -11,97 +13,96 @@ final class InteriorMapMasterTest extends TestCase
 {
     use InteriorMapFixture;
 
-    public function test_positions_houses_and_opposites_are_derived_without_example_defaults(): void
+    private function facts(?array $snapshot = null): array
     {
-        $chart = new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => self::snapshot()]);
-        $facts = (new InteriorMapMaster)->facts($chart);
-        $this->assertSame(['sign' => 'Cáncer', 'house' => 4, 'longitude' => 95.0, 'opposite' => 'Capricornio'], array_intersect_key($facts['sol'], array_flip(['sign', 'house', 'longitude', 'opposite'])));
-        $this->assertSame([['planet' => 'moon', 'sign' => 'Sagitario', 'house' => 9]], $facts['sol']['rulers']['traditional']);
-        $this->assertSame($facts['sol']['rulers']['traditional'], $facts['sol']['rulers']['modern']);
-        $this->assertSame('Sagitario', $facts['luna']['sign']);
-        $this->assertSame(1, $facts['ascendente']['house']);
-        $this->assertSame(7, $facts['descendente']['house']);
+        return (new InteriorMapMaster)->facts(new Chart([
+            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
+            'snapshot' => $snapshot ?? self::snapshot(),
+        ]));
     }
 
-    public function test_missing_data_are_rejected_instead_of_filled(): void
+    public function test_positions_houses_opposites_and_all_occupants_use_the_current_snapshot(): void
     {
-        $chart = new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => []]);
-        $this->expectExceptionMessage('Falta la cúspide');
-        (new InteriorMapMaster)->facts($chart);
+        $facts = $this->facts();
+        $this->assertSame('Cáncer', $facts['sol']['sign']);
+        $this->assertSame(4, $facts['sol']['house']);
+        $this->assertSame('Capricornio', $facts['sol']['opposite']);
+        $this->assertSame('moon', $facts['sol']['rulers']['traditional'][0]['planet']);
+        $this->assertSame('Sagitario', $facts['sol']['rulers']['traditional'][0]['sign']);
+        $this->assertCount(12, $facts['positions']);
+        $this->assertSame(['venus', 'pluto'], $facts['houses'][8]['occupants']);
+        $this->assertSame(['mercury'], $facts['houses'][3]['occupants']);
+        $this->assertSame('unknown', $facts['technical']['time_precision']);
+        $this->assertTrue($facts['technical']['angles_houses_conditional']);
+        $this->assertSame(6.0, $facts['technical']['maximum_orb']);
+        $this->assertSame(150.0, $facts['lunar_phase']['elongation_degrees']);
     }
 
-    public function test_modern_rulers_are_included_with_their_verified_positions(): void
+    public function test_cusp_sign_is_not_substituted_for_the_planet_sign(): void
     {
         $snapshot = self::snapshot();
-        $snapshot['sun'] = ['longitude' => 215, 'sign' => 'scorpio'];
-        $facts = (new InteriorMapMaster)->facts(new Chart([
-            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
-            'snapshot' => $snapshot,
-        ]));
-
-        $this->assertSame([['planet' => 'mars', 'sign' => 'Capricornio', 'house' => 10]], $facts['sol']['rulers']['traditional']);
-        $this->assertSame([
-            ['planet' => 'mars', 'sign' => 'Capricornio', 'house' => 10],
-            ['planet' => 'pluto', 'sign' => 'Escorpio', 'house' => 8],
-        ], $facts['sol']['rulers']['modern']);
+        $snapshot['houses'][4]['longitude'] = 89;
+        $facts = $this->facts($snapshot);
+        $this->assertSame('Géminis', $facts['houses'][4]['sign']);
+        $this->assertSame('Cáncer', $facts['sol']['sign']);
+        $this->assertSame(4, $facts['sol']['house']);
     }
 
-    public function test_missing_ruler_positions_are_rejected_instead_of_invented(): void
+    public function test_rounding_difference_at_an_angle_does_not_assign_it_to_the_previous_house(): void
+    {
+        $snapshot = self::snapshot();
+        $snapshot['houses'][1]['longitude'] = 0.000001;
+        $snapshot['houses'][7]['longitude'] = 180.000001;
+        $facts = $this->facts($snapshot);
+        $this->assertSame(1, $facts['ascendente']['house']);
+        $this->assertSame(7, $facts['descendente']['house']);
+        $this->assertSame(0.0, $facts['ascendente']['distance_from_house_cusp']);
+    }
+
+    public function test_domicile_does_not_invent_an_external_dispositor(): void
+    {
+        $snapshot = self::snapshot();
+        $snapshot['sun'] = ['longitude' => 125, 'sign' => 'leo'];
+        $facts = $this->facts($snapshot);
+        $this->assertTrue($facts['sol']['self_disposed_traditional']);
+        $this->assertSame(['domicilio'], $facts['sol']['major_dignities']);
+        $this->assertSame('sun', $facts['sol']['rulers']['traditional'][0]['planet']);
+    }
+
+    public function test_major_classical_dignities_and_modern_regencies_are_distinct(): void
+    {
+        $snapshot = self::snapshot();
+        $snapshot['sun'] = ['longitude' => 185, 'sign' => 'libra'];
+        $facts = $this->facts($snapshot);
+        $this->assertSame(['caída'], $facts['sol']['major_dignities']);
+        $this->assertSame(['detrimento'], $facts['positions']['venus']['major_dignities']);
+        $this->assertSame(['exaltación'], $facts['positions']['mars']['major_dignities']);
+        $this->assertSame(['domicilio'], $facts['positions']['jupiter']['major_dignities']);
+        $this->assertSame(['mars'], $facts['positions']['venus']['rulership']['traditional']);
+        $this->assertSame(['mars', 'pluto'], $facts['positions']['venus']['rulership']['modern']);
+        $this->assertSame([], $facts['positions']['pluto']['major_dignities']);
+    }
+
+    public function test_missing_cusp_is_rejected_instead_of_filled(): void
+    {
+        $this->expectExceptionMessage('Falta la cúspide');
+        $this->facts([]);
+    }
+
+    public function test_missing_non_ruler_planet_is_not_treated_as_an_empty_house(): void
+    {
+        $snapshot = self::snapshot();
+        unset($snapshot['mercury']);
+        $this->expectExceptionMessage('posición verificada de mercury');
+        $this->facts($snapshot);
+    }
+
+    public function test_missing_ruler_is_rejected(): void
     {
         $snapshot = self::snapshot();
         unset($snapshot['venus']);
-        $this->expectExceptionMessage('Falta la posición verificada del regente venus');
-        (new InteriorMapMaster)->facts(new Chart([
-            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
-            'snapshot' => $snapshot,
-        ]));
-    }
-
-    public function test_inconsistent_ruler_placements_are_rejected(): void
-    {
-        $master = new InteriorMapMaster;
-        $facts = $master->facts(new Chart([
-            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
-            'snapshot' => self::snapshot(),
-        ]));
-        $content = self::chapter('sol');
-        $content['sign'][] = 'Venus está en Aries, casa I.';
-
-        $this->expectExceptionMessage('posición verificada de un regente');
-        $master->validateFacts($content, $facts, 'sol');
-    }
-
-    public function test_house_of_the_current_door_ruler_is_not_mistaken_for_the_door_house(): void
-    {
-        $master = new InteriorMapMaster;
-        $facts = $master->facts(new Chart([
-            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
-            'snapshot' => self::snapshot(),
-        ]));
-        $content = self::chapter('sol');
-        $content['house'] = ['La Luna, regente de Cáncer, está situada en casa IX.'];
-
-        $this->assertNull($master->validateFacts($content, $facts, 'sol'));
-    }
-
-    public function test_incorrect_house_of_the_current_door_ruler_is_rejected(): void
-    {
-        $master = new InteriorMapMaster;
-        $facts = $master->facts(new Chart([
-            'configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'],
-            'snapshot' => self::snapshot(),
-        ]));
-        $content = self::chapter('sol');
-        $content['house'] = ['La Luna, regente de Cáncer, está situada en casa VIII.'];
-
-        $this->expectExceptionMessage('casa verificada de un regente');
-        $master->validateFacts($content, $facts, 'sol');
-    }
-
-    public function test_non_placidus_protocol_is_rejected(): void
-    {
-        $this->expectExceptionMessage('requiere zodiaco tropical');
-        (new InteriorMapMaster)->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'koch'], 'snapshot' => self::snapshot()]));
+        $this->expectExceptionMessage('posición verificada de venus');
+        $this->facts($snapshot);
     }
 
     public function test_inconsistent_sign_is_rejected(): void
@@ -109,176 +110,129 @@ final class InteriorMapMasterTest extends TestCase
         $snapshot = self::snapshot();
         $snapshot['sun']['sign'] = 'libra';
         $this->expectExceptionMessage('Signo y longitud inconsistentes');
-        (new InteriorMapMaster)->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => $snapshot]));
+        $this->facts($snapshot);
     }
 
-    public function test_schema_and_total_word_budget_follow_only_the_new_master(): void
+    public function test_non_placidus_configuration_is_not_silently_reinterpreted(): void
+    {
+        $this->expectExceptionMessage('requiere zodiaco tropical');
+        (new InteriorMapMaster)->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'koch'], 'snapshot' => self::snapshot()]));
+    }
+
+    public function test_aspect_threshold_and_exact_orbs_do_not_use_rounded_visual_values(): void
+    {
+        $builder = new AspectMatrixBuilder;
+        $aspect = $builder->between(359, 65)[0];
+        $this->assertSame('sextile', $aspect['key']);
+        $this->assertSame(6.0, $aspect['exact_orb']);
+        $this->assertSame([], $builder->between(359, 65.0001));
+        $this->assertEqualsWithDelta(0.001, $builder->between(1, 61.001)[0]['exact_orb'], 0.000001);
+        foreach ($this->facts()['aspects'] as $fact) {
+            $this->assertNull($fact['applying_or_separating']);
+            $this->assertFalse($fact['first'] === 'ascendant' && $fact['second'] === 'descendant');
+        }
+    }
+
+    public function test_schema_has_open_concepts_with_explained_characteristics_and_no_old_sections(): void
     {
         $master = new InteriorMapMaster;
-        $total = 0;
-        foreach ([...InteriorMapMaster::DOORS, 'integration'] as $chapter) {
-            $content = self::chapter($chapter);
-            $master->validate($content, $chapter === 'integration');
-            $total += $master->wordCount($content);
-        }
-        $this->assertGreaterThanOrEqual(4000, $total);
-        $this->assertLessThanOrEqual(InteriorMapMaster::REPORT_MAX_WORDS, $total + 200);
-        $this->assertArrayNotHasKey('ruler', $master->schema()['properties']);
-        $this->assertSame(array_keys(InteriorMapMaster::TITLES), $master->schema()['required']);
+        $this->assertSame(['concepts'], $master->schema()['required']);
+        $this->assertSame(['title', 'characteristics'], $master->schema()['properties']['concepts']['items']['required']);
+        $this->assertSame(InteriorMapMaster::CHAPTERS, $master->auditSchema()['properties']['replacements']['items']['properties']['chapter']['enum']);
+        $this->assertStringContainsString('siete páginas', $master->systemPrompt());
+        $this->assertStringContainsString('matriz interna', $master->systemPrompt());
+        $this->assertStringContainsString('tradicionales prioritarias', $master->systemPrompt());
         $this->assertStringNotContainsString('Pastora', $master->systemPrompt());
-        $this->assertStringNotContainsString('{CHAPTER_MAX}', $master->systemPrompt());
-        $this->assertStringContainsString('800–1800', $master->systemPrompt());
-        $this->assertStringContainsString('4000 y 9500', $master->systemPrompt());
+        $this->assertStringNotContainsString('Libra en casa VI', $master->systemPrompt());
+        foreach (InteriorMapMaster::CHAPTERS as $chapter) {
+            $master->validate(self::chapter($chapter));
+        }
     }
 
-    public function test_old_structure_and_empty_sections_are_rejected(): void
+    public function test_position_format_carries_rounded_seconds_across_sign_and_zodiac_boundaries(): void
     {
-        $content = self::chapter('sol');
-        $content['ruler'] = ['Old content'];
-        $this->expectExceptionMessage('exactamente las secciones');
-        (new InteriorMapMaster)->validate($content);
+        $builder = new AspectMatrixBuilder;
+        $this->assertSame('Tauro 0° 0\' 0.0"', $builder->formatLongitude(29.999999));
+        $this->assertSame('Aries 0° 0\' 0.0"', $builder->formatLongitude(359.999999));
     }
 
-    public function test_chapter_can_use_the_expanded_word_budget_for_developed_examples(): void
-    {
-        $content = self::chapter('sol');
-        $content['practice'][] = str_repeat('palabra ', 675);
-
-        (new InteriorMapMaster)->validate($content);
-        $this->assertGreaterThan(1400, (new InteriorMapMaster)->wordCount($content));
-        $this->assertLessThanOrEqual(1800, (new InteriorMapMaster)->wordCount($content));
-    }
-
-    public function test_chapter_word_cap_is_enforced(): void
-    {
-        $content = self::chapter('sol');
-        $content['practice'][] = str_repeat('palabra ', 1050);
-        $this->expectExceptionMessage('Extensión de capítulo inválida');
-        (new InteriorMapMaster)->validate($content);
-    }
-
-    public function test_chapter_with_1492_words_passes_validation(): void
-    {
-        $content = self::chapter('sol');
-        $currentWords = (new InteriorMapMaster)->wordCount($content);
-        $content['practice'][] = str_repeat('palabra ', 1492 - $currentWords);
-
-        (new InteriorMapMaster)->validate($content);
-        $this->assertSame(1492, (new InteriorMapMaster)->wordCount($content));
-    }
-
-    public function test_integration_with_1492_words_passes_validation(): void
-    {
-        $content = self::chapter('integration');
-        $currentWords = (new InteriorMapMaster)->wordCount($content);
-        $content['practice'][] = str_repeat('palabra ', 1492 - $currentWords);
-
-        (new InteriorMapMaster)->validate($content, true);
-        $this->assertSame(1492, (new InteriorMapMaster)->wordCount($content));
-    }
-
-    public function test_wrong_canonical_claim_in_narrative_is_rejected(): void
+    public function test_short_supported_blocks_are_not_padded_to_a_fixed_minimum(): void
     {
         $master = new InteriorMapMaster;
-        $facts = $master->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => self::snapshot()]));
         $content = self::chapter('sol');
-        $content['sign'][] = 'Tu Sol en Libra te invita a reflexionar.';
-        $this->expectExceptionMessage('contradice una posición canónica');
-        $master->validateFacts($content, $facts, 'sol');
+        $this->assertLessThan(780, $master->wordCount($content));
+        $master->validate($content);
     }
 
-    public function test_duplicate_paragraphs_are_not_accepted_as_a_complete_report(): void
+    public function test_technical_word_cap_remains_enforced(): void
     {
         $content = self::chapter('sol');
-        $content['practice'][] = $content['function'][0];
+        $content['concepts'][0]['characteristics'][0]['paragraphs'][] = str_repeat('palabra ', 6000);
+        $this->expectExceptionMessage('Extensión de bloque inválida');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public function test_old_schema_and_unexplained_lists_are_rejected(): void
+    {
+        $this->expectExceptionMessage('exclusivamente conceptos');
+        (new InteriorMapMaster)->validate(['harmony' => ['adjetivo'], 'summary' => ['cierre']]);
+    }
+
+    public function test_each_characteristic_requires_paragraphs(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'] = [];
+        $this->expectExceptionMessage('lista no vacía de párrafos');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    #[DataProvider('excludedHeadings')]
+    public function test_introductions_summaries_and_closings_are_rejected(string $heading): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['title'] = $heading;
+        $this->expectExceptionMessage('no admite introducciones');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public static function excludedHeadings(): array
+    {
+        return array_map(static fn (string $title): array => [$title], ['Introducción', 'Resumen solar', 'Síntesis final', 'Conclusión', 'Cierre', 'Prólogo']);
+    }
+
+    #[DataProvider('contradictoryClaims')]
+    public function test_contradictions_are_checked_in_any_nested_characteristic(string $claim, string $error): void
+    {
+        $content = self::chapter('opposites');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'][] = $claim;
+        $this->expectExceptionMessage($error);
+        (new InteriorMapMaster)->validateFacts($content, $this->facts());
+    }
+
+    public static function contradictoryClaims(): array
+    {
+        return [
+            ['Tu Sol en Libra expresa tu identidad.', 'posición canónica'],
+            ['Plutón está en Aries, casa I.', 'posición canónica'],
+            ['La Luna, regente de Cáncer, está situada en casa VIII.', 'casa verificada'],
+            ['Júpiter en Piscis, casa VII.', 'casa verificada'],
+            ['La oposición Sol-Luna señala una relación.', 'aspecto no verificado'],
+        ];
+    }
+
+    public function test_other_house_rulers_are_not_mistaken_for_the_current_house(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'][] = 'La Luna, regente de Cáncer, está situada en casa IX.';
+        $this->assertNull((new InteriorMapMaster)->validateFacts($content, $this->facts(), 'sol'));
+    }
+
+    public function test_duplicate_paragraphs_are_detected_across_blocks(): void
+    {
+        $first = self::chapter('sol');
+        $second = self::chapter('luna');
+        $second['concepts'][0]['characteristics'][0]['paragraphs'] = $first['concepts'][0]['characteristics'][0]['paragraphs'];
         $this->expectExceptionMessage('repite un párrafo');
-        (new InteriorMapMaster)->assertNoDuplicateParagraphs([$content]);
-    }
-
-    public function test_all_twelve_signs_have_their_exact_complementary_opposite(): void
-    {
-        $signs = array_keys(InteriorMapMaster::SIGNS);
-        $master = new InteriorMapMaster;
-        foreach ($signs as $index => $sign) {
-            $snapshot = self::snapshot();
-            $snapshot['sun'] = ['longitude' => $index * 30 + 5, 'sign' => $sign];
-            $facts = $master->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => $snapshot]));
-            $this->assertSame(InteriorMapMaster::SIGNS[$signs[($index + 6) % 12]], $facts['sol']['opposite']);
-        }
-    }
-
-    public function test_integration_rejects_a_theme_without_its_work_points(): void
-    {
-        $content = self::chapter('integration');
-        unset($content['themes'][0]['work_points']);
-        $this->expectExceptionMessage('Cada tema requiere');
-        (new InteriorMapMaster)->validate($content, true);
-    }
-
-    public function test_integration_facts_are_checked_inside_nested_theme_paragraphs(): void
-    {
-        $master = new InteriorMapMaster;
-        $facts = $master->facts(new Chart(['configuration' => ['zodiac' => 'tropical', 'houses' => 'placidus'], 'snapshot' => self::snapshot()]));
-        $content = self::chapter('integration');
-        $content['themes'][0]['paragraphs'][] = 'Tu Sol en Libra describe tu identidad.';
-        $this->expectExceptionMessage('contradice una posición canónica');
-        $master->validateFacts($content, $facts, null);
-    }
-
-    public function test_summary_requires_all_four_labels(): void
-    {
-        $content = self::chapter('sol');
-        $content['summary'][0] = 'Una síntesis sin distinguir el don.';
-        $this->expectExceptionMessage('La síntesis requiere');
-        (new InteriorMapMaster)->validate($content);
-    }
-
-    public function test_integration_rejects_unstructured_themes(): void
-    {
-        $content = self::chapter('integration');
-        $content['themes'] = 'Un bloque sin temas diferenciados.';
-        $this->expectExceptionMessage('lista no vacía');
-        (new InteriorMapMaster)->validate($content, true);
-    }
-
-    public function test_each_state_requires_exactly_five_behaviours_in_schema_and_validation(): void
-    {
-        $master = new InteriorMapMaster;
-        foreach (['harmony', 'deficit', 'excess'] as $state) {
-            $this->assertSame(5, $master->schema()['properties'][$state]['minItems']);
-            $this->assertSame(5, $master->schema()['properties'][$state]['maxItems']);
-            foreach ([4, 6] as $count) {
-                $content = self::chapter('sol');
-                $content[$state] = array_fill(0, $count, 'Reconocer una necesidad y expresarla con claridad.');
-                try {
-                    $master->validate($content);
-                    $this->fail('An invalid state count was accepted.');
-                } catch (\RuntimeException $exception) {
-                    $this->assertStringContainsString('exactamente cinco', $exception->getMessage());
-                }
-            }
-        }
-    }
-
-    public function test_general_function_cannot_start_with_a_sign_interpretation(): void
-    {
-        $content = self::chapter('sol');
-        $content['function'][0] = 'El Sol en Cáncer explica cómo te expresas.';
-        $this->expectExceptionMessage('función general');
-        (new InteriorMapMaster)->validate($content);
-    }
-
-    public function test_element_framework_and_technical_jargon_are_rejected(): void
-    {
-        foreach (['Fuego: actuar con iniciativa.', 'El elemento tierra organiza tu experiencia.', 'Alquimia emocional', 'Impulso ariano', 'Mecanismos operativos', 'Indicadores de validación'] as $text) {
-            $content = self::chapter('sol');
-            $content['sign'][] = $text;
-            try {
-                (new InteriorMapMaster)->validate($content);
-                $this->fail('An obsolete writing framework was accepted.');
-            } catch (\RuntimeException $exception) {
-                $this->assertStringContainsString('ajeno al método', $exception->getMessage());
-            }
-        }
+        (new InteriorMapMaster)->assertNoDuplicateParagraphs([$first, $second]);
     }
 }

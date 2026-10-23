@@ -1,5 +1,13 @@
 # Reinicio local y MySQL — ASTROLOGIA SARANA VEDA
 
+> Este documento conserva el estado historico de la operacion de reinicio.
+> El modelo de generacion se ha actualizado posteriormente al Manual Maestro
+> Universal: cinco bloques, conceptos/caracteristicas/parrafos y auditoria
+> conjunta, sin introduccion ni sintesis final. El contrato vigente y sus
+> versiones estan en [README de la aplicacion](../app/README.md).
+> Este cambio de codigo local no acredita un despliegue ni una nueva operacion
+> sobre MySQL o los archivos del NAS.
+
 ## Estado y alcance
 
 Se ha ejecutado la activacion **en el codigo local** del nuevo Informe I y el

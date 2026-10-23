@@ -1,158 +1,180 @@
 # ASTROLOGIA SARANA VEDA — Informe I
 
-Aplicacion privada Laravel 13 / PHP 8.3. El unico modelo activo de interpretacion
-es **Informe I — Mapa interior**. No importa textos de Word, PDF ni informes antiguos.
+Aplicacion privada Laravel 13 / PHP 8.3. El modelo activo del Informe I aplica
+el prompt universal y el **Manual Maestro Universal de Interpretacion Natal
+Copilot, edicion revisada**. No reutiliza interpretaciones de Word, PDF ni
+informes historicos.
 
-## Modelo maestro
+## Modelo y referencia
 
-- Prompt aprobado, esquema, opuestos y validaciones:
+- Reglas del manual, esquema, hechos y validaciones:
   [InteriorMapMaster](app/Services/InteriorMapMaster.php).
-- Modelo generico y campos variables:
-  [PhaseOneReportService](app/Services/PhaseOneReportService.php).
-- Generacion estructurada:
+- Generacion secuencial y auditoria:
   [PhaseOneAiGenerationService](app/Services/PhaseOneAiGenerationService.php).
-- Presentacion web/PDF y estilos editoriales originales:
+- Persistencia, estructura y edicion:
+  [PhaseOneReportService](app/Services/PhaseOneReportService.php) y
+  [PhaseOneManualSaveService](app/Services/PhaseOneManualSaveService.php).
+- Vista web/PDF:
   [template.blade.php](resources/views/reports/phase-one/template.blade.php).
 
-El Word de referencia conservado en `../docs` contiene datos personales y no se
-lee en ejecucion. Sus posiciones y su nombre no son valores predeterminados.
-Tambien se entrega `../docs/plantilla_Mapa_Interior_Generica.docx`, sin identidad
-ni posiciones personales, con la estructura y los campos variables del modelo.
-El modelo definitivo es generico: nombre y nacimiento de la carta actual,
-signo/casa/longitud de Sol, Luna, Ascendente y Descendente calculados, y opuestos
-derivados de esos signos. La IA no recibe el nombre ni la fecha de nacimiento:
-la aplicacion los incorpora a la portada.
+Las reglas se incorporaron desde el manual facilitado, identificado por SHA256
+`B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED`.
+No se abre un DOCX en cada llamada: la IA recibe las reglas incorporadas y esta
+procedencia se declara en los hechos. Modificar un Word externo no actualiza
+automaticamente el generador.
 
-## Estructura del Informe I
+Los documentos anteriores conservados en `../docs`, incluidas sus plantillas,
+son referencias historicas, **no el contrato del modelo actual**. No se leen
+en ejecucion ni se importan sus nombres o posiciones. La IA no recibe el nombre
+ni la fecha de nacimiento; la aplicacion los incorpora a la portada.
 
-Introduccion breve, cuatro posiciones y cinco capitulos:
+## Cinco bloques
 
-1. Sol: identidad, voluntad y eleccion.
-2. Luna: necesidades emocionales, seguridad y cuidado.
-3. Ascendente: orientacion y comienzo.
-4. Descendente: reciprocidad, acuerdos y encuentro.
-5. Integracion individual de las cuatro puertas.
+1. **Sol natal:** identidad y voluntad consciente.
+2. **Luna natal:** necesidades y respuestas emocionales.
+3. **Ascendente:** orientacion expresiva y actuacion.
+4. **Descendente:** vinculo y reciprocidad.
+5. **Opuestos complementarios:** polaridad solar, polaridad lunar y eje angular,
+   con complementariedad bidireccional.
 
-Cada puerta contiene funcion, pregunta de entrada, signo, casa, armonia, defecto,
-exceso, pregunta para distinguirlos, opuesto complementario, ejemplo hipotetico,
-sintesis, pregunta esencial y practica observable. La integracion contiene de tres
-a cinco temas con preguntas y una practica conjunta.
+Cada bloque tiene conceptos abiertos; cada concepto contiene caracteristicas
+concretas y, debajo, uno o varios parrafos explicativos. El JSON es:
 
-Se exige un total de **4000–5500 palabras**. Cada puerta tiene 780–1050 y la
-integracion 800–1050. No hay capitulos interpretativos de regentes, aspectos,
-otros planetas, desarrollo de doce casas ni ampliacion comercial. Se conservan
-la rueda y la matriz visual de la portada; no se interpretan exhaustivamente.
-El nuevo recorrido tiene su propia paginacion: no inserta la pagina nueve vacia
-del dossier retirado.
+```json
+{
+  "concepts": [{
+    "title": "Concepto pertinente",
+    "characteristics": [{
+      "title": "Caracteristica concreta",
+      "paragraphs": ["Desarrollo individualizado sustentado en la carta."]
+    }]
+  }]
+}
+```
 
-La lectura es simbolica, no diagnostica ni predictiva. No se deduce biografia ni
-genero a partir del nombre. Los estados son modos de expresion, no etiquetas
-morales.
+No hay introduccion interpretativa, resumen, conclusion ni sintesis final.
+Se retiraron las cuotas de cinco conductas y las secciones obligatorias de
+armonia/defecto/exceso, DON/NECESIDAD/SOMBRA/RECURSO y practica de cierre.
+La portada y el indice no incorporan interpretaciones adicionales.
 
-## Protocolo y datos
+El objetivo editorial es **siete paginas Word orientativas por bloque**, no
+una paginacion garantizada. Se propone una referencia flexible de 2800 palabras;
+no hay minimo obligatorio por bloque, caracteristica o informe que fuerce
+relleno. El limite tecnico de seguridad es 6000 palabras por bloque. La
+profundidad debe ajustarse a los datos y no alcanzarse repitiendo ideas.
+No se exporta Word ni se verifica su paginacion: el producto de la aplicacion
+es web/PDF A4. El renderizado PDF registra las paginas reales del indice y
+rechaza paginas sin contenido, sin insertar paginas vacias para llegar a siete.
+Se conservan la rueda, la matriz, los colores y los encabezados/pies editoriales.
 
-- Zodiaco tropical, posiciones geocentricas, casas Placidus.
-- Swiss Ephemeris (`swetest`); datos normalizados a UTC.
-- Coordenadas persistidas a seis decimales.
-- Datos y calculos faltantes o inconsistentes detienen la generacion.
-- Signos/casas/opuestos se derivan del snapshot actual, nunca del Word.
-- La IA recibe solo el maestro y hechos actuales; la integracion recibe las
-  cuatro puertas del mismo trabajo, no interpretaciones historicas.
+## Hechos tecnicos y universalidad
 
-El formulario y el servicio rechazan otros sistemas de casas para este nuevo
-protocolo. El calculador astronomico conserva su implementacion y capacidades.
-La version de modelo es 100; la version editorial PDF es 15.
+El protocolo calculado existente sigue siendo tropical, geocentrico y Placidus.
+No se reinterpreta como otro sistema de casas. Los datos provienen del snapshot
+de la carta actual, calculado con Swiss Ephemeris y normalizado a UTC.
 
-## Generacion y actualizaciones
+- Se verifican las doce cuspides, su orden, los diez planetas y el eje
+  Ascendente-Descendente. Los datos cruciales faltantes o inconsistentes detienen
+  la generacion; no hay posiciones por defecto.
+- Casas, ocupantes, signo de cuspide, regentes y proximidad a cuspides se
+  derivan de longitudes, sin adelantar planetas a la casa siguiente.
+- Regencias tradicionales prioritarias y modernas complementarias. Se reconoce
+  la autodisposicion. Domicilio, detrimento, exaltacion y caida clasicos se
+  distinguen de atribuciones modernas y de condiciones no calculadas.
+- Aspectos mayores: conjuncion, sextil, cuadratura, trigono y oposicion; orbe
+  maximo de 6 grados, coherente con la matriz visual. El calculo se comparte
+  mediante [AspectMatrixBuilder](app/Services/AspectMatrixBuilder.php) y conserva
+  el orbe exacto, ademas de su representacion en grados/minutos/segundos.
+- La oposicion geometrica de los angulos no se presenta como oposicion entre
+  planetas. Compartir casa no implica conjuncion.
+- Fuente y precision de la hora viajan al prompt. Casas y angulos se declaran
+  condicionales cuando la precision es aproximada o desconocida.
+- Aplicacion/separacion, velocidades, retrogradacion, combustion y dignidades
+  menores no se inventan: no estan calculadas en este modelo.
 
-El proceso usa cinco llamadas estructuradas (cuatro puertas y una integracion),
-mas preparacion, validacion, montaje y PDF. La cola `reports` debe tener un
-worker activo. No genera en una peticion HTTP larga.
+La lectura es simbolica, no cientifica, diagnostica ni predictiva. Se prohiben
+biografias inventadas, jerarquias porcentuales, excepciones psicologicas por signo
+y valoraciones automaticas de aspectos como buenos o malos.
 
-El 11% indica que la preparacion termino y se esta generando el Sol. Si un
-capitulo no supera la validacion, la cola aplica sus reintentos con espera; la
-barra conserva el porcentaje hasta que ese capitulo sea valido. Cada peticion
-incluye objetivos de palabras por seccion (no por parrafo). El motivo del rechazo
-se conserva como feedback para corregir la siguiente respuesta y se muestra en
-el aviso de progreso. El borrador rechazado se guarda temporalmente en ese mismo
-trabajo junto al motivo; el siguiente intento recibe ese borrador y los recuentos
-reales total y por seccion para editarlo, en vez de generar otro texto a ciegas.
-Se elimina el borrador rechazado al aceptar el capitulo corregido. Nunca se usa
-como interpretacion publicada ni como entrada de otros trabajos. No se amplian
-los limites y no se hacen llamadas adicionales fuera de los reintentos de cola.
-Al agotarlos, se informa del motivo y se permite reintentar la etapa pendiente.
-Desplegar cambios del generador exige recrear tambien el worker, no solo la web.
+## Generacion, auditoria y edicion
 
-Siempre se regeneran las cuatro puertas y su integracion juntas. Una peticion
-antigua de generacion individual se convierte en regeneracion completa para
-evitar mezclar textos de trabajos distintos.
+La cola `reports` ejecuta cinco llamadas estructuradas, una por bloque, y una
+sexta llamada de auditoria conjunta, seguidas de validacion, montaje y PDF.
+Cada bloque recibe los anteriores del **mismo trabajo**, nunca informes
+historicos. Si falta ese contexto, se detiene la generacion.
 
-Al cambiar datos relevantes de nacimiento se recalcula la carta y se marca el
-informe como desactualizado. Se muestra el aviso de regeneracion y se bloquea su
-descarga o la creacion de un PDF reutilizando textos anteriores. Las notas
-privadas no fuerzan un nuevo calculo.
+La auditoria recibe los cinco bloques y devuelve reemplazos completos solo
+donde hacen falta correcciones. Se validan todos los reemplazos antes de
+guardarlos en una transaccion. El trabajo no se completa sin esa auditoria.
+Los controles locales verifican estructura, campos no vacios, titulos excluidos,
+limite tecnico, parrafos literalmente duplicados y afirmaciones reconocibles
+de signo, casa y aspecto. La auditoria de IA aborda duplicaciones conceptuales,
+soporte, matices exclusivos y relleno; **no sustituye una revision humana** de
+toda la coherencia semantica ni garantiza detectar cada afirmacion erronea.
 
-El PDF se descarga como `Informe I - Nombre de la carta natal.pdf`.
-La edicion manual conserva el esquema completo y el presupuesto de palabras e
-invalida el PDF. Guardar el PDF no vuelve a interpretar.
+Los rechazos guardan motivo y borrador en el trabajo actual. El siguiente
+intento recibe ambos para corregirlo; al aceptar el bloque se retiran. No se
+publican borradores rechazados ni se silencian errores de salida truncada.
+La preparacion termina en el 10% y el Sol se acepta en el 20%; el progreso
+incluye la auditoria como etapa independiente.
 
-`reports:refresh-pdfs` solo sirve para textos completos del modelo nuevo. No
-convierte el dossier antiguo: este requiere una generacion completa desde cero.
-Los trabajos pendientes del modelo anterior no pueden procesarse ni reintentarse.
+Siempre se regeneran los cinco bloques juntos. Las rutas antiguas que solicitan
+una puerta individual se convierten en regeneracion completa. Cambiar datos de
+nacimiento marca el informe como desactualizado y bloquea su descarga.
 
-## Configuracion necesaria
+El editor conserva conceptos H3, caracteristicas H4 y parrafos. Valida tambien
+el bloque V, contradicciones y duplicaciones entre bloques antes de guardar.
+Conserva enfasis en linea, elimina atributos HTML e invalida el PDF. Guardar o
+recrear el PDF no vuelve a interpretar.
 
-Mantener `.env`, `APP_KEY`, cuentas de acceso y credenciales fuera del repositorio.
-La configuracion existente apunta al MySQL del NAS: **no es una base local de
-pruebas**. No ejecutar limpiezas, migraciones destructivas ni seeds contra ella
-sin revision y autorizacion especifica.
+**Version de modelo: 104. Version editorial PDF: 18.** Los textos y trabajos de
+versiones anteriores no se mezclan con este modelo: requieren regeneracion.
+`reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
+El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.
 
-La IA requiere `AI_ENABLED=true`, `AI_API_KEY`, `AI_MODEL` compatible con JSON
-schema y `AI_BASE_URL`. El limite por capitulo es
-`AI_CHAPTER_MAX_COMPLETION_TOKENS` (5000 por defecto). No se usan las antiguas
-cuotas del Sol ni las 22 etapas por puerta. Precios, cambio de divisa y tasas
-siguen en `config/ai.php`.
+## Configuracion y despliegue
 
-Para activar este codigo en otro entorno, revisar sus cambios, desplegar la
-imagen actualizada y aplicar las migraciones, incluida la ampliacion de nombres
-de seccion; limpiar configuracion/vistas y reiniciar el worker. La nueva
-migracion **no borra personas ni informes**. La limpieza del NAS debe ser una
-operacion separada confirmada, con workers detenidos y conservando `users`,
-credenciales y migraciones.
+Mantener `.env`, `APP_KEY`, cuentas y credenciales fuera del repositorio.
+La configuracion existente apunta al MySQL del NAS: **no es una base de
+pruebas**. Este cambio no borra personas, cartas ni datos de produccion y no
+necesita una migracion de esquema.
 
-La imagen Docker crea los directorios de ejecucion de Laravel antes de ejecutar
-los scripts de Composer y asignar permisos. `storage` puede no existir en un clon
-limpio porque sus archivos generados estan excluidos del contexto de build; no
-deben copiarse informes ni caches antiguos para resolverlo. Los volumenes
-persistentes del NAS se preparan por separado en `deploy.sh`.
+La IA necesita `AI_ENABLED=true`, clave, modelo compatible con JSON schema,
+URL y tarifas en [config/ai.php](config/ai.php). Los valores predeterminados de
+salida son `AI_CHAPTER_MAX_COMPLETION_TOKENS=10000` y
+`AI_AUDIT_MAX_COMPLETION_TOKENS=16000`; revisar valores antiguos mas bajos y
+la capacidad real del modelo antes de generar. Los limites son tecnicos, no
+objetivos de texto. `AI_AUDIT_TIMEOUT=300` reserva tiempo para la revision
+conjunta dentro del timeout de 360 segundos del worker. La auditoria y el mayor desarrollo pueden aumentar coste
+y duracion respecto al modelo anterior. Una salida truncada produce un error,
+no un informe incompleto presentado como valido.
+
+Para activar en otro entorno, desplegar la imagen actualizada, limpiar
+configuracion/vistas y recrear **web y worker**. No basta con cambiar la web:
+un worker persistente mantiene el codigo cargado. Los informes anteriores deben
+generarse de nuevo; no basta con refrescar su PDF.
 
 ## Pruebas
 
-Desde `app`, con dependencias existentes:
+Desde `app`, con las dependencias existentes:
 
 ```powershell
 php vendor\bin\phpunit
-php vendor\bin\pint --test
+php vendor\bin\pint --dirty --format agent
 node --test tests\Feature\*.test.mjs tests\Feature\*.test.cjs
 ```
 
 PHPUnit usa SQLite en memoria, HTTP simulado y almacenamiento aislado. No llama
-al proveedor ni escribe personas en MySQL. Si el PHP de Windows tiene SQLite
-instalado pero deshabilitado, activarlo solo para el proceso:
+al proveedor ni escribe personas en MySQL. Si SQLite esta instalado pero
+deshabilitado en PHP de Windows, activarlo solo para el proceso:
 
 ```powershell
 $phpDir = Split-Path (Get-Command php).Source
 php -d "extension=$phpDir\ext\php_pdo_sqlite.dll" vendor\bin\phpunit
 ```
 
-Las pruebas del generador retirado se sustituyeron por pruebas del maestro,
-hechos/opuestos, limites, ausencia de defaults, cola completa, web/PDF/editor,
-rechazo de trabajos antiguos, stale y nombres de descarga. Se mantienen las
-pruebas de registro, calculo, autenticacion, costes/metricas y componentes.
-
-## Limites del reinicio
-
-Eliminar archivos del directorio de trabajo no los elimina del historial Git,
-GitHub, otros clones, descargas o copias de seguridad. El codigo local no acredita
-la limpieza de MySQL ni del almacenamiento persistente de produccion. Consultar
-el resumen de reinicio en `../docs` antes de declarar un reinicio total.
+La cobertura del Informe I incluye hechos/cuspides/regencias/dignidades,
+orbes exactos, autodisposicion, incertidumbre de hora, esquema abierto, ausencia
+de introducciones/cierres, contexto secuencial, auditoria transaccional,
+reintentos, edicion y PDF real sin paginas vacias. Tambien se conservan las
+pruebas de registro/calculo, autenticacion, costes y componentes.

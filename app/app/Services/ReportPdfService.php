@@ -52,6 +52,7 @@ class ReportPdfService
         $indexStartPages = [];
         $indexPageLabels = [];
         $blankPages = [];
+        $contentPages = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
             ->pluck('key')
@@ -59,8 +60,11 @@ class ReportPdfService
         $expectedIndexKeys = array_column($report['index'], 'key');
         $dompdf->setCallbacks([[
             'event' => 'begin_frame',
-            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$blankPages): void {
+            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$blankPages, &$contentPages): void {
                 $node = $frame->get_node();
+                if ($node instanceof \DOMText && trim($node->textContent) !== '') {
+                    $contentPages[$canvas->get_page_number()] = true;
+                }
                 if (! $node instanceof \DOMElement) {
                     return;
                 }
@@ -102,6 +106,9 @@ class ReportPdfService
             throw new \RuntimeException('No se pudieron determinar las páginas de todos los apartados del índice.');
         }
         $canvas = $dompdf->getCanvas();
+        if (array_diff(range(1, $canvas->get_page_count()), array_keys($contentPages)) !== []) {
+            throw new \RuntimeException('El PDF contiene una página sin contenido. Revisa la paginación sin insertar páginas vacías.');
+        }
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
         $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
         $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels, $blankPages): void {
@@ -140,6 +147,7 @@ class ReportPdfService
             'chart_id' => $chart->id,
             'pages' => $canvas->get_page_count(),
             'index_pages' => $indexStartPages,
+            'content_pages' => array_keys($contentPages),
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);
 

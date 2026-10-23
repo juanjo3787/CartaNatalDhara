@@ -51,8 +51,11 @@ final class OpenAiTextGenerator implements StructuredAiTextGenerator
 
         $isStructured = $responseFormat['type'] === 'json_schema';
         // Each call has its own deadline; report orchestration runs in the queue worker.
-        $timeout = (int) ($isStructured ? config('ai.stage_timeout', 95) : config('ai.timeout', 90));
-        $maxTokens = (int) ($isStructured ? config('ai.chapter_max_completion_tokens', 5000) : config('ai.door_max_completion_tokens', 4000));
+        $audit = $isStructured && ($meta['stage'] ?? null) === 'natal_audit';
+        $timeout = (int) ($isStructured ? ($audit ? config('ai.audit_timeout', 300) : config('ai.stage_timeout', 95)) : config('ai.timeout', 90));
+        $maxTokens = (int) ($isStructured
+            ? ($audit ? config('ai.audit_max_completion_tokens', 16000) : config('ai.chapter_max_completion_tokens', 10000))
+            : config('ai.door_max_completion_tokens', 4000));
         $model = (string) config('ai.model');
 
         $http = Http::baseUrl((string) config('ai.base_url'))

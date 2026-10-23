@@ -65,7 +65,8 @@ class ReportJobService
             $steps[] = ['status' => 'generating_'.$names[$door], 'door' => $door, 'stage' => 'interior_map'];
         }
         if ($job->doors !== []) {
-            $steps[] = ['status' => 'generating_integration'];
+            $steps[] = ['status' => 'generating_opposites'];
+            $steps[] = ['status' => 'auditing'];
         }
         foreach (['validating', 'building_document', 'generating_pdf'] as $status) {
             $steps[] = compact('status');
@@ -106,8 +107,10 @@ class ReportJobService
         $chart = $job->chart;
         if (isset($step['door'])) {
             app(PhaseOneAiGenerationService::class)->generateChapter($chart, $step['door'], $job);
-        } elseif ($step['status'] === 'generating_integration') {
-            app(PhaseOneAiGenerationService::class)->generateChapter($chart, 'integration', $job);
+        } elseif ($step['status'] === 'generating_opposites') {
+            app(PhaseOneAiGenerationService::class)->generateChapter($chart, 'opposites', $job);
+        } elseif ($step['status'] === 'auditing') {
+            app(PhaseOneAiGenerationService::class)->auditReport($chart, $job);
         } elseif (in_array($step['status'], ['validating', 'building_document'], true)) {
             $reportService = app(PhaseOneReportService::class);
             if ($job->doors !== []) {

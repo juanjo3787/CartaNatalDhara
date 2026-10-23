@@ -3,7 +3,12 @@
 @section('title', 'Editar informe Fase 1 - ' . $report['name'])
 
 @php
-    $blockTitles = ['intro' => 'Tu primera lectura'] + \App\Services\InteriorMapMaster::TITLES + \App\Services\InteriorMapMaster::INTEGRATION_TITLES;
+    $blockTitles = \App\Services\InteriorMapMaster::TITLES;
+    $editorChapters = [];
+    foreach ($report['doors'] as $door) {
+        $editorChapters[] = ['title' => $door['title'], 'prefix' => 'doors[' . $door['key'] . ']', 'old_prefix' => 'doors.' . $door['key'], 'id' => $door['key'], 'blocks' => $editable['doors'][$door['key']]];
+    }
+    $editorChapters[] = ['title' => 'V — Opuestos complementarios', 'prefix' => 'shared', 'old_prefix' => 'shared', 'id' => 'shared', 'blocks' => $editable['shared']];
 @endphp
 
 @section('content')
@@ -32,7 +37,7 @@
         <div><span class="badge">Edición del informe</span><h1>Editar informe Fase 1</h1></div>
         <form id="generate-all-ai-form" data-report-job method="POST" action="{{ route('charts.report.ai.all', $chart) }}">
             @csrf
-            <button type="submit" style="margin:0; padding:.65rem .9rem; font-size:.78rem;">Generar las cuatro puertas con IA</button>
+            <button type="submit" style="margin:0; padding:.65rem .9rem; font-size:.78rem;">Generar los cinco bloques con IA</button>
         </form>
     </div>
     <p class="ai-generation-status" data-ai-generation-status role="status" aria-live="polite"></p>
@@ -45,18 +50,19 @@
         @csrf
         @method('PUT')
 
-        <section class="editor-section">
-            <h2>Introducción e integración del mapa interior</h2>
-            @foreach ($editable['shared'] as $block => $content)
-                    <div class="editor-block"><label for="shared-{{ $block }}">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</label><div id="toolbar-shared-{{ $block }}" class="quill-toolbar"><span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button></span><span class="ql-formats"><button class="ql-link"></button><button class="ql-clean"></button></span></div><div id="shared-{{ $block }}" class="rich-editor" data-rich-editor>{!! old('shared.' . $block, $content) !!}</div><textarea name="shared[{{ $block }}]" data-editor-value="shared-{{ $block }}" hidden></textarea></div>
-            @endforeach
-        </section>
-
-        @foreach ($report['doors'] as $door)
+        @foreach ($editorChapters as $chapter)
             <section class="editor-section">
-                <h2 class="editor-door">{{ $door['title'] }}<small style="display:block;font: .9rem Aptos, 'Segoe UI', sans-serif;margin-top:.4rem;">{{ $door['question'] }}</small></h2>
-                @foreach ($editable['doors'][$door['key']] as $block => $content)
-                    <div class="editor-block"><label for="{{ $door['key'] }}-{{ $block }}">{{ $blockTitles[$block] ?? ucfirst(str_replace('_', ' ', $block)) }}</label><div id="toolbar-{{ $door['key'] }}-{{ $block }}" class="quill-toolbar"><span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span><span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button><button class="ql-blockquote"></button></span><span class="ql-formats"><button class="ql-link"></button><button class="ql-clean"></button></span></div><div id="{{ $door['key'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! old('doors.' . $door['key'] . '.' . $block, $content) !!}</div><textarea name="doors[{{ $door['key'] }}][{{ $block }}]" data-editor-value="{{ $door['key'] }}-{{ $block }}" hidden></textarea></div>
+                <h2 class="editor-door">{{ $chapter['title'] }}</h2>
+                @foreach ($chapter['blocks'] as $block => $content)
+                    <div class="editor-block">
+                        <label for="{{ $chapter['id'] }}-{{ $block }}">{{ $blockTitles[$block] }}</label>
+                        <div id="toolbar-{{ $chapter['id'] }}-{{ $block }}" class="quill-toolbar">
+                            <span class="ql-formats"><select class="ql-header"><option value="3">Concepto</option><option value="4">Característica</option><option selected>Párrafo</option></select></span>
+                            <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
+                        </div>
+                        <div id="{{ $chapter['id'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! old($chapter['old_prefix'] . '.' . $block, $content) !!}</div>
+                        <textarea name="{{ $chapter['prefix'] }}[{{ $block }}]" data-editor-value="{{ $chapter['id'] }}-{{ $block }}" hidden></textarea>
+                    </div>
                 @endforeach
             </section>
         @endforeach

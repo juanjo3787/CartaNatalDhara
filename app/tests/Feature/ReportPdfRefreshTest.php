@@ -18,32 +18,15 @@ final class ReportPdfRefreshTest extends TestCase
 {
     use InteriorMapFixture, RefreshDatabase;
 
-    public function test_reference_word_content_keeps_a_comparable_pdf_density(): void
+    public function test_extended_blocks_have_real_index_pages_without_blank_pages_or_fixed_page_counts(): void
     {
         Storage::fake('local');
         Http::preventStrayRequests();
         $chart = $this->chart();
-        $chapters = $this->referenceChapters();
-        $snapshot = self::snapshot();
-        $signs = array_keys(InteriorMapMaster::SIGNS);
-        foreach (range(1, 12) as $house) {
-            $longitude = fmod(35 + ($house - 1) * 30, 360);
-            $snapshot['houses'][$house] = ['longitude' => $longitude, 'sign' => $signs[(int) floor($longitude / 30)]];
-        }
-        foreach (['sun' => 190, 'moon' => 135, 'ascendant' => 35, 'descendant' => 215] as $point => $longitude) {
-            $snapshot[$point] = ['longitude' => $longitude, 'sign' => $signs[(int) floor($longitude / 30)]];
-        }
-        $chart->update(['snapshot' => $snapshot]);
-        $this->assertCount(5, $chapters);
-        foreach ($chapters as $chapter => $content) {
-            $expected = $chapter === 'integration' ? InteriorMapMaster::INTEGRATION_TITLES : InteriorMapMaster::TITLES;
-            $this->assertEqualsCanonicalizing(array_keys($expected), array_keys($content));
-            if ($chapter !== 'integration') {
-                foreach (['harmony', 'deficit', 'excess'] as $state) {
-                    $this->assertCount(5, $content[$state]);
-                }
-            }
-            app(PhaseOneReportService::class)->storeChapter($chart, $chapter === 'integration' ? null : $chapter, $content);
+        foreach (InteriorMapMaster::CHAPTERS as $chapter) {
+            $content = self::chapter($chapter);
+            $content['concepts'][0]['characteristics'][0]['paragraphs'][] = $chapter.' '.str_repeat('Desarrollo sintético extenso para comprobar el salto natural de página y la continuidad del contenido. ', 150);
+            app(PhaseOneReportService::class)->storeChapter($chart, $chapter === 'opposites' ? null : $chapter, $content);
         }
         Log::spy();
         app(ReportPdfService::class)->store($chart, 102);
@@ -51,8 +34,14 @@ final class ReportPdfRefreshTest extends TestCase
             if ($message !== 'Phase 1 PDF rendered.') {
                 return false;
             }
-            $this->assertLessThanOrEqual(18, $context['pages'], 'The reference content must not grow into a fragmented dossier.');
-            $this->assertSame(['sol', 'luna', 'ascendente', 'descendente', 'integration'], array_keys($context['index_pages']));
+            $this->assertGreaterThan(7, $context['pages']);
+            $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($context['index_pages']));
+            $this->assertEqualsCanonicalizing(range(1, $context['pages']), $context['content_pages']);
+            $starts = array_values($context['index_pages']);
+            $sorted = $starts;
+            sort($sorted);
+            $this->assertSame($sorted, $starts);
+            $this->assertCount(5, array_unique($starts));
 
             return true;
         })->once();
