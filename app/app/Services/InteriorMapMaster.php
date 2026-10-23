@@ -318,7 +318,7 @@ PROMPT;
 
     public function validateFacts(array $content, array $facts, ?string $door = null): void
     {
-        $text = implode(' ', $this->texts($content));
+        $text = implode(".\n", $this->texts($content));
         $signs = implode('|', array_map(static fn (string $sign): string => preg_quote($sign, '/'), self::SIGNS));
         $positions = $facts['positions'];
         $labels = array_column($positions, 'label');
@@ -327,16 +327,16 @@ PROMPT;
             $byLabel[mb_strtolower($position['label'])] = $position;
         }
         $names = implode('|', array_map(static fn (string $label): string => preg_quote($label, '/'), $labels));
-        preg_match_all('/\b('.$names.')\s+(?:(?:está|situad[oa]|se encuentra)\s+)?en\s+('.$signs.')\b/ui', $text, $claims, PREG_SET_ORDER);
-        foreach ($claims as $claim) {
+        $placementVerbs = '(?:(?:está|situad[oa]|ubicad[oa]|se encuentra)\s+)*';
+        foreach ($this->assertedClaims('/\b('.$names.')\s+'.$placementVerbs.'en\s+('.$signs.')\b/ui', $text) as $claim) {
             $position = $byLabel[mb_strtolower($claim[1])];
             if (mb_strtolower($claim[2]) !== mb_strtolower($position['sign'])) {
                 throw new RuntimeException('El texto contradice una posición canónica: '.$claim[0]);
             }
         }
         foreach ($positions as $position) {
-            preg_match_all('/\b'.preg_quote($position['label'], '/').'\b(?:\s*,[^.!?]{0,70}?,)?\s+(?:(?:está|situad[oa]|se encuentra)\s+)*(?:en\s+)?(?:'.$signs.'\s*,?\s*(?:en\s+)?)?casa\s+([IVX]+|\d{1,2})\b/ui', $text, $claims, PREG_SET_ORDER);
-            foreach ($claims as $claim) {
+            $pattern = '/\b'.preg_quote($position['label'], '/').'\b(?:\s*,(?:(?!\b(?:'.$names.')\b)[^.!?()]){0,70}?,)?\s+'.$placementVerbs.'(?:en\s+)?(?:'.$signs.'\s*,?\s*(?:en\s+)?)?casa\s+([IVX]+|\d{1,2})\b/ui';
+            foreach ($this->assertedClaims($pattern, $text) as $claim) {
                 $number = $this->houseNumber($claim[1]);
                 if ($number !== $position['house']) {
                     throw new RuntimeException('El texto contradice la casa verificada: '.$claim[0]);
@@ -347,15 +347,14 @@ PROMPT;
         $types = ['conjunción' => 'conjunction', 'sextil' => 'sextile', 'cuadratura' => 'square', 'trígono' => 'trine', 'trino' => 'trine', 'oposición' => 'opposition'];
         $patterns = [
             '/\b(?<type>'.$aspectNames.')\s+(?:entre\s+)?(?:el\s+|la\s+)?(?<first>'.$names.')\s*(?:[-–—]|y|con|a|al)\s*(?:el\s+|la\s+)?(?<second>'.$names.')\b/ui',
-            '/\b(?<first>'.$names.')\s+(?:(?:forma|hace)\s+)?(?:un[ao]?\s+)?(?<type>'.$aspectNames.')\s+(?:con|a|al)\s+(?:el\s+|la\s+)?(?<second>'.$names.')\b/ui',
+            '/\b(?<first>'.$names.')\s+(?:(?:forma|hace)\s+|(?:está\s+)?en\s+)?(?:un[ao]?\s+)?(?<type>'.$aspectNames.')\s+(?:con|a|al)\s+(?:el\s+|la\s+)?(?<second>'.$names.')\b/ui',
         ];
         $keysByLabel = [];
         foreach ($positions as $key => $position) {
             $keysByLabel[mb_strtolower($position['label'])] = $key;
         }
         foreach ($patterns as $pattern) {
-            preg_match_all($pattern, $text, $claims, PREG_SET_ORDER);
-            foreach ($claims as $claim) {
+            foreach ($this->assertedClaims($pattern, $text) as $claim) {
                 $first = $keysByLabel[mb_strtolower($claim['first'])];
                 $second = $keysByLabel[mb_strtolower($claim['second'])];
                 $type = $types[mb_strtolower($claim['type'])];
@@ -370,6 +369,23 @@ PROMPT;
                 }
             }
         }
+    }
+
+    // Only immediate non-assertive prefixes qualify; unrelated negations must not hide later claims.
+    private function assertedClaims(string $pattern, string $text): array
+    {
+        preg_match_all($pattern, $text, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        $nonAssertion = '/\b(?:(?:no|nunca|tampoco|jamás)\s+(?:(?:se\s+)?(?:hay|existe|exige|requiere|implica|supone|significa|presupone|afirma|asume|indica|equivale\s+a|trata\s+de|es)\s+)?|(?:ni|sin)\s+|como\s+si\s+)(?:(?:un[ao]?|el|la|tu|su)\s+)?$/ui';
+        $claims = [];
+        foreach ($matches as $match) {
+            $before = substr($text, 0, $match[0][1]);
+            if (preg_match($nonAssertion, $before)) {
+                continue;
+            }
+            $claims[] = array_map(static fn (array $group): string => $group[0], $match);
+        }
+
+        return $claims;
     }
 
     public function assertNoDuplicateParagraphs(array $chapters): void

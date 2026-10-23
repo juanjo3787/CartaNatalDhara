@@ -107,6 +107,24 @@ final class ReportGenerationIntegrationTest extends TestCase
             ->assertSessionHasErrors('doors');
     }
 
+    public function test_manual_edit_distinguishes_conceptual_mentions_from_later_false_claims(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $service = app(PhaseOneReportService::class);
+        $editable = $service->editableContent($chart);
+        $editable['shared']['concepts'] .= '<p>La polaridad no exige Luna en Acuario.</p>';
+        app(PhaseOneManualSaveService::class)->save($chart, $editable['shared'], $editable['doors']);
+        $saved = $service->editableContent($chart->fresh());
+        $this->assertStringContainsString('no exige Luna en Acuario', $saved['shared']['concepts']);
+
+        $editable = $saved;
+        $editable['shared']['concepts'] .= '<p>No es un diagnóstico, pero tu Sol en Libra expresa tu identidad.</p>';
+        $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
+            ->assertSessionHasErrors('shared');
+        $this->assertSame($saved, $service->editableContent($chart->fresh()));
+    }
+
     public function test_manual_edit_checks_block_v_and_cross_block_duplicates_before_saving(): void
     {
         $chart = $this->chart();

@@ -217,7 +217,58 @@ final class InteriorMapMasterTest extends TestCase
             ['La Luna, regente de Cáncer, está situada en casa VIII.', 'casa verificada'],
             ['Júpiter en Piscis, casa VII.', 'casa verificada'],
             ['La oposición Sol-Luna señala una relación.', 'aspecto no verificado'],
+            ['Sin embargo, tu Sol en Libra expresa tu identidad.', 'posición canónica'],
+            ['La polaridad no exige nada. Tu Sol en Libra expresa tu identidad.', 'posición canónica'],
+            ['No es un diagnóstico, pero tu Sol en Libra expresa tu identidad.', 'posición canónica'],
+            ['Sin prisa, tu Sol en Libra expresa tu identidad.', 'posición canónica'],
+            ['No solo tu Sol en Libra resulta relevante.', 'posición canónica'],
+            ['No exige Luna en Acuario, pero tu Sol en Libra expresa tu identidad.', 'posición canónica'],
+            ['La Luna está situada en Acuario.', 'posición canónica'],
+            ['Plutón se encuentra ubicado en Aries.', 'posición canónica'],
+            ['El Sol está en oposición a la Luna.', 'aspecto no verificado'],
+            ['No hay oposición Sol-Luna, pero Júpiter en Piscis, casa VII, también importa.', 'casa verificada'],
         ];
+    }
+
+    #[DataProvider('nonAssertedClaims')]
+    public function test_negated_or_hypothetical_mentions_are_not_read_as_positions(string $text): void
+    {
+        $content = self::chapter('opposites');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'][] = $text;
+        $this->assertNull((new InteriorMapMaster)->validateFacts($content, $this->facts()));
+    }
+
+    public static function nonAssertedClaims(): array
+    {
+        return array_map(static fn (string $text): array => [$text], [
+            'Técnicamente: la polaridad no exige Luna en Acuario ni Sol en Libra.',
+            'No hay una oposición Sol-Luna dentro del orbe utilizado.',
+            'Leerlo como si Júpiter en Piscis, casa VII, fuera un dato sería un error.',
+            'La polaridad no requiere una Luna en Acuario.',
+            'El complemento no equivale a una Luna en Acuario.',
+            'Tampoco se exige Luna en Acuario.',
+            'La casa VI como taller (con Sol, Venus, Plutón), casa VII ocupada por Saturno.',
+            'La Luna, junto con Júpiter en Piscis, casa XII.',
+        ]);
+    }
+
+    public function test_negation_does_not_leak_between_paragraphs(): void
+    {
+        $content = self::chapter('opposites');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'] = [
+            'La polaridad no exige',
+            'Tu Sol en Libra expresa tu identidad.',
+        ];
+        $this->expectExceptionMessage('posición canónica');
+        (new InteriorMapMaster)->validateFacts($content, $this->facts());
+    }
+
+    public function test_separate_fields_are_not_combined_into_position_claims(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['title'] = 'El Sol';
+        $content['concepts'][0]['characteristics'][0]['title'] = 'En Libra como principio complementario';
+        $this->assertNull((new InteriorMapMaster)->validateFacts($content, $this->facts()));
     }
 
     public function test_other_house_rulers_are_not_mistaken_for_the_current_house(): void

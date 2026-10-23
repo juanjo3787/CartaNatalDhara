@@ -111,6 +111,12 @@ limite tecnico, parrafos literalmente duplicados y afirmaciones reconocibles
 de signo, casa y aspecto. La auditoria de IA aborda duplicaciones conceptuales,
 soporte, matices exclusivos y relleno; **no sustituye una revision humana** de
 toda la coherencia semantica ni garantiza detectar cada afirmacion erronea.
+El detector textual separa titulos y parrafos; una negacion no se propaga a
+afirmaciones posteriores. Reconoce prefijos no asertivos inmediatos, como
+«no exige Luna en Acuario» o «como si Jupiter en Piscis, casa VII».
+Los incisos sobre un planeta no atraviesan parentesis ni otros nombres de
+planetas para atribuirle una casa. Son reglas conservadoras, no un analizador
+completo de todas las formulaciones del lenguaje natural.
 
 Los rechazos guardan motivo y borrador en el trabajo actual. El siguiente
 intento recibe ambos para corregirlo; al aceptar el bloque se retiran. No se
