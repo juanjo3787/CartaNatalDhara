@@ -186,6 +186,57 @@ final class InteriorMapMasterTest extends TestCase
         (new InteriorMapMaster)->validate($content);
     }
 
+    public function test_a_concept_cannot_exceed_eight_characteristics(): void
+    {
+        $content = self::chapter('sol');
+        $template = $content['concepts'][0]['characteristics'][0];
+        $content['concepts'][0]['characteristics'] = array_map(static fn (int $n): array => ['title' => 'Rasgo propio '.$n] + $template, range(1, 9));
+        $this->expectExceptionMessage('como máximo 8 características');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public function test_eight_characteristics_are_accepted(): void
+    {
+        $content = self::chapter('sol');
+        $template = $content['concepts'][0]['characteristics'][0];
+        $content['concepts'][0]['characteristics'] = array_map(static fn (int $n): array => ['title' => 'Rasgo propio '.$n] + $template, range(1, 8));
+        $this->assertNull((new InteriorMapMaster)->validate($content));
+    }
+
+    #[DataProvider('internalFieldNames')]
+    public function test_internal_data_field_names_are_rejected(string $text): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'][] = $text;
+        $this->expectExceptionMessage('nombres internos de datos');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public static function internalFieldNames(): array
+    {
+        return array_map(static fn (string $text): array => [$text], [
+            'Según positions, tu Sol destaca.',
+            'Los rulers indican una cadena de regencias.',
+            'El snapshot confirma la casa.',
+            'Los occupants de la casa VI acompañan.',
+            'Como se vio en current_report, el tema vuelve.',
+            'El maximum_orb permite el contacto.',
+            'La time_precision es exacta.',
+        ]);
+    }
+
+    public function test_prompt_carries_the_corrective_editorial_contract(): void
+    {
+        $prompt = (new InteriorMapMaster)->systemPrompt();
+        $this->assertStringContainsString('I El Sol; II La Luna; III El Ascendente; IV El Descendente; V Los opuestos complementarios', $prompt);
+        $this->assertStringNotContainsString('Sol natal', $prompt);
+        $this->assertStringContainsString('entre cinco y ocho características', $prompt);
+        $this->assertStringContainsString('dos o tres párrafos', $prompt);
+        $this->assertStringContainsString('nunca en porcentajes', $prompt);
+        $this->assertStringContainsString('10. Integra', $prompt);
+        $this->assertStringContainsString('DIFERENCIACIÓN ENTRE BLOQUES', $prompt);
+    }
+
     #[DataProvider('excludedHeadings')]
     public function test_introductions_summaries_and_closings_are_rejected(string $heading): void
     {

@@ -40,8 +40,10 @@ final class ReportGenerationIntegrationTest extends TestCase
             $html = view('reports.phase-one.template', compact('chart', 'report', 'pdf'))->render();
             $this->assertSame(1, substr_count($html, 'data-section-id="sol.concepts"'));
             $this->assertSame(1, substr_count($html, 'data-index-key="opposites"'));
-            $this->assertStringContainsString('BLOQUE I — Sol natal', $html);
-            $this->assertStringContainsString('BLOQUE V — Opuestos complementarios', $html);
+            $this->assertStringContainsString('BLOQUE I — El Sol', $html);
+            $this->assertStringContainsString('BLOQUE V — Los opuestos complementarios', $html);
+            $this->assertStringNotContainsString('Sol natal', $html);
+            $this->assertStringContainsString("content: 'Característica ' counter(report-characteristic)", $html);
             $this->assertStringNotContainsString('data-report-blank-page="9"', $html);
             $this->assertStringContainsString('#f8dfcc', $html);
             $this->assertStringContainsString('Inicio de la casa 7', $html);
@@ -57,7 +59,7 @@ final class ReportGenerationIntegrationTest extends TestCase
         $this->assertNull($chart->fresh()->phase_one_pdf);
         $this->assertTrue($service->build($chart->fresh(), storedOnly: true)['complete']);
         $this->assertSame($editable['shared']['concepts'], $service->editableContent($chart->fresh())['shared']['concepts']);
-        $this->actingAs(User::factory()->create())->get(route('charts.report.edit', $chart))->assertOk()->assertSee('Opuestos complementarios')->assertSee('ql-header', false);
+        $this->actingAs(User::factory()->create())->get(route('charts.report.edit', $chart))->assertOk()->assertSee('Los opuestos complementarios')->assertSee('ql-header', false);
     }
 
     public function test_last_chart_deletion_removes_person_and_allows_name_reuse(): void

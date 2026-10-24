@@ -30,15 +30,26 @@ ni la fecha de nacimiento; la aplicacion los incorpora a la portada.
 
 ## Cinco bloques
 
-1. **Sol natal:** identidad y voluntad consciente.
-2. **Luna natal:** necesidades y respuestas emocionales.
-3. **Ascendente:** orientacion expresiva y actuacion.
-4. **Descendente:** vinculo y reciprocidad.
-5. **Opuestos complementarios:** polaridad solar, polaridad lunar y eje angular,
+1. **El Sol:** identidad y voluntad consciente.
+2. **La Luna:** necesidades y respuestas emocionales (incluida la fase lunar calculada).
+3. **El Ascendente:** orientacion expresiva y actuacion.
+4. **El Descendente:** vinculo y reciprocidad.
+5. **Los opuestos complementarios:** polaridad solar, polaridad lunar y eje angular,
    con complementariedad bidireccional.
 
-Cada bloque tiene conceptos abiertos; cada concepto contiene caracteristicas
-concretas y, debajo, uno o varios parrafos explicativos. El JSON es:
+Los titulos de bloque no llevan la palabra "natal". Cada bloque tiene conceptos
+principales; cada concepto contiene entre cinco y ocho caracteristicas cuando
+los datos lo sostienen (nunca mas de ocho, validado) y, debajo, normalmente dos
+o tres parrafos sustanciales en segunda persona y lenguaje llano. La aplicacion
+anade al renderizar los rotulos CONCEPTO: y Caracteristica N.; la IA solo
+escribe los nombres. El prompt maestro (version 105) incluye la jerarquia de
+instrucciones, la intensidad en lenguaje natural (importancia astrologica,
+intensidad simbolica y manifestacion personal), el procedimiento de 10 pasos
+para casas, cuspides y regentes, las dimensiones constructiva, desequilibrada,
+contradiccion, integracion y maduracion, y la diferenciacion entre bloques.
+El validador rechaza nombres internos de datos (positions, ulers,
+occupants, snapshot, current_report, maximum_orb, 	ime_precision o
+cualquier identificador con guion bajo). El JSON es:
 
 ```json
 {
@@ -58,7 +69,7 @@ armonia/defecto/exceso, DON/NECESIDAD/SOMBRA/RECURSO y practica de cierre.
 La portada y el indice no incorporan interpretaciones adicionales.
 
 El objetivo editorial es **siete paginas Word orientativas por bloque**, no
-una paginacion garantizada. Se propone una referencia flexible de 2800 palabras;
+una paginacion garantizada. Se propone una referencia flexible de 3200 palabras;
 no hay minimo obligatorio por bloque, caracteristica o informe que fuerce
 relleno. El limite tecnico de seguridad es 6000 palabras por bloque. La
 profundidad debe ajustarse a los datos y no alcanzarse repitiendo ideas.
@@ -133,7 +144,7 @@ el bloque V, contradicciones y duplicaciones entre bloques antes de guardar.
 Conserva enfasis en linea, elimina atributos HTML e invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 104. Version editorial PDF: 18.** Los textos y trabajos de
+**Version de modelo: 105. Version editorial PDF: 18.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.

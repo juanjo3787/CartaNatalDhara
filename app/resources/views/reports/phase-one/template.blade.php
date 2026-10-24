@@ -76,7 +76,10 @@
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
     .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
-    .report-block-body h4::before { content: '\2022\00a0'; }
+    .report-block-body h3 { counter-reset: report-characteristic; }
+    .report-block-body h3::before { content: 'CONCEPTO: '; }
+    .report-block-body h4 { counter-increment: report-characteristic; }
+    .report-block-body h4::before { content: 'Característica ' counter(report-characteristic) '. '; }
     .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; text-indent: 1.5em; font-size: 1rem; line-height: 1.75; }
     .report-page p, .report-page li { orphans: 3; widows: 3; }
     .report-page h1, .report-page h2, .report-page h3, .report-page h4, .report-block-title, .report-arrow-title { page-break-after: avoid; }
@@ -298,7 +301,7 @@
         </section>
     @endforeach
     <section class="report-page report-chapter report-last-page report-reading" id="report-section-opposites" data-index-key="opposites">
-        <div class="report-door-heading"><h1>BLOQUE V — Opuestos complementarios</h1></div>
+        <div class="report-door-heading"><h1>BLOQUE {{ $report['sections']['opposites']['number'] }} — {{ $report['sections']['opposites']['title'] }}</h1></div>
         @foreach ($report['opposites'] as $block => $paragraphs)
             <div class="report-block report-block-body" data-section-id="opposites.{{ $block }}">@foreach ($paragraphs as $html){!! $html !!}@endforeach</div>
         @endforeach

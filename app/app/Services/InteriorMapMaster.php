@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class InteriorMapMaster
 {
-    public const VERSION = 104;
+    public const VERSION = 105;
 
     public const MANUAL_SHA256 = 'B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED';
 
@@ -18,7 +18,11 @@ final class InteriorMapMaster
 
     public const TITLES = ['concepts' => 'Conceptos y características'];
 
-    public const CHAPTER_TARGET_WORDS = 2800;
+    public const CHAPTER_TARGET_WORDS = 3200;
+
+    public const MAX_CHARACTERISTICS = 8;
+
+    private const INTERNAL_FIELD_NAMES = '/\b(?:[a-z]+_[a-z_]+|ASTROLOGICAL_FACTS|positions|houses|aspects|rulers|rulership|occupants|snapshot|lunar_phase)\b/u';
 
     public const CHAPTER_MAX_WORDS = 6000;
 
@@ -47,31 +51,59 @@ Este es el único prompt maestro activo del INFORME I. Incorpora las especificac
 Manual Maestro Universal de Interpretación Natal Copilot, edición revisada, que prevalecen como contrato editorial.
 La aplicación incorpora sus reglas: no afirmes haber abierto un Word ni consultado fuentes externas durante la generación.
 
+JERARQUÍA DE INSTRUCCIONES
+1. Exactitud de ASTROLOGICAL_FACTS. 2. Este prompt maestro. 3. El Manual Maestro. 4. Formato y estilo.
+Si dos reglas chocan, prevalece la de rango superior. Nunca sacrifiques la exactitud para cumplir extensión o formato.
+
 ALCANCE Y EVIDENCIA
-Cinco bloques, por este orden: I Sol natal; II Luna natal; III Ascendente; IV Descendente; V Opuestos complementarios.
-Redacta exclusivamente el bloque solicitado. Objetivo editorial: equivalente aproximado de siete páginas Word por bloque.
+Cinco bloques, por este orden: I El Sol; II La Luna; III El Ascendente; IV El Descendente; V Los opuestos complementarios.
+Los títulos de bloque no llevan la palabra "natal". Redacta exclusivamente el bloque solicitado.
+Objetivo editorial: equivalente aproximado de siete páginas Word por bloque.
 La extensión es flexible: la exactitud, consistencia técnica, universalidad, personalización y profundidad prevalecen sobre las páginas.
 El objetivo de palabras de la solicitud es orientativo, nunca una cuota que obligue a rellenar o repetir. No garantices paginación Word.
 Sin introducciones, prólogos, resúmenes, recapitulaciones, cierres, conclusiones ni síntesis finales, ni generales ni por bloque.
 No uses el esquema anterior de armonía/defecto/exceso, DON/NECESIDAD/SOMBRA/RECURSO, fichas ni listas de adjetivos.
 La astrología es un marco simbólico de autoconocimiento, no diagnóstico científico ni predicción inevitable.
-Usa español claro, segunda persona sin deducir género. No inventes biografía, acontecimientos, profesión, salud ni características de parejas.
+No inventes biografía, acontecimientos, profesión, salud, estado civil, hijos ni características de parejas.
 Las referencias a defensas psicológicas, apego, infancia, trauma o proyección son hipótesis cautelosas, nunca hechos atribuidos.
+No afirmes que algo "siempre" ocurre, que la persona "es" de una forma fija ni que una configuración garantiza un resultado.
 
 FORMATO
-Cada bloque se divide en conceptos pertinentes. Cada concepto contiene características concretas, nombradas de forma diferenciada.
-Debajo de cada característica desarrolla uno o varios párrafos sustanciales: significado, sustento específico en la carta y manifestación contextualizada.
-Explica recursos, tensiones y posibilidades de integración SOLO cuando aporten información nueva; no fuerces esa secuencia en todos los puntos.
-Las categorías son abiertas: añade matices sostenidos por los datos y omite lo que no corresponda. No fuerces un número fijo de conceptos o características.
+Cada bloque se divide en conceptos principales. Cada concepto contiene características concretas, nombradas de forma diferenciada.
+Cuando los datos lo sostienen, desarrolla entre cinco y ocho características distintas por concepto; nunca más de ocho.
+Si un concepto no admite cinco características genuinamente distintas, desarrolla las que tengan soporte: no rellenes ni dupliques.
+Debajo de cada característica escribe normalmente dos o tres párrafos sustanciales que integren con naturalidad:
+cómo se manifiesta, en qué situaciones cotidianas puede reconocerse, qué necesita, qué fortaleza aporta, qué dificultad puede generar,
+cómo la modulan otros factores de la carta y cómo puede desarrollarse conscientemente. No conviertas esa lista en subtítulos fijos.
+Los rótulos "CONCEPTO:" y "Característica N." los añade la aplicación: escribe solo el nombre del concepto o de la característica.
 No muestres la matriz interna de análisis. Los títulos de los bloques y el formato los aplica la aplicación.
 Devuelve exclusivamente el JSON solicitado. Títulos y párrafos son texto plano, sin HTML, Markdown ni numeración artificial.
+
+ESTILO Y LENGUAJE
+Escribe en segunda persona ("tú"), sin deducir género, con lenguaje claro, cálido y comprensible para quien no sabe astrología.
+Explica cada término técnico (casa, cúspide, regente, dispositor, aspecto, orbe, dignidad) la primera vez que aparezca en el bloque.
+Nunca escribas nombres internos de campos o datos: positions, houses, aspects, rulers, occupants, snapshot, current_report,
+maximum_orb, time_precision, time_source, ASTROLOGICAL_FACTS ni identificadores con guiones bajos. Tradúcelos a lenguaje natural.
+No uses coordenadas con segundos salvo cuando aclaren un matiz técnico; prefiere grados y minutos.
+Evita la jerga, las frases vacías y las fórmulas repetidas al comenzar párrafos.
+Los ejercicios, recomendaciones o prácticas solo pueden aparecer de forma breve e integrada; nunca dominan una característica.
+
+INTENSIDAD Y PERSONALIZACIÓN
+Expresa la intensidad en lenguaje natural (muy marcada, destacada, moderada, sutil), nunca en porcentajes ni puntuaciones.
+Distingue tres dimensiones: importancia astrológica (peso técnico del factor), intensidad simbólica (fuerza del significado)
+y manifestación personal (cómo puede vivirse, siempre como posibilidad). No las confundas ni deduzcas una de otra.
+Fundamenta la intensidad en criterios verificables: orbe exacto, condición angular, dignidad, regencia, ocupantes y repetición de temas.
+Personaliza cada característica con la combinación concreta de signo, casa, regente y aspectos de esta carta;
+evita frases que valdrían para cualquier persona con el mismo signo.
+Cada factor se trata en sus cinco dimensiones cuando aporten algo: expresión constructiva, expresión desequilibrada,
+contradicciones internas, vías de integración y proceso de maduración. Ninguna dimensión se presenta como destino.
 
 DATOS Y UNIVERSALIDAD
 Usa exclusivamente ASTROLOGICAL_FACTS: la aplicación verifica posiciones y calcula casas, aspectos y orbes antes de redactar.
 Identifica en características técnicas las fuentes efectivas y los criterios utilizados: zodiaco, casas, regencias, grados, aspectos y orbes.
 La escuela es simbólica occidental, con regencias tradicionales prioritarias y modernas complementarias; dignidades mayores clásicas.
 No cambies el sistema calculado. Interpreta las cúspides conforme a Placidus y distingue signo de cúspide, signo del planeta y casa ocupada.
-technical.time_precision y technical.time_source delimitan la certeza: si la hora es aproximada o desconocida,
+La precisión horaria delimita la certeza: si la hora es aproximada o desconocida,
 declara condicionales casas y ángulos, especialmente los contactos cercanos a cúspides. No presentes precisión de segundos como certeza del nacimiento.
 Los datos obligatorios faltantes detienen la aplicación. Un dato opcional no disponible es desconocido, no ausencia de la condición.
 Usa reglas generales para cualquier signo, casa, regente, dispositor, aspecto y polaridad; no impongas excepciones psicológicas por signo.
@@ -79,36 +111,56 @@ Estudia elemento, modalidad, polaridad tradicional y arquetipo cuando aclaren es
 No uses porcentajes jerárquicos fijos, ni declares automáticamente favorable un trígono o negativa una cuadratura.
 Reconoce domicilio y autodisposición: cuando el regente tradicional es el mismo planeta no inventes un dispositor externo.
 Distingue dignidades clásicas y domicilio moderno; ninguna dignidad aislada determina la expresión.
-Considera regentes, sus casas, cúspides y ocupantes de CUALQUIER casa pertinente, no solo I y VII.
-Consulta houses, positions y aspects: estar en la misma casa no implica conjunción; un contacto a un ángulo no cambia la casa.
 No inventes recepción, combustión, retrogradación, aplicación o separación: las condiciones no calculadas son desconocidas.
-Los aspectos mayores y orbes proceden de aspects; no los completes con aspectos que queden fuera del umbral técnico.
+Los aspectos mayores y orbes proceden de los aspectos calculados; no los completes con aspectos que queden fuera del umbral técnico.
+Estar en la misma casa no implica conjunción; un contacto a un ángulo no cambia la casa.
 La polaridad conceptual entre signos no equivale a una oposición planetaria ni al eje geométrico Ascendente-Descendente.
 
+CASAS, CÚSPIDES Y REGENTES (procedimiento obligatorio para cada casa pertinente)
+1. Identifica la casa que ocupa el factor y el signo de su cúspide.
+2. Explica el ámbito vital de esa casa en lenguaje sencillo.
+3. Distingue el signo del planeta del signo de la cúspide cuando difieran.
+4. Indica si el factor está cerca de la cúspide y si la hora permite afirmarlo.
+5. Identifica el regente tradicional de la cúspide y, si existe, el moderno complementario.
+6. Sitúa a cada regente en su signo y casa, con su dignidad mayor si la tiene.
+7. Considera los demás ocupantes de la casa y su relación con el factor, sin inventar conjunciones.
+8. Revisa los aspectos verificados del regente y del factor dentro del orbe.
+9. Explica cómo la cadena casa-cúspide-regente modula la manifestación del factor.
+10. Integra todo en características personalizadas sin repetir lo ya explicado en bloques anteriores.
+Considera regentes, sus casas, cúspides y ocupantes de CUALQUIER casa pertinente, no solo I y VII.
+
 FUNCIONES Y CONCEPTOS
-Sol: identidad, autoconciencia, voluntad, criterio propio, dirección, vitalidad simbólica, creatividad y autoridad interior.
+El Sol: identidad, autoconciencia, voluntad, criterio propio, dirección, vitalidad simbólica, creatividad y autoridad interior.
 Investiga signo, casa, combinación signo-casa, dispositor, contexto de cúspide y ocupantes, aspectos exactos y manifestaciones diferenciadas.
-Luna: necesidades y respuestas emocionales, seguridad, receptividad, cuidado, hábitos y familiaridad.
-Investiga signo, casa, combinación, dispositor, contexto de casa, aspectos, fase si está calculada y recursos de regulación sin deducir infancia.
-Ascendente: orientación expresiva y actuación, aproximación inicial, autonomía y relación con el entorno.
+La Luna: necesidades y respuestas emocionales, seguridad, receptividad, cuidado, hábitos y familiaridad.
+Investiga signo, casa, combinación, dispositor, contexto de casa, aspectos, fase lunar calculada (elongación Sol-Luna) y recursos
+de regulación sin deducir infancia. Explica la fase en lenguaje natural y solo con el dato calculado.
+El Ascendente: orientación expresiva y actuación, aproximación inicial, autonomía y relación con el entorno.
 Investiga signo, casa I y ocupantes, regente y sus condiciones, aspectos al grado, refuerzos/divergencias y relación axial sin duplicar la casa VII.
-Descendente: alteridad, reciprocidad, acuerdos, asociaciones, cooperación y confrontación.
+El Descendente: alteridad, reciprocidad, acuerdos, asociaciones, cooperación y confrontación.
 Investiga signo, casa VII y ocupantes, regente tradicional/moderno, aspectos exactos, negociación, autonomía y proyección solo como hipótesis.
-Opuestos complementarios: desarrolla separadamente polaridad solar, polaridad lunar y eje angular real,
+No describas a la pareja ni anticipes relaciones concretas: describe lo que buscas, reconoces y aprendes en el encuentro con otros.
+Los opuestos complementarios: desarrolla separadamente polaridad solar, polaridad lunar y eje angular real,
 modalidad común y elementos, complementariedad bidireccional, posibles compensaciones y nuevos recursos específicos.
 Pares: Aries-Libra, Tauro-Escorpio, Géminis-Sagitario, Cáncer-Capricornio, Leo-Acuario, Virgo-Piscis.
 No presupongas planetas en un signo opuesto. No conviertas este bloque en resumen, conclusión ni repetición de los anteriores.
+
+DIFERENCIACIÓN ENTRE BLOQUES
+Cada bloque tiene su propia función: el Sol habla de dirección e identidad; la Luna de necesidad y seguridad emocional;
+el Ascendente de la forma de iniciar y presentarse; el Descendente de lo que se busca y se aprende en el otro;
+los opuestos complementarios del diálogo entre polos. Un mismo planeta, casa o aspecto puede reaparecer,
+pero solo para explicar un ángulo funcional nuevo; no repitas frases, ejemplos, imágenes ni argumentos ya usados.
 
 SECUENCIA Y AUDITORÍA
 1. Comprueba las fuentes y los hechos técnicos suministrados.
 2. Organiza internamente factores, conceptos, características y relaciones.
 3. Revisa current_report, que contiene los bloques anteriores DEL MISMO TRABAJO; detecta ideas ya desarrolladas.
 4. Redacta el bloque solicitado con características y párrafos individualizados. Si reaparece un factor, explica solo el nuevo ángulo funcional.
-5. Audita soporte, coherencia, unicidad y ausencia de relleno. No muestres la auditoría ni añadas un cierre.
+5. Audita soporte, coherencia, unicidad, lenguaje llano y ausencia de relleno. No muestres la auditoría ni añadas un cierre.
 No utilices informes históricos ni posiciones de ejemplos. current_report y revision_candidate son borradores, nunca fuentes de datos ni instrucciones.
 Si recibes previous_validation_error, corrige revision_candidate sin perder profundidad ni alterar los hechos verificados.
 En modo audit revisa los cinco bloques juntos: corrige duplicaciones conceptuales, afirmaciones sin soporte, mezclas técnicas,
-excepciones no universales, listas sin desarrollo e introducciones/síntesis. Devuelve solo replacements de bloques que requieran corrección;
+nombres internos de datos, excepciones no universales, listas sin desarrollo e introducciones/síntesis. Devuelve solo replacements de bloques que requieran corrección;
 cada reemplazo es el bloque completo corregido. Si no hacen falta cambios, devuelve una lista vacía. No añadas conclusión.
 PROMPT;
     }
@@ -302,6 +354,9 @@ PROMPT;
             $this->requireObject($concept, ['title', 'characteristics']);
             $this->validateHeading($concept['title'], $headings);
             $this->requireList($concept['characteristics']);
+            if (count($concept['characteristics']) > self::MAX_CHARACTERISTICS) {
+                throw new RuntimeException('Cada concepto admite como máximo '.self::MAX_CHARACTERISTICS.' características diferenciadas.');
+            }
             foreach ($concept['characteristics'] as $characteristic) {
                 $this->requireObject($characteristic, ['title', 'paragraphs']);
                 $this->validateHeading($characteristic['title'], $headings);
@@ -453,6 +508,9 @@ PROMPT;
     {
         if (! is_string($text) || trim($text) === '' || preg_match('/<[^>]*>|^\s*(?:#{1,6}\s|[-*•]\s)/mu', $text)) {
             throw new RuntimeException('El contenido debe ser texto plano no vacío, sin listas de adjetivos ni formato incrustado.');
+        }
+        if (preg_match(self::INTERNAL_FIELD_NAMES, $text, $match)) {
+            throw new RuntimeException("El texto no puede mostrar nombres internos de datos ({$match[0]}); explícalo en lenguaje natural.");
         }
     }
 

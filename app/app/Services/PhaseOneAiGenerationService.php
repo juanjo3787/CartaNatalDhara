@@ -30,7 +30,7 @@ final class PhaseOneAiGenerationService
             'word_target' => InteriorMapMaster::CHAPTER_TARGET_WORDS,
             'pages' => 'Siete páginas Word orientativas; sin paginación garantizada ni mínimo obligatorio de palabras.',
             'maximum_words' => InteriorMapMaster::CHAPTER_MAX_WORDS,
-            'instruction' => 'Profundidad por características; omite categorías sin soporte. No rellenes para alcanzar el objetivo.',
+            'instruction' => 'Entre cinco y ocho características por concepto cuando los datos lo sostengan, con dos o tres párrafos sustanciales cada una. Omite lo que no tenga soporte; no rellenes para alcanzar el objetivo.',
         ];
         foreach (array_slice(InteriorMapMaster::CHAPTERS, 0, $index) as $previous) {
             $input['current_report'][$previous] = $job->drafts[$previous] ?? throw new RuntimeException("Falta el bloque anterior {$previous} del trabajo actual.");

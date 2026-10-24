@@ -8,7 +8,7 @@
     foreach ($report['doors'] as $door) {
         $editorChapters[] = ['title' => $door['title'], 'prefix' => 'doors[' . $door['key'] . ']', 'old_prefix' => 'doors.' . $door['key'], 'id' => $door['key'], 'blocks' => $editable['doors'][$door['key']]];
     }
-    $editorChapters[] = ['title' => 'V — Opuestos complementarios', 'prefix' => 'shared', 'old_prefix' => 'shared', 'id' => 'shared', 'blocks' => $editable['shared']];
+    $editorChapters[] = ['title' => 'V — Los opuestos complementarios', 'prefix' => 'shared', 'old_prefix' => 'shared', 'id' => 'shared', 'blocks' => $editable['shared']];
 @endphp
 
 @section('content')

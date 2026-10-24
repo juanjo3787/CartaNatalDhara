@@ -31,7 +31,7 @@ class ReportGeneration extends Model
     public function getChapterLabelAttribute(): string
     {
         return $this->door ? ucfirst($this->door) : match ($this->filename) {
-            'natal-universal-opposites' => 'Opuestos complementarios',
+            'natal-universal-opposites' => 'Los opuestos complementarios',
             'natal-universal-audit' => 'Auditoría conjunta',
             default => 'Integración',
         };

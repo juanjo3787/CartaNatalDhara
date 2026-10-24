@@ -20,7 +20,7 @@ final class PhaseOneReportService
         $rows = $chart->interpretations()->where('phase', 'fase-1')
             ->whereHas('template', fn ($query) => $query->where('version', InteriorMapMaster::VERSION))
             ->orderBy('id')->get()->keyBy(fn ($row) => ($row->door ?? 'shared').'.'.$row->block);
-        $titles = ['sol' => 'Sol natal', 'luna' => 'Luna natal', 'ascendente' => 'Ascendente', 'descendente' => 'Descendente'];
+        $titles = ['sol' => 'El Sol', 'luna' => 'La Luna', 'ascendente' => 'El Ascendente', 'descendente' => 'El Descendente'];
         $numbers = ['I', 'II', 'III', 'IV'];
         $doors = [];
         $sections = [];
@@ -53,11 +53,11 @@ final class PhaseOneReportService
         if ($storedOnly && $missing !== []) {
             throw new RuntimeException('Faltan secciones del nuevo Informe I: '.implode(', ', $missing));
         }
-        $sections['opposites'] = ['enabled' => true, 'number' => 'V', 'title' => 'Opuestos complementarios'];
-        $index[] = ['key' => 'opposites', 'number' => 'V', 'title' => 'Opuestos complementarios'];
+        $sections['opposites'] = ['enabled' => true, 'number' => 'V', 'title' => 'Los opuestos complementarios'];
+        $index[] = ['key' => 'opposites', 'number' => 'V', 'title' => 'Los opuestos complementarios'];
 
         return [
-            'report_schema_version' => InteriorMapMaster::VERSION, 'prompt_version' => 'natal-universal-1',
+            'report_schema_version' => InteriorMapMaster::VERSION, 'prompt_version' => 'natal-universal-2',
             'name' => $chart->person->full_name ?: $chart->person->alias,
             'doors' => $doors, 'sections' => $sections, 'index' => $index,
             'opposites' => $opposites, 'complete' => $missing === [], 'facts' => $facts,

@@ -60,7 +60,7 @@ final class ReportJobTest extends TestCase
             } else {
                 $index = array_search($input['chapter'], InteriorMapMaster::CHAPTERS, true);
                 $this->assertSame(array_slice(InteriorMapMaster::CHAPTERS, 0, $index), array_keys($input['current_report']));
-                $this->assertSame(2800, $input['editorial_target']['word_target']);
+                $this->assertSame(3200, $input['editorial_target']['word_target']);
                 $this->assertSame(6000, $input['editorial_target']['maximum_words']);
                 $this->assertArrayNotHasKey('section_word_targets', $input);
                 $content = self::chapter($input['chapter']);
@@ -91,9 +91,9 @@ final class ReportJobTest extends TestCase
         $this->assertStringStartsWith('%PDF-', Storage::disk('local')->get($chart->fresh()->phase_one_pdf));
         $opposites = $chart->reportGenerations()->where('filename', 'natal-universal-opposites')->firstOrFail();
         $this->actingAs(User::findOrFail($job->user_id))->get(route('charts.report.history', $chart))
-            ->assertOk()->assertSee('Opuestos complementarios')->assertSee('Auditoría conjunta');
+            ->assertOk()->assertSee('Los opuestos complementarios')->assertSee('Auditoría conjunta');
         $this->get(route('charts.report.prompts', [$chart, $opposites]))
-            ->assertOk()->assertSee('Opuestos complementarios')->assertSee('único prompt maestro');
+            ->assertOk()->assertSee('Los opuestos complementarios')->assertSee('único prompt maestro');
         Http::assertSentCount(6);
         (new ProcessReportStep($job->id, 1))->handle(app(ReportJobService::class));
         Http::assertSentCount(6);
@@ -132,7 +132,7 @@ final class ReportJobTest extends TestCase
         $calls = 0;
         Http::fake(function ($request) use (&$calls) {
             $input = json_decode($request['messages'][1]['content'], true);
-            $this->assertSame(2800, $input['editorial_target']['word_target']);
+            $this->assertSame(3200, $input['editorial_target']['word_target']);
             $content = self::chapter('sol');
             if (++$calls === 1) {
                 $this->assertArrayNotHasKey('previous_validation_error', $input);
