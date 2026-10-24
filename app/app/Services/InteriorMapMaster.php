@@ -159,6 +159,7 @@ Estar en la misma casa no implica conjunción; un contacto a un ángulo no cambi
 Una casa vacía no prueba rigidez, predictibilidad, ausencia de experiencias ni otro rasgo psicológico.
 No deduzcas constitución física, cualidades físicas de la voz, apariencia ni hábitos corporales de un signo o del Ascendente.
 La voz propia como metáfora de expresión, afirmación o comunicación sí puede interpretarse: no equivale a un rasgo corporal.
+La apariencia como imagen social o contraste con la autenticidad tampoco equivale a una descripción del físico.
 Una distancia pequeña a una cúspide no prueba sensibilidad a acontecimientos concretos ni justifica por sí sola una característica.
 La polaridad conceptual entre signos no equivale a una oposición planetaria ni al eje geométrico Ascendente-Descendente.
 La pertenencia a un signo no implica carencia de las cualidades de su opuesto: complementariedad no significa corregir un defecto.
@@ -597,7 +598,7 @@ PROMPT;
             $issues['jargon'][] = $title;
         } elseif (preg_match('/^(?:ejercicios?|talleres?|cronogramas?)\b|^plan(?:es)? de acci[oó]n\b|^pr[aá]cticas? (?:para|de)\b|\bv[ií]as pr[aá]cticas\b|\bc[oó]mo corregir/ui', $title)) {
             $issues['advice'][] = $title;
-        } elseif (preg_match('/\b(?:tu cuerpo|timbre de (?:tu |la )?voz|cualidades f[ií]sicas de (?:tu |la )?voz|voz (?:grave|aguda|ronca)|apariencia|constituci[oó]n|complexi[oó]n|rasgos f[ií]sicos|personas que|parejas? que|socios que)\b/ui', $title)) {
+        } elseif (preg_match('/\b(?:tu cuerpo|timbre de (?:tu |la )?voz|cualidades f[ií]sicas de (?:tu |la )?voz|voz (?:grave|aguda|ronca)|apariencia\s+(?:f[ií]sica|corporal)|aspecto\s+f[ií]sico|constituci[oó]n\s+(?:f[ií]sica|corporal)|complexi[oó]n|rasgos f[ií]sicos|personas que|parejas? que|socios que)\b/ui', $title)) {
             $issues['inference'][] = $title;
         }
         $key = mb_strtolower(trim($title));

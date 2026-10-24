@@ -136,6 +136,7 @@ final class PhaseOneAiGenerationService
                 .'Ningún título de característica nombra casas numeradas, cúspides, regentes, dispositores, dignidades o aspectos, ni prescribe ejercicios o planes de acción ni atribuye rasgos corporales, carencias por polaridad o rasgos de otras personas; evita adjetivos con marca de género referidos al lector. '
                 .'Describir rutinas como hábitos es válido; la falta de respuesta o reconocimiento es un contexto posible, no una carencia personal. No elimines esas interpretaciones solo por esas palabras. '
                 .'La voz propia en sentido figurado de expresión o afirmación no es un rasgo corporal: conserva ese significado si está sustentado. '
+                .'La apariencia como imagen social o contraste con la autenticidad no describe el físico y no debe eliminarse por esa palabra. '
                 .'Hazlo sin añadir relleno y sin perder el formato concepto/característica/párrafos.';
         }
 

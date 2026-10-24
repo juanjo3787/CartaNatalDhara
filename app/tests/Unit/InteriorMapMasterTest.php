@@ -426,6 +426,10 @@ final class InteriorMapMasterTest extends TestCase
             'Prácticas para reforzar la iniciativa' => 'ejercicios y planes de acción',
             'El timbre de tu voz como extensión de seguridad' => 'rasgos corporales',
             'Tu voz grave como extensión de seguridad' => 'rasgos corporales',
+            'Tu apariencia física como expresión del signo' => 'rasgos corporales',
+            'El aspecto físico como reflejo del signo' => 'rasgos corporales',
+            'Tu constitución física según el signo' => 'rasgos corporales',
+            'La exigencia y la seriedad que trae un ocupante en la casa' => 'pasos del análisis',
             'Atracción por personas que gestionan recursos' => 'otras personas',
         ];
         foreach ($titles as $title => $message) {
@@ -457,6 +461,21 @@ final class InteriorMapMasterTest extends TestCase
         }
         $this->assertStringContainsString('íntegramente en español', $master->systemPrompt());
         $this->assertStringContainsString('La voz propia como metáfora', $master->systemPrompt());
+    }
+
+    public function test_social_appearance_is_not_mistaken_for_a_physical_trait(): void
+    {
+        $master = new InteriorMapMaster;
+        foreach ([
+            'Buscar autenticidad por sobre la apariencia',
+            'Intensidad velada bajo una apariencia serena',
+            'Tu apariencia social y la necesidad de pertenecer',
+            'La constitución de acuerdos basados en confianza',
+        ] as $title) {
+            $content = self::chapter('descendente');
+            $content['concepts'][0]['characteristics'][0]['title'] = $title;
+            $this->assertNull($master->validate($content), $title);
+        }
     }
 
     public function test_descriptive_habits_and_external_absence_are_not_rejected_as_advice_or_deficiencies(): void

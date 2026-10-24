@@ -137,7 +137,10 @@ referencias vividas a cerrar una etapa y a la dignidad personal, pero rechazan
 encabezados de cierre del informe y dignidades astrológicas.
 La palabra voz no se rechaza por si sola: su uso figurado como expresion o
 afirmacion es valido; se detectan referencias fisicas explicitas como el timbre
-de voz. El prompt y los reintentos exigen titulos y parrafos solo en espanol,
+de voz. Apariencia o constitucion por si solas tampoco prueban un rasgo corporal:
+se permiten imagen social y autenticidad; se rechazan referencias explicitas
+como apariencia fisica o constitucion corporal.
+El prompt y los reintentos exigen titulos y parrafos solo en espanol,
 sin encabezados en ingles ni traducciones bilingues.
 La auditoria de IA aborda duplicaciones conceptuales,
 soporte, matices exclusivos y relleno; **no sustituye una revision humana** de
