@@ -361,11 +361,20 @@ final class InteriorMapMasterTest extends TestCase
         ]);
     }
 
-    public function test_plain_title_with_a_house_reference_in_parentheses_is_accepted(): void
+    public function test_title_with_parentheses_is_rejected_and_its_plain_rewrite_is_accepted(): void
     {
+        $master = new InteriorMapMaster;
         $content = self::chapter('sol');
         $content['concepts'][0]['characteristics'][0]['title'] = 'Cómo se activa tu energía en lo cotidiano (casa VI)';
-        $this->assertNull((new InteriorMapMaster)->validate($content));
+        try {
+            $master->validate($content);
+            $this->fail('Se esperaba un rechazo por paréntesis.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('ni paréntesis', $exception->getMessage());
+            $this->assertStringContainsString('«Cómo se activa tu energía en lo cotidiano (casa VI)»', $exception->getMessage());
+        }
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Cómo se activa tu energía en lo cotidiano';
+        $this->assertNull($master->validate($content));
     }
 
     public function test_decimal_orbs_in_paragraphs_are_rejected(): void
