@@ -243,6 +243,7 @@
     .report-reading .report-index-item { padding-top: 5pt; padding-bottom: 5pt; margin-bottom: 5pt; }
     @if ($pdf)
     .report-page.report-reading { padding-left: 0; padding-right: 0; }
+    .report-page.report-door, .report-page.report-chapter { padding-top: 18mm; }
     .report-reading .report-block { margin: 6pt 0 8pt; }
     .report-reading p { margin-bottom: 4pt; line-height: 1.35; }
     .report-reading ul, .report-reading ol { margin-top: 3pt; margin-bottom: 5pt; line-height: 1.35; }
@@ -283,10 +284,12 @@
         </div>
         <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
+    @if ($pdf)<section class="report-page report-pdf-blank-page" data-report-blank-page="cover"></section>@endif
     <section class="report-page report-reading"><h1>Índice</h1>
         <div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">00</span>@endif</div>@endforeach</div>
         @unless ($report['complete'])<div class="report-note">Este Informe I todavía no está generado con el Manual Maestro Universal. Regenera el informe completo de cinco bloques.</div>@endunless
     </section>
+            @if ($pdf)<section class="report-page report-pdf-blank-page" data-report-blank-page="index"></section>@endif
     @foreach ($report['doors'] as $door)
         @continue(!($report['sections'][$door['key']]['enabled'] ?? false))
         <section class="report-page report-door report-reading" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}">

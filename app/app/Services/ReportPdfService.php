@@ -106,7 +106,7 @@ class ReportPdfService
             throw new \RuntimeException('No se pudieron determinar las páginas de todos los apartados del índice.');
         }
         $canvas = $dompdf->getCanvas();
-        if (array_diff(range(1, $canvas->get_page_count()), array_keys($contentPages)) !== []) {
+        if (array_diff(range(1, $canvas->get_page_count()), array_keys($contentPages), $blankPages) !== []) {
             throw new \RuntimeException('El PDF contiene una página sin contenido. Revisa la paginación sin insertar páginas vacías.');
         }
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
@@ -148,6 +148,7 @@ class ReportPdfService
             'pages' => $canvas->get_page_count(),
             'index_pages' => $indexStartPages,
             'content_pages' => array_keys($contentPages),
+            'blank_pages' => $blankPages,
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);
 
