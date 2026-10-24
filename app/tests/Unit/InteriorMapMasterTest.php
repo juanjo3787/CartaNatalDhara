@@ -355,10 +355,17 @@ final class InteriorMapMasterTest extends TestCase
     public static function technicalTitles(): array
     {
         return array_map(static fn (string $title): array => [$title], [
-            'Sextil exacto a la Luna (orbe mínimo)',
+            'Sextil exacto a la Luna a 5° 17′',
             "Cómo influye la dignidad 'caída'",
             'Cuadratura a Neptuno — orbe 2.3',
         ]);
+    }
+
+    public function test_plain_title_with_a_house_reference_in_parentheses_is_accepted(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Cómo se activa tu energía en lo cotidiano (casa VI)';
+        $this->assertNull((new InteriorMapMaster)->validate($content));
     }
 
     public function test_decimal_orbs_in_paragraphs_are_rejected(): void

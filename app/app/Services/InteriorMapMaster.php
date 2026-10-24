@@ -78,7 +78,7 @@ cómo la modulan otros factores de la carta y cómo puede desarrollarse conscien
 Los rótulos "CONCEPTO:" y "Característica N." los añade la aplicación: escribe solo el nombre del concepto o de la característica.
 TÍTULOS: los conceptos y características nombran vivencias y rasgos humanos en lenguaje llano (por ejemplo,
 "Tu forma de buscar el equilibrio" o "La exigencia de hacer bien las cosas"), nunca fichas técnicas.
-Los títulos no contienen grados, orbes, cifras, símbolos (°, ', "), comillas, paréntesis ni jerga sin explicar
+Los títulos no contienen grados, orbes, cifras, símbolos de grado, comillas ni jerga sin explicar
 (dignidad, caída, dispositor, cadente, angular, regente, orbe, cúspide). La base técnica se explica dentro de los párrafos.
 Ningún título ni característica puede usar las palabras introducción, prólogo, presentación, resumen, síntesis,
 conclusión, cierre ni recapitulación, ni funcionar como apertura o balance del bloque o del concepto.
@@ -393,7 +393,7 @@ PROMPT;
             $problems['El Informe I no admite introducciones, resúmenes ni síntesis o cierres. Renombra como rasgos vividos, sin esas palabras, estos títulos: «'.implode('», «', $titleIssues['closing']).'».'] = true;
         }
         if ($titleIssues['technical'] !== []) {
-            $problems['Los títulos deben estar en lenguaje llano, sin grados, decimales, comillas ni paréntesis. Reescribe estos títulos: «'.implode('», «', $titleIssues['technical']).'».'] = true;
+            $problems['Los títulos deben estar en lenguaje llano, sin grados, decimales ni comillas. Reescribe estos títulos: «'.implode('», «', $titleIssues['technical']).'».'] = true;
         }
         if ($problems !== []) {
             throw new RuntimeException(implode(' ', array_keys($problems)));
@@ -528,7 +528,7 @@ PROMPT;
         $this->validateText($title);
         if (preg_match('/\b(introducci[oó]n|pr[oó]logo|presentaci[oó]n|resumen|s[ií]ntesis|conclusi[oó]n|cierre|recapitulaci[oó]n)\b/ui', $title)) {
             $issues['closing'][] = $title;
-        } elseif (preg_match('/[°′″"\'“”«»()]|\d+[.,]\d+/u', $title)) {
+        } elseif (preg_match('/[°′″"\'“”«»]|\d+[.,]\d+/u', $title)) {
             $issues['technical'][] = $title;
         }
         $key = mb_strtolower(trim($title));
