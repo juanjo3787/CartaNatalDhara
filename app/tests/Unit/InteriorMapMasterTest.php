@@ -257,6 +257,31 @@ final class InteriorMapMasterTest extends TestCase
         (new InteriorMapMaster)->validate($content);
     }
 
+    public function test_closing_and_astrological_dignity_terms_are_contextual(): void
+    {
+        $master = new InteriorMapMaster;
+        foreach ([
+            'Periodo de cierre y reorganización interior',
+            'Hábitos y respuestas que buscan dignidad',
+            'Rutinas emocionales que conservan dignidad y orden',
+        ] as $title) {
+            $content = self::chapter('luna');
+            $content['concepts'][0]['characteristics'][0]['title'] = $title;
+            $this->assertNull($master->validate($content), $title);
+        }
+
+        foreach (['Cierre del informe', 'La caída clásica y su significado', 'Dignidad esencial del planeta'] as $title) {
+            $content = self::chapter('sol');
+            $content['concepts'][0]['characteristics'][0]['title'] = $title;
+            try {
+                $master->validate($content);
+                $this->fail("Se esperaba rechazar el título técnico «{$title}».");
+            } catch (\RuntimeException $exception) {
+                $this->assertStringContainsString("«{$title}»", $exception->getMessage());
+            }
+        }
+    }
+
     public static function excludedHeadings(): array
     {
         return array_map(static fn (string $title): array => [$title], ['Introducción', 'Resumen solar', 'Síntesis final', 'Conclusión', 'Cierre', 'Prólogo']);
@@ -395,6 +420,7 @@ final class InteriorMapMasterTest extends TestCase
             'La cúspide en Libra y la relevancia de Venus' => 'pasos del análisis',
             'Qué implica que el Sol esté en la casa seis' => 'pasos del análisis',
             'Lecciones de autonomía ligadas a la cadena dispositiva' => 'pasos del análisis',
+            'La cadena regencial local y sus implicaciones prácticas' => 'pasos del análisis',
             'Ejercicios breves para entrenar la complementariedad' => 'ejercicios y planes de acción',
             'Plan de acción para desarrollar confianza' => 'ejercicios y planes de acción',
             'Prácticas para reforzar la iniciativa' => 'ejercicios y planes de acción',
@@ -450,6 +476,13 @@ final class InteriorMapMasterTest extends TestCase
             $this->assertNull($master->validate($content), $title);
         }
         $this->assertStringContainsString('supuestas carencias deducidas de la polaridad', $master->systemPrompt());
+    }
+
+    public function test_everyday_chain_title_is_not_mistaken_for_an_astrological_chain(): void
+    {
+        $content = self::chapter('ascendente');
+        $content['concepts'][0]['characteristics'][0]['title'] = 'La cadena que conecta tu presencia con la vida cotidiana';
+        $this->assertNull((new InteriorMapMaster)->validate($content));
     }
 
     public function test_bilingual_title_with_parentheses_is_rejected(): void

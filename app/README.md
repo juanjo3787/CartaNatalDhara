@@ -132,6 +132,9 @@ o con descripciones de otras personas. Describir rutinas, horarios o tareas
 no equivale a prescribir ejercicios. Las expresiones falta de respuesta o
 carencia no bastan para rechazar un titulo: la auditoria de IA revisa si
 existe una carencia personal inferida sin sustento de la polaridad.
+Los filtros de cierre y dignidad astrológica son contextuales: permiten
+referencias vividas a cerrar una etapa y a la dignidad personal, pero rechazan
+encabezados de cierre del informe y dignidades astrológicas.
 La palabra voz no se rechaza por si sola: su uso figurado como expresion o
 afirmacion es valido; se detectan referencias fisicas explicitas como el timbre
 de voz. El prompt y los reintentos exigen titulos y parrafos solo en espanol,

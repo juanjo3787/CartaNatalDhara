@@ -101,6 +101,8 @@ Estos ejemplos solo ilustran los niveles de escritura, no son contenidos que deb
 Los títulos no contienen grados, orbes, cifras, símbolos de grado, comillas, paréntesis ni jerga sin explicar
 (dignidad, caída, dispositor, cadente, angular, regente, orbe, cúspide). La casa, el signo o el aspecto se mencionan dentro de los párrafos,
 nunca entre paréntesis en el título: escribe "Cómo se activa tu energía en lo cotidiano", no "Cómo se activa tu energía en lo cotidiano (casa VI)".
+La dignidad personal y el cierre de una etapa vital son expresiones cotidianas válidas; solo se excluyen como títulos los cierres del informe
+y las dignidades o caídas astrológicas.
 Ningún título ni característica puede usar las palabras introducción, prólogo, presentación, resumen, síntesis,
 conclusión, cierre ni recapitulación, ni funcionar como apertura o balance del bloque o del concepto.
 No dediques conceptos ni características solo a datos técnicos (posición exacta, grado, orbe, dignidad, precisión horaria):
@@ -587,11 +589,11 @@ PROMPT;
     private function validateHeading(mixed $title, array &$seen, array &$issues): void
     {
         $this->validateText($title);
-        if (preg_match('/\b(introducci[oó]n|pr[oó]logo|resumen|s[ií]ntesis|conclusi[oó]n|cierre|recapitulaci[oó]n)\b|^\s*presentaci[oó]n\b/ui', $title)) {
+        if (preg_match('/\b(introducci[oó]n|pr[oó]logo|resumen|s[ií]ntesis|conclusi[oó]n|recapitulaci[oó]n)\b|^\s*presentaci[oó]n\b|^\s*cierre\b|\bcierre\s+(?:del|de la)\s+(?:bloque|cap[ií]tulo|informe|documento)\b/ui', $title)) {
             $issues['closing'][] = $title;
         } elseif (preg_match('/[°′″"\'“”«»()\[\]]|\d+[.,]\d+/u', $title)) {
             $issues['technical'][] = $title;
-        } elseif (preg_match('/\b(?:dignidad\w*|ca[ií]da|detrimento|exaltaci[oó]n|domicilio|dispositor\w*|dispositiv[oa]s?|cadente|angular|regentes?|regencias?|orbes?|c[uú]spides?|ocupantes?|cadena|sextil|tr[ií]gono|cuadratura|quincuncio)\b|\bcasas? (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|[IVX]+|\d+)\b/ui', $title)) {
+        } elseif (preg_match('/\b(?:dignidades?\s+(?:esenciales|accidentales|planetarias|astrol[oó]gicas|cl[aá]sicas)|dignidad\s+(?:esencial|accidental|planetaria|astrol[oó]gica|cl[aá]sica)|condici[oó]n\s+(?:de\s+)?(?:dignidad|ca[ií]da)|ca[ií]da\s+(?:cl[aá]sica|tradicional|del planeta)|detrimento|exaltaci[oó]n|domicilio|dispositor\w*|dispositiv[oa]s?|cadente|angular|regentes?|regencias?|orbes?|c[uú]spides?|ocupantes?|sextil|tr[ií]gono|cuadratura|quincuncio)\b|\b(?:cadena|recorrido)\s+(?:regencial|dispositiva|de\s+(?:casas?|regentes?|regencias?|dispositores?|c[uú]spides?))\b|\bcasas? (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|[IVX]+|\d+)\b/ui', $title)) {
             $issues['jargon'][] = $title;
         } elseif (preg_match('/^(?:ejercicios?|talleres?|cronogramas?)\b|^plan(?:es)? de acci[oó]n\b|^pr[aá]cticas? (?:para|de)\b|\bv[ií]as pr[aá]cticas\b|\bc[oó]mo corregir/ui', $title)) {
             $issues['advice'][] = $title;
