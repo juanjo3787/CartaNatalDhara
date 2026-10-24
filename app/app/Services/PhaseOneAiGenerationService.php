@@ -125,7 +125,10 @@ final class PhaseOneAiGenerationService
             $input['previous_validation_error'] = $job->drafts['_validation_feedback'][$chapter];
             $input['revision_candidate'] = $job->drafts['_validation_candidate'][$chapter] ?? null;
             $input['measured_word_count'] = $this->master->wordCount($input['revision_candidate'] ?? []);
-            $input['retry_instruction'] = 'Edita el borrador del mismo trabajo para corregir el rechazo, sin añadir relleno, resúmenes ni perder el formato concepto/característica/párrafos.';
+            $input['retry_instruction'] = 'Edita el borrador del mismo trabajo para corregir el rechazo y revisa a la vez TODOS los títulos y párrafos con la misma regla: '
+                .'títulos en lenguaje llano que nombren rasgos vividos, sin introducciones, síntesis, resúmenes ni cierres, sin grados ni cifras técnicas; '
+                .'entre cinco y ocho características por concepto cuando haya soporte, dos o tres párrafos sustanciales cada una, segunda persona y sin nombres internos de datos. '
+                .'Hazlo sin añadir relleno y sin perder el formato concepto/característica/párrafos.';
         }
 
         return $input;

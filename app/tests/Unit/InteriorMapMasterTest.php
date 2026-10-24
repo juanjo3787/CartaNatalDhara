@@ -329,6 +329,46 @@ final class InteriorMapMasterTest extends TestCase
         $this->assertNull((new InteriorMapMaster)->validateFacts($content, $this->facts(), 'sol'));
     }
 
+    public function test_all_closing_and_technical_titles_are_reported_together(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Introducción técnica y posición exacta';
+        $content['concepts'][1]['characteristics'][1]['title'] = 'Cómo se modula la voluntad: síntesis de la cadena';
+        try {
+            (new InteriorMapMaster)->validate($content);
+            $this->fail('Se esperaba un rechazo.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('«Introducción técnica y posición exacta»', $exception->getMessage());
+            $this->assertStringContainsString('síntesis de la cadena»', $exception->getMessage());
+        }
+    }
+
+    #[DataProvider('technicalTitles')]
+    public function test_technical_titles_are_rejected(string $title): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['title'] = $title;
+        $this->expectExceptionMessage('lenguaje llano');
+        (new InteriorMapMaster)->validate($content);
+    }
+
+    public static function technicalTitles(): array
+    {
+        return array_map(static fn (string $title): array => [$title], [
+            'Sextil exacto a la Luna (orbe mínimo)',
+            "Cómo influye la dignidad 'caída'",
+            'Cuadratura a Neptuno — orbe 2.3',
+        ]);
+    }
+
+    public function test_decimal_orbs_in_paragraphs_are_rejected(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['paragraphs'][] = 'El contacto tiene un orbe de 0.096° con la Luna.';
+        $this->expectExceptionMessage('sin decimales');
+        (new InteriorMapMaster)->validate($content);
+    }
+
     public function test_duplicate_paragraphs_are_detected_across_blocks(): void
     {
         $first = self::chapter('sol');

@@ -76,6 +76,14 @@ Debajo de cada característica escribe normalmente dos o tres párrafos sustanci
 cómo se manifiesta, en qué situaciones cotidianas puede reconocerse, qué necesita, qué fortaleza aporta, qué dificultad puede generar,
 cómo la modulan otros factores de la carta y cómo puede desarrollarse conscientemente. No conviertas esa lista en subtítulos fijos.
 Los rótulos "CONCEPTO:" y "Característica N." los añade la aplicación: escribe solo el nombre del concepto o de la característica.
+TÍTULOS: los conceptos y características nombran vivencias y rasgos humanos en lenguaje llano (por ejemplo,
+"Tu forma de buscar el equilibrio" o "La exigencia de hacer bien las cosas"), nunca fichas técnicas.
+Los títulos no contienen grados, orbes, cifras, símbolos (°, ', "), comillas, paréntesis ni jerga sin explicar
+(dignidad, caída, dispositor, cadente, angular, regente, orbe, cúspide). La base técnica se explica dentro de los párrafos.
+Ningún título ni característica puede usar las palabras introducción, prólogo, presentación, resumen, síntesis,
+conclusión, cierre ni recapitulación, ni funcionar como apertura o balance del bloque o del concepto.
+No dediques conceptos ni características solo a datos técnicos (posición exacta, grado, orbe, dignidad, precisión horaria):
+cada característica describe cómo se vive un rasgo y justifica su base astrológica dentro del texto.
 No muestres la matriz interna de análisis. Los títulos de los bloques y el formato los aplica la aplicación.
 Devuelve exclusivamente el JSON solicitado. Títulos y párrafos son texto plano, sin HTML, Markdown ni numeración artificial.
 
@@ -84,7 +92,8 @@ Escribe en segunda persona ("tú"), sin deducir género, con lenguaje claro, cá
 Explica cada término técnico (casa, cúspide, regente, dispositor, aspecto, orbe, dignidad) la primera vez que aparezca en el bloque.
 Nunca escribas nombres internos de campos o datos: positions, houses, aspects, rulers, occupants, snapshot, current_report,
 maximum_orb, time_precision, time_source, ASTROLOGICAL_FACTS ni identificadores con guiones bajos. Tradúcelos a lenguaje natural.
-No uses coordenadas con segundos salvo cuando aclaren un matiz técnico; prefiere grados y minutos.
+No uses coordenadas con segundos salvo cuando aclaren un matiz técnico; expresa posiciones y orbes en grados y minutos
+(por ejemplo, "a menos de un grado" o "5° 23′"), nunca con decimales.
 Evita la jerga, las frases vacías y las fórmulas repetidas al comenzar párrafos.
 Los ejercicios, recomendaciones o prácticas solo pueden aparecer de forma breve e integrada; nunca dominan una característica.
 
@@ -100,7 +109,8 @@ contradicciones internas, vías de integración y proceso de maduración. Ningun
 
 DATOS Y UNIVERSALIDAD
 Usa exclusivamente ASTROLOGICAL_FACTS: la aplicación verifica posiciones y calcula casas, aspectos y orbes antes de redactar.
-Identifica en características técnicas las fuentes efectivas y los criterios utilizados: zodiaco, casas, regencias, grados, aspectos y orbes.
+Menciona dentro de los párrafos, cuando aporte claridad, los criterios utilizados (zodiaco, casas, regencias, grados, aspectos y orbes),
+siempre explicados en lenguaje sencillo y sin crear características técnicas aisladas.
 La escuela es simbólica occidental, con regencias tradicionales prioritarias y modernas complementarias; dignidades mayores clásicas.
 No cambies el sistema calculado. Interpreta las cúspides conforme a Placidus y distingue signo de cúspide, signo del planeta y casa ocupada.
 La precisión horaria delimita la certeza: si la hora es aproximada o desconocida,
@@ -350,21 +360,43 @@ PROMPT;
         }
         $this->requireList($content['concepts']);
         $headings = [];
+        $titleIssues = ['closing' => [], 'technical' => []];
+        $problems = [];
+        $check = static function (callable $validation) use (&$problems): void {
+            try {
+                $validation();
+            } catch (RuntimeException $exception) {
+                $problems[$exception->getMessage()] = true;
+            }
+        };
         foreach ($content['concepts'] as $concept) {
             $this->requireObject($concept, ['title', 'characteristics']);
-            $this->validateHeading($concept['title'], $headings);
+            $check(function () use ($concept, &$headings, &$titleIssues): void {
+                $this->validateHeading($concept['title'], $headings, $titleIssues);
+            });
             $this->requireList($concept['characteristics']);
             if (count($concept['characteristics']) > self::MAX_CHARACTERISTICS) {
-                throw new RuntimeException('Cada concepto admite como máximo '.self::MAX_CHARACTERISTICS.' características diferenciadas.');
+                $problems['Cada concepto admite como máximo '.self::MAX_CHARACTERISTICS.' características diferenciadas; «'.$concept['title'].'» tiene '.count($concept['characteristics']).'.'] = true;
             }
             foreach ($concept['characteristics'] as $characteristic) {
                 $this->requireObject($characteristic, ['title', 'paragraphs']);
-                $this->validateHeading($characteristic['title'], $headings);
+                $check(function () use ($characteristic, &$headings, &$titleIssues): void {
+                    $this->validateHeading($characteristic['title'], $headings, $titleIssues);
+                });
                 $this->requireList($characteristic['paragraphs']);
                 foreach ($characteristic['paragraphs'] as $paragraph) {
-                    $this->validateText($paragraph);
+                    $check(fn () => $this->validateText($paragraph));
                 }
             }
+        }
+        if ($titleIssues['closing'] !== []) {
+            $problems['El Informe I no admite introducciones, resúmenes ni síntesis o cierres. Renombra como rasgos vividos, sin esas palabras, estos títulos: «'.implode('», «', $titleIssues['closing']).'».'] = true;
+        }
+        if ($titleIssues['technical'] !== []) {
+            $problems['Los títulos deben estar en lenguaje llano, sin grados, decimales, comillas ni paréntesis. Reescribe estos títulos: «'.implode('», «', $titleIssues['technical']).'».'] = true;
+        }
+        if ($problems !== []) {
+            throw new RuntimeException(implode(' ', array_keys($problems)));
         }
         if ($this->wordCount($content) > self::CHAPTER_MAX_WORDS) {
             throw new RuntimeException('Extensión de bloque inválida: supera el límite técnico de '.self::CHAPTER_MAX_WORDS.' palabras; siete páginas es un objetivo flexible, no una cuota.');
@@ -491,11 +523,13 @@ PROMPT;
         }
     }
 
-    private function validateHeading(mixed $title, array &$seen): void
+    private function validateHeading(mixed $title, array &$seen, array &$issues): void
     {
         $this->validateText($title);
-        if (preg_match('/\b(introducci[oó]n|pr[oó]logo|resumen|s[ií]ntesis|conclusi[oó]n|cierre|recapitulaci[oó]n)\b/ui', $title)) {
-            throw new RuntimeException('El Informe I no admite introducciones, resúmenes ni síntesis o cierres.');
+        if (preg_match('/\b(introducci[oó]n|pr[oó]logo|presentaci[oó]n|resumen|s[ií]ntesis|conclusi[oó]n|cierre|recapitulaci[oó]n)\b/ui', $title)) {
+            $issues['closing'][] = $title;
+        } elseif (preg_match('/[°′″"\'“”«»()]|\d+[.,]\d+/u', $title)) {
+            $issues['technical'][] = $title;
         }
         $key = mb_strtolower(trim($title));
         if (isset($seen[$key])) {
@@ -511,6 +545,9 @@ PROMPT;
         }
         if (preg_match(self::INTERNAL_FIELD_NAMES, $text, $match)) {
             throw new RuntimeException("El texto no puede mostrar nombres internos de datos ({$match[0]}); explícalo en lenguaje natural.");
+        }
+        if (preg_match('/\d+[.,]\d+\s*°|\borb\b/u', $text)) {
+            throw new RuntimeException('Expresa grados y orbes en grados y minutos o con palabras (por ejemplo, «a menos de un grado» o «5° 23′»), sin decimales ni la palabra inglesa «orb».');
         }
     }
 
