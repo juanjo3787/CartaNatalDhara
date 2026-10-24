@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class InteriorMapMaster
 {
-    public const VERSION = 107;
+    public const VERSION = 108;
 
     public const MANUAL_SHA256 = 'B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED';
 
@@ -109,6 +109,7 @@ No muestres la matriz interna de análisis. Los títulos de los bloques y el for
 Devuelve exclusivamente el JSON solicitado. Títulos y párrafos son texto plano, sin HTML, Markdown ni numeración artificial.
 
 ESTILO Y LENGUAJE
+Escribe todos los títulos y párrafos íntegramente en español, sin encabezados en inglés ni traducciones bilingües.
 Escribe en segunda persona ("tú"), sin deducir género, con lenguaje claro, cálido y comprensible para quien no sabe astrología.
 Evita adjetivos y participios con marca de género referidos al lector (seguro, cansado, valorada): usa construcciones neutras
 como "sentirte en seguridad" o "que se reconozca tu valor".
@@ -152,7 +153,8 @@ No inventes recepción, combustión, retrogradación, aplicación o separación:
 Los aspectos mayores y orbes proceden de los aspectos calculados; no los completes con aspectos que queden fuera del umbral técnico.
 Estar en la misma casa no implica conjunción; un contacto a un ángulo no cambia la casa.
 Una casa vacía no prueba rigidez, predictibilidad, ausencia de experiencias ni otro rasgo psicológico.
-No deduzcas constitución física, voz, apariencia ni hábitos corporales de un signo o del Ascendente.
+No deduzcas constitución física, cualidades físicas de la voz, apariencia ni hábitos corporales de un signo o del Ascendente.
+La voz propia como metáfora de expresión, afirmación o comunicación sí puede interpretarse: no equivale a un rasgo corporal.
 Una distancia pequeña a una cúspide no prueba sensibilidad a acontecimientos concretos ni justifica por sí sola una característica.
 La polaridad conceptual entre signos no equivale a una oposición planetaria ni al eje geométrico Ascendente-Descendente.
 La pertenencia a un signo no implica carencia de las cualidades de su opuesto: complementariedad no significa corregir un defecto.
@@ -591,7 +593,7 @@ PROMPT;
             $issues['jargon'][] = $title;
         } elseif (preg_match('/^(?:ejercicios?|pr[aá]cticas?|rutinas?|horarios?|planes?|talleres?|cronogramas?|tareas?|pasos)\b|\bv[ií]as pr[aá]cticas\b|\bc[oó]mo corregir/ui', $title)) {
             $issues['advice'][] = $title;
-        } elseif (preg_match('/\b(?:tu cuerpo|voz|apariencia|constituci[oó]n|complexi[oó]n|rasgos f[ií]sicos|falta de|carencia|careces?|personas que|parejas? que|socios que)\b/ui', $title)) {
+        } elseif (preg_match('/\b(?:tu cuerpo|timbre de (?:tu |la )?voz|cualidades f[ií]sicas de (?:tu |la )?voz|voz (?:grave|aguda|ronca)|apariencia|constituci[oó]n|complexi[oó]n|rasgos f[ií]sicos|falta de|carencia|careces?|personas que|parejas? que|socios que)\b/ui', $title)) {
             $issues['inference'][] = $title;
         }
         $key = mb_strtolower(trim($title));

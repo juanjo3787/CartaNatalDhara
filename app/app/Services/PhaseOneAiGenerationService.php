@@ -127,12 +127,14 @@ final class PhaseOneAiGenerationService
             $input['revision_candidate'] = $job->drafts['_validation_candidate'][$chapter] ?? null;
             $input['measured_word_count'] = $this->master->wordCount($input['revision_candidate'] ?? []);
             $input['retry_instruction'] = 'Edita el borrador del mismo trabajo para corregir el rechazo y revisa a la vez TODOS los títulos y párrafos con la misma regla: '
+                .'escribe todo íntegramente en español, sin inglés ni traducciones bilingües; sustituye títulos como «Alliances that amplify your reach (Alianzas que amplifican tu alcance)» por «Alianzas que amplifican tu alcance». '
                 .'títulos en lenguaje llano que nombren rasgos vividos, sin introducciones, síntesis, resúmenes ni cierres, sin grados, cifras técnicas, comillas ni paréntesis '
                 .'(si un título cita la casa, el signo o el aspecto entre paréntesis, elimina el paréntesis y explica ese dato en el párrafo); '
                 .'en los párrafos, grados y orbes en grados y minutos o con palabras, nunca con decimales ni la palabra «orb»; '
                 .'entre cinco y ocho características por concepto cuando haya soporte, dos o tres párrafos sustanciales cada una, segunda persona y sin nombres internos de datos. '
                 .'Conserva la distinción entre tema principal, manifestación específica y explicación: los datos de regentes, cúspides y ocupantes fundamentan los párrafos, no son características por sí solos. '
                 .'Ningún título de característica nombra casas numeradas, cúspides, regentes, dispositores, dignidades o aspectos, ni ejercicios, rutinas, rasgos corporales, carencias u otras personas; evita adjetivos con marca de género referidos al lector. '
+                .'La voz propia en sentido figurado de expresión o afirmación no es un rasgo corporal: conserva ese significado si está sustentado. '
                 .'Hazlo sin añadir relleno y sin perder el formato concepto/característica/párrafos.';
         }
 

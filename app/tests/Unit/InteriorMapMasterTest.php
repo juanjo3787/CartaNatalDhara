@@ -385,7 +385,8 @@ final class InteriorMapMasterTest extends TestCase
             'Qué implica que el Sol esté en la casa seis' => 'pasos del análisis',
             'Lecciones de autonomía ligadas a la cadena dispositiva' => 'pasos del análisis',
             'Ejercicios breves para entrenar la complementariedad' => 'ejercicios, prácticas',
-            'La voz y el gesto como extensiones de seguridad' => 'rasgos corporales',
+            'El timbre de tu voz como extensión de seguridad' => 'rasgos corporales',
+            'Tu voz grave como extensión de seguridad' => 'rasgos corporales',
             'Cómo se manifiesta la falta de impulso y qué necesitas' => 'carencias',
             'Atracción por personas que gestionan recursos' => 'otras personas',
         ];
@@ -402,6 +403,30 @@ final class InteriorMapMasterTest extends TestCase
         }
         $content['concepts'][0]['characteristics'][0]['title'] = 'Identidad que se fortalece con el hacer útil';
         $this->assertNull($master->validate($content));
+    }
+
+    public function test_figurative_voice_titles_are_accepted(): void
+    {
+        $master = new InteriorMapMaster;
+        foreach ([
+            'Cómo la voz propia necesita afirmarse',
+            'Suavizamiento de la voz para preservar la paz',
+            'Alianzas que amplifican tu alcance',
+        ] as $title) {
+            $content = self::chapter('sol');
+            $content['concepts'][0]['characteristics'][0]['title'] = $title;
+            $this->assertNull($master->validate($content), $title);
+        }
+        $this->assertStringContainsString('íntegramente en español', $master->systemPrompt());
+        $this->assertStringContainsString('La voz propia como metáfora', $master->systemPrompt());
+    }
+
+    public function test_bilingual_title_with_parentheses_is_rejected(): void
+    {
+        $content = self::chapter('sol');
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Alliances that amplify your reach (Alianzas que amplifican tu alcance)';
+        $this->expectExceptionMessage('ni paréntesis');
+        (new InteriorMapMaster)->validate($content);
     }
 
     public function test_decimal_orbs_in_paragraphs_are_rejected(): void
