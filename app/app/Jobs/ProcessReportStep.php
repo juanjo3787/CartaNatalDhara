@@ -40,12 +40,22 @@ class ProcessReportStep implements ShouldQueue
     public function handle(ReportJobService $service): void
     {
         $job = ReportJob::find($this->reportJobId);
-        if (! $job || $job->cursor !== $this->cursor || in_array($job->status, ['completed', 'failed'], true)) {
+        if (! $job || $job->cursor !== $this->cursor || in_array($job->status, ['completed', 'failed', 'cancelled'], true)) {
+            return;
+        }
+        if ($job->status === 'cancelling') {
+            $service->completeCancellation($job);
+
             return;
         }
         try {
             $service->process($job);
         } catch (AiGenerationException $exception) {
+            if ($job->fresh()->status === 'cancelling') {
+                $service->completeCancellation($job);
+
+                return;
+            }
             $job->update(['error_code' => $exception->errorCode, 'error_message' => $exception->getMessage()]);
             if (! $exception->isRetryable()) {
                 $this->failed($exception);
@@ -55,6 +65,11 @@ class ProcessReportStep implements ShouldQueue
             }
             throw $exception;
         } catch (ReportContentValidationException $exception) {
+            if ($job->fresh()->status === 'cancelling') {
+                $service->completeCancellation($job);
+
+                return;
+            }
             $job->update([
                 'error_code' => 'CONTENT_VALIDATION_FAILED',
                 'error_message' => 'El capítulo no superó la validación: '.$exception->getMessage().' Se reintentará con instrucciones de corrección.',
@@ -65,14 +80,31 @@ class ProcessReportStep implements ShouldQueue
                 'validation_error' => $exception->getMessage(),
             ]);
             throw $exception;
+        } catch (Throwable $exception) {
+            if ($job->fresh()->status === 'cancelling') {
+                $service->completeCancellation($job);
+
+                return;
+            }
+            throw $exception;
         }
     }
 
     public function failed(?Throwable $exception): void
     {
+        $cancelled = ReportJob::whereKey($this->reportJobId)->where('status', 'cancelling')->update([
+            'status' => 'cancelled',
+            'active_chart_id' => null,
+            'completed_at' => now(),
+            'error_code' => 'CANCELLED',
+            'error_message' => 'Trabajo cancelado por solicitud del usuario. Las etapas anteriores permanecen guardadas.',
+        ]);
+        if ($cancelled) {
+            return;
+        }
         $job = ReportJob::whereKey($this->reportJobId)
             ->where('cursor', $this->cursor)
-            ->whereNotIn('status', ['completed', 'failed'])
+            ->whereNotIn('status', ['completed', 'failed', 'cancelled', 'cancelling'])
             ->first(['id', 'chart_id', 'cursor', 'current_section']);
         if (! $job) {
             return;
@@ -80,7 +112,7 @@ class ProcessReportStep implements ShouldQueue
 
         $updated = ReportJob::whereKey($job->id)
             ->where('cursor', $this->cursor)
-            ->whereNotIn('status', ['completed', 'failed'])
+            ->whereNotIn('status', ['completed', 'failed', 'cancelled', 'cancelling'])
             ->update([
                 'status' => 'failed', 'active_chart_id' => null, 'completed_at' => now(),
                 'error_code' => $exception instanceof ReportContentValidationException ? 'CONTENT_VALIDATION_FAILED' : ($exception instanceof AiGenerationException ? $exception->errorCode : 'REPORT_STEP_FAILED'),

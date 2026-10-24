@@ -9,6 +9,7 @@ use App\Models\Place;
 use App\Models\ReportJob;
 use App\Models\User;
 use App\Services\InteriorMapMaster;
+use App\Services\ReportJobService;
 use App\Services\ReportMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +55,55 @@ class ReportImprovementsTest extends TestCase
         $this->actingAs(User::factory()->create())->postJson(route('reports.jobs.dismiss', $job))->assertForbidden();
         $this->actingAs(User::findOrFail($job->user_id))->postJson(route('reports.jobs.dismiss', $job))->assertConflict();
         $this->assertNull($job->fresh()->dismissed_at);
+    }
+
+    public function test_owner_can_cancel_a_queued_job_without_deleting_saved_drafts_or_chart(): void
+    {
+        $job = $this->job('queued');
+        $job->update([
+            'active_chart_id' => $job->chart_id,
+            'drafts' => ['sol' => ['concepts' => [['title' => 'Saved block']]]],
+        ]);
+
+        $this->actingAs(User::findOrFail($job->user_id))
+            ->postJson(route('reports.jobs.cancel', $job))
+            ->assertAccepted()
+            ->assertJsonPath('status', 'cancelled');
+
+        $this->assertNull($job->fresh()->active_chart_id);
+        $this->assertSame('Saved block', $job->fresh()->drafts['sol']['concepts'][0]['title']);
+        $this->assertModelExists($job->chart);
+    }
+
+    public function test_cancelling_a_running_job_waits_for_the_current_step_boundary(): void
+    {
+        $job = $this->job('generating_sun');
+        $job->update(['active_chart_id' => $job->chart_id]);
+        $user = User::findOrFail($job->user_id);
+
+        $this->actingAs($user)
+            ->postJson(route('reports.jobs.cancel', $job))
+            ->assertAccepted()
+            ->assertJsonPath('status', 'cancelling');
+        $this->assertSame($job->chart_id, $job->fresh()->active_chart_id);
+
+        app(ReportJobService::class)->completeCancellation($job->fresh());
+        $this->assertSame('cancelled', $job->fresh()->status);
+        $this->assertNull($job->fresh()->active_chart_id);
+    }
+
+    public function test_cannot_cancel_another_users_or_inactive_job(): void
+    {
+        $job = $this->job('queued');
+        $job->update(['active_chart_id' => $job->chart_id]);
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('reports.jobs.cancel', $job))
+            ->assertForbidden();
+
+        $job->update(['active_chart_id' => null, 'status' => 'completed']);
+        $this->actingAs(User::findOrFail($job->user_id))
+            ->postJson(route('reports.jobs.cancel', $job))
+            ->assertConflict();
     }
 
     public function test_guest_cannot_dismiss_a_notice(): void

@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const actions = document.createElement('span');
         actions.className = 'report-actions';
         let close;
-        if (['completed', 'failed'].includes(job.status)) {
+        if (['completed', 'failed', 'cancelled'].includes(job.status)) {
             close = document.createElement('button');
             close.type = 'button';
             close.textContent = '×';
@@ -89,8 +89,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Reintentar etapa pendiente';
             button.onclick = () => send(job.retry_url, {}).catch(showError); actions.append(button);
             const error = document.createElement('span'); error.textContent = job.error_message; row.append(error);
+        } else if (job.status === 'cancelling') {
+            const hint = document.createElement('span'); hint.textContent = job.error_message || 'Deteniendo al finalizar la operación actual.'; row.append(hint);
         } else {
             const hint = document.createElement('span'); hint.textContent = job.error_message || 'Puedes navegar o cerrar esta página.'; row.append(hint);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = 'Cancelar trabajo';
+            button.onclick = async () => {
+                if (!window.confirm('¿Cancelar este trabajo? La operación de IA que ya está en curso puede terminar antes de detenerse. Las etapas anteriores se conservan.')) return;
+                button.disabled = true;
+                try { await send(job.cancel_url, {}); } catch (error) { showError(error); }
+            };
+            actions.append(button);
         }
         if (close) actions.append(close);
         if (actions.children.length) row.append(actions);
@@ -139,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!ids.has(id) && !dismissing.has(id)) { row.remove(); labels.delete(id); }
                     }
                     for (const job of jobs) {
-                        if (!['completed', 'failed'].includes(job.status)) dismissed.delete(job.job_id);
+                        if (!['completed', 'failed', 'cancelled'].includes(job.status)) dismissed.delete(job.job_id);
                         display(job);
                     }
                 }

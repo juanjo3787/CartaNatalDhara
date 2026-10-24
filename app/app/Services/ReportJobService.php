@@ -57,6 +57,48 @@ class ReportJobService
         });
     }
 
+    public function cancel(ReportJob $job): ReportJob
+    {
+        return DB::transaction(function () use ($job): ReportJob {
+            $current = ReportJob::whereKey($job->id)->lockForUpdate()->firstOrFail();
+            abort_unless($current->active_chart_id === $current->chart_id && ! in_array($current->status, ['completed', 'failed', 'cancelled'], true), 409, 'El trabajo ya no está activo.');
+            if ($current->status === 'queued') {
+                $current->update([
+                    'status' => 'cancelled',
+                    'active_chart_id' => null,
+                    'completed_at' => now(),
+                    'error_code' => 'CANCELLED',
+                    'error_message' => 'Trabajo cancelado por solicitud del usuario.',
+                ]);
+            } else {
+                $current->update([
+                    'status' => 'cancelling',
+                    'error_code' => 'CANCELLATION_REQUESTED',
+                    'error_message' => 'Se detendrá al finalizar la operación actual.',
+                ]);
+            }
+
+            return $current->fresh();
+        });
+    }
+
+    public function completeCancellation(ReportJob $job): void
+    {
+        DB::transaction(function () use ($job): void {
+            $current = ReportJob::whereKey($job->id)->lockForUpdate()->first();
+            if (! $current || $current->status !== 'cancelling') {
+                return;
+            }
+            $current->update([
+                'status' => 'cancelled',
+                'active_chart_id' => null,
+                'completed_at' => now(),
+                'error_code' => 'CANCELLED',
+                'error_message' => 'Trabajo cancelado por solicitud del usuario. Las etapas anteriores permanecen guardadas.',
+            ]);
+        });
+    }
+
     public function steps(ReportJob $job): array
     {
         $steps = [['status' => 'preparing']];
@@ -77,6 +119,15 @@ class ReportJobService
 
     public function process(ReportJob $job): void
     {
+        $job->refresh();
+        if ($job->status === 'cancelling') {
+            $this->completeCancellation($job);
+
+            return;
+        }
+        if (in_array($job->status, ['cancelled', 'completed', 'failed'], true)) {
+            return;
+        }
         if (($job->drafts['_master_version'] ?? null) !== InteriorMapMaster::VERSION) {
             throw new \RuntimeException('Trabajo del sistema anterior. Inicia un Informe I nuevo.');
         }
@@ -103,7 +154,20 @@ class ReportJobService
     {
         $steps = $this->steps($job);
         $step = $steps[$job->cursor];
-        $job->update(['status' => $step['status'], 'current_section' => isset($step['door']) ? $step['door'].'.'.$step['stage'] : $step['status'], 'started_at' => $job->started_at ?? now()]);
+        $claimed = DB::transaction(function () use ($job, $step): bool {
+            $current = ReportJob::whereKey($job->id)->lockForUpdate()->firstOrFail();
+            if (in_array($current->status, ['cancelling', 'cancelled', 'completed', 'failed'], true)) {
+                return false;
+            }
+            $current->update(['status' => $step['status'], 'current_section' => isset($step['door']) ? $step['door'].'.'.$step['stage'] : $step['status'], 'started_at' => $current->started_at ?? now()]);
+
+            return true;
+        });
+        if (! $claimed) {
+            $this->completeCancellation($job);
+
+            return;
+        }
         $chart = $job->chart;
         if (isset($step['door'])) {
             app(PhaseOneAiGenerationService::class)->generateChapter($chart, $step['door'], $job);
@@ -127,11 +191,23 @@ class ReportJobService
             app(ReportPdfService::class)->store($chart, $job->id, $completeReport);
         }
         DB::transaction(function () use ($job, $steps): void {
-            $next = $job->cursor + 1;
+            $current = ReportJob::whereKey($job->id)->lockForUpdate()->firstOrFail();
+            if ($current->status === 'cancelling') {
+                $current->update([
+                    'status' => 'cancelled',
+                    'active_chart_id' => null,
+                    'completed_at' => now(),
+                    'error_code' => 'CANCELLED',
+                    'error_message' => 'Trabajo cancelado por solicitud del usuario. Las etapas anteriores permanecen guardadas.',
+                ]);
+
+                return;
+            }
+            $next = $current->cursor + 1;
             $complete = $next === count($steps);
-            $job->update(['cursor' => $next, 'progress' => (int) floor(100 * $next / count($steps)), 'status' => $complete ? 'completed' : $job->status, 'active_chart_id' => $complete ? null : $job->chart_id, 'completed_at' => $complete ? now() : null, 'error_code' => null, 'error_message' => null]);
+            $current->update(['cursor' => $next, 'progress' => (int) floor(100 * $next / count($steps)), 'status' => $complete ? 'completed' : $current->status, 'active_chart_id' => $complete ? null : $current->chart_id, 'completed_at' => $complete ? now() : null, 'error_code' => null, 'error_message' => null]);
             if (! $complete) {
-                ProcessReportStep::dispatch($job->id, $next)->onConnection('reports')->onQueue('reports');
+                ProcessReportStep::dispatch($current->id, $next)->onConnection('reports')->onQueue('reports');
             }
         });
     }

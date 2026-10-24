@@ -246,6 +246,17 @@ final class InteriorMapMasterTest extends TestCase
         (new InteriorMapMaster)->validate($content);
     }
 
+    public function test_presentation_as_a_lived_context_is_not_mistaken_for_an_introduction(): void
+    {
+        $content = self::chapter('ascendente');
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Visibilidad funcional en contextos de presentación';
+        $this->assertNull((new InteriorMapMaster)->validate($content));
+
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Presentación del bloque';
+        $this->expectExceptionMessage('no admite introducciones');
+        (new InteriorMapMaster)->validate($content);
+    }
+
     public static function excludedHeadings(): array
     {
         return array_map(static fn (string $title): array => [$title], ['Introducción', 'Resumen solar', 'Síntesis final', 'Conclusión', 'Cierre', 'Prólogo']);

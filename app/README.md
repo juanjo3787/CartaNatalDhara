@@ -47,7 +47,7 @@ Cada solicitud recibe las ocho categorias de investigacion del bloque; la audito
 recibe las de los cinco bloques. Son una guia de cobertura, no ocho secciones
 obligatorias ni una verificacion determinista de la calidad semantica.
 Los pasos tecnicos fundamentan los parrafos y no son caracteristicas personales.
-El prompt maestro (version 108) incluye la jerarquia de
+El prompt maestro (version 109) incluye la jerarquia de
 instrucciones conforme al manual (exactitud, consistencia tecnica, universalidad,
 personalizacion, profundidad y extension), la intensidad en lenguaje natural (importancia astrologica,
 intensidad simbolica y manifestacion personal), el procedimiento de 10 pasos
@@ -155,13 +155,17 @@ incluye la auditoria como etapa independiente.
 Siempre se regeneran los cinco bloques juntos. Las rutas antiguas que solicitan
 una puerta individual se convierten en regeneracion completa. Cambiar datos de
 nacimiento marca el informe como desactualizado y bloquea su descarga.
+El panel de progreso permite cancelar un trabajo activo. Si ya hay una
+operacion en curso, la cancelacion es cooperativa: el worker la completa en el
+siguiente limite seguro, no inicia otra etapa y conserva los borradores
+guardados. Los trabajos en cola se cancelan de inmediato.
 
 El editor conserva conceptos H3, caracteristicas H4 y parrafos. Valida tambien
 el bloque V, contradicciones y duplicaciones entre bloques antes de guardar.
 Conserva enfasis en linea, elimina atributos HTML e invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 108. Version editorial PDF: 20.** Los textos y trabajos de
+**Version de modelo: 109. Version editorial PDF: 20.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.

@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class InteriorMapMaster
 {
-    public const VERSION = 108;
+    public const VERSION = 109;
 
     public const MANUAL_SHA256 = 'B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED';
 
@@ -587,7 +587,7 @@ PROMPT;
     private function validateHeading(mixed $title, array &$seen, array &$issues): void
     {
         $this->validateText($title);
-        if (preg_match('/\b(introducci[oó]n|pr[oó]logo|presentaci[oó]n|resumen|s[ií]ntesis|conclusi[oó]n|cierre|recapitulaci[oó]n)\b/ui', $title)) {
+        if (preg_match('/\b(introducci[oó]n|pr[oó]logo|resumen|s[ií]ntesis|conclusi[oó]n|cierre|recapitulaci[oó]n)\b|^\s*presentaci[oó]n\b/ui', $title)) {
             $issues['closing'][] = $title;
         } elseif (preg_match('/[°′″"\'“”«»()\[\]]|\d+[.,]\d+/u', $title)) {
             $issues['technical'][] = $title;

@@ -60,10 +60,17 @@ class ReportJobController extends Controller
         return response()->json($this->payload(app(ReportJobService::class)->retry($job)), 202);
     }
 
+    public function cancel(Request $request, ReportJob $job): JsonResponse
+    {
+        abort_unless($request->user()?->id === $job->user_id, 403);
+
+        return response()->json($this->payload(app(ReportJobService::class)->cancel($job)), 202);
+    }
+
     public function dismiss(Request $request, ReportJob $job): JsonResponse
     {
         abort_unless($request->user()?->id === $job->user_id, 403);
-        $updated = ReportJob::whereKey($job->id)->whereIn('status', ['completed', 'failed'])
+        $updated = ReportJob::whereKey($job->id)->whereIn('status', ['completed', 'failed', 'cancelled'])
             ->update(['dismissed_at' => now()]);
         abort_unless($updated, 409, 'Solo puedes cerrar avisos terminados o fallidos.');
 
@@ -72,8 +79,8 @@ class ReportJobController extends Controller
 
     private function payload(ReportJob $job): array
     {
-        $messages = ['queued' => 'En cola', 'preparing' => 'Preparando informe', 'generating_sun' => 'Generando Sol', 'generating_moon' => 'Generando Luna', 'generating_ascendant' => 'Generando Ascendente', 'generating_descendant' => 'Generando Descendente', 'generating_opposites' => 'Generando opuestos complementarios', 'auditing' => 'Auditando los cinco bloques', 'validating' => 'Validando contenido', 'building_document' => 'Montando documento', 'generating_pdf' => 'Generando PDF', 'completed' => 'Informe disponible', 'failed' => 'Generación interrumpida'];
+        $messages = ['queued' => 'En cola', 'preparing' => 'Preparando informe', 'generating_sun' => 'Generando Sol', 'generating_moon' => 'Generando Luna', 'generating_ascendant' => 'Generando Ascendente', 'generating_descendant' => 'Generando Descendente', 'generating_opposites' => 'Generando opuestos complementarios', 'auditing' => 'Auditando los cinco bloques', 'validating' => 'Validando contenido', 'building_document' => 'Montando documento', 'generating_pdf' => 'Generando PDF', 'cancelling' => 'Deteniendo al finalizar la operación actual', 'cancelled' => 'Trabajo cancelado; se conservan las etapas guardadas', 'completed' => 'Informe disponible', 'failed' => 'Generación interrumpida'];
 
-        return ['job_id' => $job->id, 'report_id' => $job->chart_id, 'status' => $job->status, 'current_section' => $job->current_section, 'progress' => $job->progress, 'message' => $messages[$job->status] ?? $job->status, 'error_code' => $job->error_code, 'error_message' => $job->error_message, 'status_url' => route('reports.jobs.show', $job), 'retry_url' => route('reports.jobs.retry', $job), 'report_url' => route('charts.report', $job->chart_id), 'pdf_url' => $job->status === 'completed' ? route('charts.report.download', $job->chart_id) : null];
+        return ['job_id' => $job->id, 'report_id' => $job->chart_id, 'status' => $job->status, 'current_section' => $job->current_section, 'progress' => $job->progress, 'message' => $messages[$job->status] ?? $job->status, 'error_code' => $job->error_code, 'error_message' => $job->error_message, 'status_url' => route('reports.jobs.show', $job), 'retry_url' => route('reports.jobs.retry', $job), 'cancel_url' => route('reports.jobs.cancel', $job), 'report_url' => route('charts.report', $job->chart_id), 'pdf_url' => $job->status === 'completed' ? route('charts.report.download', $job->chart_id) : null];
     }
 }

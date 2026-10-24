@@ -110,6 +110,33 @@ final class ReportJobTest extends TestCase
         $this->assertDatabaseCount('jobs', 0);
     }
 
+    public function test_worker_finishes_cancellation_at_the_current_step_boundary(): void
+    {
+        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
+        Http::preventStrayRequests();
+        $chart = $this->chart();
+        $user = User::factory()->create();
+        $job = app(ReportJobService::class)->start($chart, $user->id, InteriorMapMaster::DOORS);
+        $job->update(['cursor' => 1, 'status' => 'generating_sun']);
+
+        Http::fake(function ($request) use ($job) {
+            $input = json_decode($request['messages'][1]['content'], true);
+            $content = self::chapter($input['chapter']);
+            $job->refresh()->update(['status' => 'cancelling']);
+
+            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode($content)]]], 'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 20]]);
+        });
+
+        app(ReportJobService::class)->process($job);
+
+        $this->assertSame('cancelled', $job->fresh()->status);
+        $this->assertSame(1, $job->fresh()->cursor);
+        $this->assertNull($job->fresh()->active_chart_id);
+        $this->assertArrayHasKey('sol', $job->fresh()->drafts);
+        $this->assertDatabaseCount('interpretations', 1);
+        $this->assertDatabaseCount('jobs', 1);
+    }
+
     public function test_changed_birth_data_require_full_regeneration_not_pdf_only(): void
     {
         $chart = $this->chart();
