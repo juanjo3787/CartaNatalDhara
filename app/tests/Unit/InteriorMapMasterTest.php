@@ -377,6 +377,33 @@ final class InteriorMapMasterTest extends TestCase
         $this->assertNull($master->validate($content));
     }
 
+    public function test_analysis_steps_advice_and_unsupported_inferences_are_rejected_as_titles(): void
+    {
+        $master = new InteriorMapMaster;
+        $titles = [
+            'La cúspide en Libra y la relevancia de Venus' => 'pasos del análisis',
+            'Qué implica que el Sol esté en la casa seis' => 'pasos del análisis',
+            'Lecciones de autonomía ligadas a la cadena dispositiva' => 'pasos del análisis',
+            'Ejercicios breves para entrenar la complementariedad' => 'ejercicios, prácticas',
+            'La voz y el gesto como extensiones de seguridad' => 'rasgos corporales',
+            'Cómo se manifiesta la falta de impulso y qué necesitas' => 'carencias',
+            'Atracción por personas que gestionan recursos' => 'otras personas',
+        ];
+        foreach ($titles as $title => $message) {
+            $content = self::chapter('sol');
+            $content['concepts'][0]['characteristics'][0]['title'] = $title;
+            try {
+                $master->validate($content);
+                $this->fail("Se esperaba un rechazo para «{$title}».");
+            } catch (\RuntimeException $exception) {
+                $this->assertStringContainsString($message, $exception->getMessage());
+                $this->assertStringContainsString("«{$title}»", $exception->getMessage());
+            }
+        }
+        $content['concepts'][0]['characteristics'][0]['title'] = 'Identidad que se fortalece con el hacer útil';
+        $this->assertNull($master->validate($content));
+    }
+
     public function test_decimal_orbs_in_paragraphs_are_rejected(): void
     {
         $content = self::chapter('sol');

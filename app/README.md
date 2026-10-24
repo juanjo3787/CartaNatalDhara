@@ -41,8 +41,13 @@ Los titulos de bloque no llevan la palabra "natal". Cada bloque tiene conceptos
 principales; cada concepto contiene entre cinco y ocho caracteristicas cuando
 los datos lo sostienen (nunca mas de ocho, validado) y, debajo, normalmente dos
 o tres parrafos sustanciales en segunda persona y lenguaje llano. La aplicacion
-anade al renderizar los rotulos CONCEPTO: y Caracteristica N.; la IA solo
-escribe los nombres. El prompt maestro (version 106) incluye la jerarquia de
+presenta conceptos como encabezados y caracteristicas como puntos numerados,
+sin repetir los rotulos CONCEPTO o Caracteristica. La IA solo escribe los nombres.
+Cada solicitud recibe las ocho categorias de investigacion del bloque; la auditoria
+recibe las de los cinco bloques. Son una guia de cobertura, no ocho secciones
+obligatorias ni una verificacion determinista de la calidad semantica.
+Los pasos tecnicos fundamentan los parrafos y no son caracteristicas personales.
+El prompt maestro (version 107) incluye la jerarquia de
 instrucciones conforme al manual (exactitud, consistencia tecnica, universalidad,
 personalizacion, profundidad y extension), la intensidad en lenguaje natural (importancia astrologica,
 intensidad simbolica y manifestacion personal), el procedimiento de 10 pasos
@@ -120,7 +125,11 @@ donde hacen falta correcciones. Se validan todos los reemplazos antes de
 guardarlos en una transaccion. El trabajo no se completa sin esa auditoria.
 Los controles locales verifican estructura, campos no vacios, titulos excluidos,
 limite tecnico, parrafos literalmente duplicados y afirmaciones reconocibles
-de signo, casa y aspecto. La auditoria de IA aborda duplicaciones conceptuales,
+de signo, casa y aspecto. Tambien rechazan titulos con pasos del analisis
+(casas numeradas, cuspides, regentes, dispositores, ocupantes, dignidades o
+aspectos), con ejercicios, practicas, rutinas o planes, con rasgos corporales,
+con carencias deducidas de la polaridad o con descripciones de otras personas.
+La auditoria de IA aborda duplicaciones conceptuales,
 soporte, matices exclusivos y relleno; **no sustituye una revision humana** de
 toda la coherencia semantica ni garantiza detectar cada afirmacion erronea.
 El detector textual separa titulos y parrafos; una negacion no se propaga a
@@ -145,7 +154,7 @@ el bloque V, contradicciones y duplicaciones entre bloques antes de guardar.
 Conserva enfasis en linea, elimina atributos HTML e invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 106. Version editorial PDF: 18.** Los textos y trabajos de
+**Version de modelo: 107. Version editorial PDF: 20.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.

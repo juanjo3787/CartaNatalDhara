@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class InteriorMapMaster
 {
-    public const VERSION = 106;
+    public const VERSION = 107;
 
     public const MANUAL_SHA256 = 'B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED';
 
@@ -43,6 +43,19 @@ final class InteriorMapMaster
 
     private const POINTS = ['sol' => 'sun', 'luna' => 'moon', 'ascendente' => 'ascendant', 'descendente' => 'descendant'];
 
+    public function analysisCoverage(string $chapter): array
+    {
+        $coverage = [
+            'sol' => ['Función solar', 'Signo ocupado', 'Casa ocupada', 'Integración signo-casa', 'Dispositor del Sol', 'Contexto de la casa y relación entre regentes', 'Aspectos verificados', 'Manifestaciones diferenciadas'],
+            'luna' => ['Función lunar', 'Signo ocupado', 'Casa ocupada', 'Integración signo-casa', 'Dispositor lunar', 'Contexto de la casa', 'Aspectos y fase lunar calculada', 'Desarrollo afectivo'],
+            'ascendente' => ['Función del ángulo', 'Signo ascendente', 'Casa I y proximidad real al ángulo', 'Regente del Ascendente', 'Aspectos y condiciones', 'Integración contextual', 'Conductas y recursos simbólicos', 'Relación axial sin duplicar el Descendente'],
+            'descendente' => ['Función del ángulo', 'Signo descendente', 'Casa VII y grado del ángulo', 'Regentes del Descendente', 'Aspectos y condiciones', 'Dinámicas vinculares', 'Proyección como hipótesis', 'Integración axial sin duplicar el Ascendente'],
+            'opposites' => ['Definición de polaridad', 'Polaridad solar', 'Polaridad lunar', 'Eje angular', 'Distinción entre polaridad y oposición planetaria', 'Complementariedad bidireccional', 'Compensación y proyección hipotéticas', 'Integración local de configuraciones sin conclusión global'],
+        ];
+
+        return $chapter === 'audit' ? $coverage : [$chapter => $coverage[$chapter] ?? throw new RuntimeException('Bloque de investigación no válido.')];
+    }
+
     public function systemPrompt(): string
     {
         return <<<'PROMPT'
@@ -71,14 +84,20 @@ No afirmes que algo "siempre" ocurre, que la persona "es" de una forma fija ni q
 
 FORMATO
 Cada bloque se divide en conceptos principales. Cada concepto contiene características concretas, nombradas de forma diferenciada.
+CONCEPTO es el tema principal que organiza la interpretación; CARACTERÍSTICA es una manifestación específica dentro de ese tema;
+PÁRRAFO es su explicación individualizada y su fundamento. No conviertas todos los niveles en rasgos de personalidad.
+Las categorías técnicas del manual sirven para investigar y fundamentar, no son por sí mismas características del lector.
+Preguntas como dónde está un regente, qué signo ocupa una cúspide o cuáles son los ocupantes pertenecen al análisis;
+sus respuestas se integran en los párrafos que sustentan una característica, no se presentan como características independientes.
 Cuando los datos lo sostienen, desarrolla entre cinco y ocho características distintas por concepto; nunca más de ocho.
 Si un concepto no admite cinco características genuinamente distintas, desarrolla las que tengan soporte: no rellenes ni dupliques.
 Debajo de cada característica escribe normalmente dos o tres párrafos sustanciales que integren con naturalidad:
 cómo se manifiesta, en qué situaciones cotidianas puede reconocerse, qué necesita, qué fortaleza aporta, qué dificultad puede generar,
 cómo la modulan otros factores de la carta y cómo puede desarrollarse conscientemente. No conviertas esa lista en subtítulos fijos.
-Los rótulos "CONCEPTO:" y "Característica N." los añade la aplicación: escribe solo el nombre del concepto o de la característica.
-TÍTULOS: los conceptos y características nombran vivencias y rasgos humanos en lenguaje llano (por ejemplo,
-"Tu forma de buscar el equilibrio" o "La exigencia de hacer bien las cosas"), nunca fichas técnicas.
+La aplicación distingue conceptos mediante encabezados y características mediante puntos numerados; escribe solo sus nombres.
+TÍTULOS: el concepto nombra el tema interpretativo en lenguaje llano, por ejemplo "Tu identidad y voluntad consciente";
+la característica nombra una manifestación concreta, por ejemplo "La exigencia de hacer bien las cosas", nunca una ficha técnica.
+Estos ejemplos solo ilustran los niveles de escritura, no son contenidos que deban incluirse en todas las cartas.
 Los títulos no contienen grados, orbes, cifras, símbolos de grado, comillas, paréntesis ni jerga sin explicar
 (dignidad, caída, dispositor, cadente, angular, regente, orbe, cúspide). La casa, el signo o el aspecto se mencionan dentro de los párrafos,
 nunca entre paréntesis en el título: escribe "Cómo se activa tu energía en lo cotidiano", no "Cómo se activa tu energía en lo cotidiano (casa VI)".
@@ -91,6 +110,11 @@ Devuelve exclusivamente el JSON solicitado. Títulos y párrafos son texto plano
 
 ESTILO Y LENGUAJE
 Escribe en segunda persona ("tú"), sin deducir género, con lenguaje claro, cálido y comprensible para quien no sabe astrología.
+Evita adjetivos y participios con marca de género referidos al lector (seguro, cansado, valorada): usa construcciones neutras
+como "sentirte en seguridad" o "que se reconozca tu valor".
+En los títulos de las características no nombres casas numeradas, cúspides, regentes, dispositores, ocupantes, dignidades ni aspectos:
+esos datos fundamentan los párrafos. Tampoco titules con ejercicios, prácticas, rutinas o planes, rasgos corporales, carencias
+ni descripciones de otras personas.
 Explica cada término técnico (casa, cúspide, regente, dispositor, aspecto, orbe, dignidad) la primera vez que aparezca en el bloque.
 Nunca escribas nombres internos de campos o datos: positions, houses, aspects, rulers, occupants, snapshot, current_report,
 maximum_orb, time_precision, time_source, ASTROLOGICAL_FACTS ni identificadores con guiones bajos. Tradúcelos a lenguaje natural.
@@ -98,6 +122,7 @@ No uses coordenadas con segundos salvo cuando aclaren un matiz técnico; expresa
 (por ejemplo, "a menos de un grado" o "5° 23′"), nunca con decimales.
 Evita la jerga, las frases vacías y las fórmulas repetidas al comenzar párrafos.
 Los ejercicios, recomendaciones o prácticas solo pueden aparecer de forma breve e integrada; nunca dominan una característica.
+No dediques características a ejercicios, cronogramas, talleres, productividad o planes de acción. Prioriza explicar significados y matices.
 
 INTENSIDAD Y PERSONALIZACIÓN
 Expresa la intensidad en lenguaje natural (muy marcada, destacada, moderada, sutil), nunca en porcentajes ni puntuaciones.
@@ -126,7 +151,11 @@ Distingue dignidades clásicas y domicilio moderno; ninguna dignidad aislada det
 No inventes recepción, combustión, retrogradación, aplicación o separación: las condiciones no calculadas son desconocidas.
 Los aspectos mayores y orbes proceden de los aspectos calculados; no los completes con aspectos que queden fuera del umbral técnico.
 Estar en la misma casa no implica conjunción; un contacto a un ángulo no cambia la casa.
+Una casa vacía no prueba rigidez, predictibilidad, ausencia de experiencias ni otro rasgo psicológico.
+No deduzcas constitución física, voz, apariencia ni hábitos corporales de un signo o del Ascendente.
+Una distancia pequeña a una cúspide no prueba sensibilidad a acontecimientos concretos ni justifica por sí sola una característica.
 La polaridad conceptual entre signos no equivale a una oposición planetaria ni al eje geométrico Ascendente-Descendente.
+La pertenencia a un signo no implica carencia de las cualidades de su opuesto: complementariedad no significa corregir un defecto.
 
 CASAS, CÚSPIDES Y REGENTES (procedimiento obligatorio para cada casa pertinente)
 1. Identifica la casa que ocupa el factor y el signo de su cúspide.
@@ -177,6 +206,8 @@ pero solo para explicar un ángulo funcional nuevo; no repitas frases, ejemplos,
 SECUENCIA Y AUDITORÍA
 1. Comprueba las fuentes y los hechos técnicos suministrados.
 2. Organiza internamente factores, conceptos, características y relaciones.
+Usa analysis_coverage como lista de investigación del bloque: comprueba cada ámbito con los datos disponibles, sin imponer
+un concepto por entrada ni una característica por paso técnico. Omite resultados no sustentados y conserva internamente el motivo.
 3. Revisa current_report, que contiene los bloques anteriores DEL MISMO TRABAJO; detecta ideas ya desarrolladas.
 4. Redacta el bloque solicitado con características y párrafos individualizados. Si reaparece un factor, explica solo el nuevo ángulo funcional.
 5. Audita soporte, coherencia, unicidad, lenguaje llano y ausencia de relleno. No muestres la auditoría ni añadas un cierre.
@@ -184,6 +215,9 @@ No utilices informes históricos ni posiciones de ejemplos. current_report y rev
 Si recibes previous_validation_error, corrige revision_candidate sin perder profundidad ni alterar los hechos verificados.
 En modo audit revisa los cinco bloques juntos: corrige duplicaciones conceptuales, afirmaciones sin soporte, mezclas técnicas,
 omisiones de categorías de investigación pertinentes cuando los datos permitan desarrollarlas, jerarquías arbitrarias entre polos,
+características que solo enumeren datos o pasos del análisis, recomendaciones que sustituyan interpretación, inferencias por casas vacías,
+rasgos corporales atribuidos por signo y supuestas carencias deducidas de la polaridad. Revisa también que cada concepto organice
+un tema distinto y cada característica aporte una manifestación específica, sin multiplicar sinónimos para llegar a cinco.
 nombres internos de datos, excepciones no universales, listas sin desarrollo e introducciones/síntesis. Devuelve solo replacements de bloques que requieran corrección;
 cada reemplazo es el bloque completo corregido. Si no hacen falta cambios, devuelve una lista vacía. No añadas conclusión.
 PROMPT;
@@ -374,7 +408,7 @@ PROMPT;
         }
         $this->requireList($content['concepts']);
         $headings = [];
-        $titleIssues = ['closing' => [], 'technical' => []];
+        $titleIssues = ['closing' => [], 'technical' => [], 'jargon' => [], 'advice' => [], 'inference' => []];
         $problems = [];
         $check = static function (callable $validation) use (&$problems): void {
             try {
@@ -408,6 +442,15 @@ PROMPT;
         }
         if ($titleIssues['technical'] !== []) {
             $problems['Los títulos deben estar en lenguaje llano, sin grados, decimales, comillas ni paréntesis (lleva la casa, el signo o el aspecto al párrafo). Reescribe estos títulos: «'.implode('», «', $titleIssues['technical']).'».'] = true;
+        }
+        if ($titleIssues['jargon'] !== []) {
+            $problems['Las características nombran vivencias, no pasos del análisis: casas numeradas, cúspides, regentes, dispositores, ocupantes, dignidades y aspectos fundamentan los párrafos, no los títulos. Reescribe como rasgos vividos estos títulos: «'.implode('», «', $titleIssues['jargon']).'».'] = true;
+        }
+        if ($titleIssues['advice'] !== []) {
+            $problems['Las características interpretan significados; los ejercicios, prácticas, rutinas o planes solo pueden aparecer brevemente dentro de un párrafo. Sustituye estas características por manifestaciones interpretativas: «'.implode('», «', $titleIssues['advice']).'».'] = true;
+        }
+        if ($titleIssues['inference'] !== []) {
+            $problems['No atribuyas rasgos corporales por signo, carencias deducidas de la polaridad ni rasgos de otras personas: describe tu forma de vivir el factor. Reescribe estos títulos: «'.implode('», «', $titleIssues['inference']).'».'] = true;
         }
         if ($problems !== []) {
             throw new RuntimeException(implode(' ', array_keys($problems)));
@@ -544,6 +587,12 @@ PROMPT;
             $issues['closing'][] = $title;
         } elseif (preg_match('/[°′″"\'“”«»()\[\]]|\d+[.,]\d+/u', $title)) {
             $issues['technical'][] = $title;
+        } elseif (preg_match('/\b(?:dignidad\w*|ca[ií]da|detrimento|exaltaci[oó]n|domicilio|dispositor\w*|dispositiv[oa]s?|cadente|angular|regentes?|regencias?|orbes?|c[uú]spides?|ocupantes?|cadena|sextil|tr[ií]gono|cuadratura|quincuncio)\b|\bcasas? (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|[IVX]+|\d+)\b/ui', $title)) {
+            $issues['jargon'][] = $title;
+        } elseif (preg_match('/^(?:ejercicios?|pr[aá]cticas?|rutinas?|horarios?|planes?|talleres?|cronogramas?|tareas?|pasos)\b|\bv[ií]as pr[aá]cticas\b|\bc[oó]mo corregir/ui', $title)) {
+            $issues['advice'][] = $title;
+        } elseif (preg_match('/\b(?:tu cuerpo|voz|apariencia|constituci[oó]n|complexi[oó]n|rasgos f[ií]sicos|falta de|carencia|careces?|personas que|parejas? que|socios que)\b/ui', $title)) {
+            $issues['inference'][] = $title;
         }
         $key = mb_strtolower(trim($title));
         if (isset($seen[$key])) {

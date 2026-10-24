@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\AiGenerationException;
 use App\Exceptions\ReportContentValidationException;
 use App\Jobs\ProcessReportStep;
 use App\Models\ReportJob;
@@ -52,12 +53,15 @@ final class ReportJobTest extends TestCase
             $this->assertStringContainsString('tradicionales prioritarias', $request['messages'][0]['content']);
             $this->assertStringNotContainsString('Pastora', $request['messages'][0]['content'].$request['messages'][1]['content']);
             if ($input['chapter'] === 'audit') {
+                $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($input['analysis_coverage']));
                 $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($input['current_report']));
                 $corrected = self::chapter('sol');
                 $corrected['concepts'][0]['characteristics'][0]['paragraphs'][] = 'Corrección específica de la auditoría conjunta.';
                 $content = ['replacements' => [['chapter' => 'sol', 'content' => $corrected]]];
                 $this->assertSame(16000, $request['max_completion_tokens']);
             } else {
+                $this->assertSame([$input['chapter']], array_keys($input['analysis_coverage']));
+                $this->assertCount(8, $input['analysis_coverage'][$input['chapter']]);
                 $index = array_search($input['chapter'], InteriorMapMaster::CHAPTERS, true);
                 $this->assertSame(array_slice(InteriorMapMaster::CHAPTERS, 0, $index), array_keys($input['current_report']));
                 $this->assertSame(3200, $input['editorial_target']['word_target']);
@@ -209,6 +213,48 @@ final class ReportJobTest extends TestCase
             $this->assertStringContainsString('Falta el bloque anterior sol', $exception->getMessage());
         }
         Http::assertNothingSent();
+    }
+
+    public function test_permanent_provider_failure_stops_the_worker_and_exposes_the_reason(): void
+    {
+        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response(['error' => ['type' => 'insufficient_quota']], 429)]);
+        $service = app(ReportJobService::class);
+        $job = $service->start($this->chart(), User::factory()->create()->id, InteriorMapMaster::DOORS);
+        $service->process($job);
+        $step = (new ProcessReportStep($job->id, 1))->withFakeQueueInteractions();
+        $step->handle($service);
+        $step->assertFailedWith(AiGenerationException::class);
+        $this->assertSame('failed', $job->fresh()->status);
+        $this->assertSame(AiGenerationException::QUOTA_EXCEEDED, $job->fresh()->error_code);
+        $this->assertStringContainsString('cuota', $job->fresh()->error_message);
+        $this->assertNull($job->fresh()->active_chart_id);
+        $this->assertDatabaseCount('interpretations', 0);
+        Http::assertSentCount(1);
+    }
+
+    public function test_temporary_provider_failure_remains_retryable_without_advancing_the_report(): void
+    {
+        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response([], 503)]);
+        $service = app(ReportJobService::class);
+        $job = $service->start($this->chart(), User::factory()->create()->id, InteriorMapMaster::DOORS);
+        $service->process($job);
+        $step = (new ProcessReportStep($job->id, 1))->withFakeQueueInteractions();
+        try {
+            $step->handle($service);
+            $this->fail('A temporary error must reach the queue retry handler.');
+        } catch (AiGenerationException $exception) {
+            $this->assertTrue($exception->isRetryable());
+        }
+        $step->assertNotFailed();
+        $this->assertSame(1, $job->fresh()->cursor);
+        $this->assertNotNull($job->fresh()->active_chart_id);
+        $this->assertSame(AiGenerationException::CONNECTION_ERROR, $job->fresh()->error_code);
+        $this->assertDatabaseCount('interpretations', 0);
+        Http::assertSentCount(1);
     }
 
     public function test_invalid_audit_does_not_publish_partial_corrections_or_mark_report_audited(): void

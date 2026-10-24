@@ -77,9 +77,8 @@
     .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
     .report-block-body h3 { counter-reset: report-characteristic; }
-    .report-block-body h3::before { content: 'CONCEPTO: '; }
     .report-block-body h4 { counter-increment: report-characteristic; }
-    .report-block-body h4::before { content: 'Característica ' counter(report-characteristic) '. '; }
+    .report-block-body h4::before { content: counter(report-characteristic) '. '; }
     .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; text-indent: 1.5em; font-size: 1rem; line-height: 1.75; }
     .report-page p, .report-page li { orphans: 3; widows: 3; }
     .report-page h1, .report-page h2, .report-page h3, .report-page h4, .report-block-title, .report-arrow-title { page-break-after: avoid; }

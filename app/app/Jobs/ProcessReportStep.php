@@ -45,6 +45,15 @@ class ProcessReportStep implements ShouldQueue
         }
         try {
             $service->process($job);
+        } catch (AiGenerationException $exception) {
+            $job->update(['error_code' => $exception->errorCode, 'error_message' => $exception->getMessage()]);
+            if (! $exception->isRetryable()) {
+                $this->failed($exception);
+                $this->fail($exception);
+
+                return;
+            }
+            throw $exception;
         } catch (ReportContentValidationException $exception) {
             $job->update([
                 'error_code' => 'CONTENT_VALIDATION_FAILED',
@@ -77,7 +86,7 @@ class ProcessReportStep implements ShouldQueue
                 'error_code' => $exception instanceof ReportContentValidationException ? 'CONTENT_VALIDATION_FAILED' : ($exception instanceof AiGenerationException ? $exception->errorCode : 'REPORT_STEP_FAILED'),
                 'error_message' => $exception instanceof ReportContentValidationException
                     ? 'El capítulo no superó la validación: '.$exception->getMessage().' Puedes reintentar sin repetir las etapas guardadas.'
-                    : 'No se pudo completar esta etapa. Puedes reintentar sin repetir las etapas guardadas.',
+                    : ($exception instanceof AiGenerationException ? $exception->getMessage() : 'No se pudo completar esta etapa. Puedes reintentar sin repetir las etapas guardadas.'),
             ]);
 
         if ($updated) {

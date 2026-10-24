@@ -43,7 +43,9 @@ final class ReportGenerationIntegrationTest extends TestCase
             $this->assertStringContainsString('BLOQUE I — El Sol', $html);
             $this->assertStringContainsString('BLOQUE V — Los opuestos complementarios', $html);
             $this->assertStringNotContainsString('Sol natal', $html);
-            $this->assertStringContainsString("content: 'Característica ' counter(report-characteristic)", $html);
+            $this->assertStringContainsString("content: counter(report-characteristic) '. '", $html);
+            $this->assertStringNotContainsString("content: 'CONCEPTO: '", $html);
+            $this->assertStringNotContainsString("content: 'Característica '", $html);
             $this->assertStringNotContainsString('data-report-blank-page="9"', $html);
             $this->assertStringContainsString('#f8dfcc', $html);
             $this->assertStringContainsString('Inicio de la casa 7', $html);

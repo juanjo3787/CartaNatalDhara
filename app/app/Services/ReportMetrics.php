@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Exceptions\AiGenerationException;
+use App\Exceptions\ReportContentValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -38,7 +40,12 @@ class ReportMetrics
                 'finished_at' => now()->format('Y-m-d H:i:s.v'),
                 'duration_ms' => (int) round((hrtime(true) - $started) / 1_000_000),
                 'outcome' => $error ? 'error' : 'success',
-                'error_code' => $error instanceof \App\Exceptions\AiGenerationException ? $error->errorCode : ($error ? 'PROCESSING_ERROR' : null),
+                'error_code' => match (true) {
+                    $error instanceof AiGenerationException => $error->errorCode,
+                    $error instanceof ReportContentValidationException => 'CONTENT_VALIDATION_FAILED',
+                    $error !== null => 'PROCESSING_ERROR',
+                    default => null,
+                },
                 'input_tokens' => $usage['input_tokens'] ?? null,
                 'output_tokens' => $usage['output_tokens'] ?? null,
             ]);

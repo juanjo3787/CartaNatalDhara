@@ -118,6 +118,7 @@ final class PhaseOneAiGenerationService
         $input = [
             'master_version' => InteriorMapMaster::VERSION,
             'chapter' => $chapter,
+            'analysis_coverage' => $this->master->analysisCoverage($chapter),
             'ASTROLOGICAL_FACTS' => $this->master->facts($chart),
             'current_report' => [],
         ];
@@ -130,6 +131,8 @@ final class PhaseOneAiGenerationService
                 .'(si un título cita la casa, el signo o el aspecto entre paréntesis, elimina el paréntesis y explica ese dato en el párrafo); '
                 .'en los párrafos, grados y orbes en grados y minutos o con palabras, nunca con decimales ni la palabra «orb»; '
                 .'entre cinco y ocho características por concepto cuando haya soporte, dos o tres párrafos sustanciales cada una, segunda persona y sin nombres internos de datos. '
+                .'Conserva la distinción entre tema principal, manifestación específica y explicación: los datos de regentes, cúspides y ocupantes fundamentan los párrafos, no son características por sí solos. '
+                .'Ningún título de característica nombra casas numeradas, cúspides, regentes, dispositores, dignidades o aspectos, ni ejercicios, rutinas, rasgos corporales, carencias u otras personas; evita adjetivos con marca de género referidos al lector. '
                 .'Hazlo sin añadir relleno y sin perder el formato concepto/característica/párrafos.';
         }
 
