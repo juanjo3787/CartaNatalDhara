@@ -42,8 +42,9 @@ principales; cada concepto contiene entre cinco y ocho caracteristicas cuando
 los datos lo sostienen (nunca mas de ocho, validado) y, debajo, normalmente dos
 o tres parrafos sustanciales en segunda persona y lenguaje llano. La aplicacion
 anade al renderizar los rotulos CONCEPTO: y Caracteristica N.; la IA solo
-escribe los nombres. El prompt maestro (version 105) incluye la jerarquia de
-instrucciones, la intensidad en lenguaje natural (importancia astrologica,
+escribe los nombres. El prompt maestro (version 106) incluye la jerarquia de
+instrucciones conforme al manual (exactitud, consistencia tecnica, universalidad,
+personalizacion, profundidad y extension), la intensidad en lenguaje natural (importancia astrologica,
 intensidad simbolica y manifestacion personal), el procedimiento de 10 pasos
 para casas, cuspides y regentes, las dimensiones constructiva, desequilibrada,
 contradiccion, integracion y maduracion, y la diferenciacion entre bloques.
@@ -144,7 +145,7 @@ el bloque V, contradicciones y duplicaciones entre bloques antes de guardar.
 Conserva enfasis en linea, elimina atributos HTML e invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 105. Version editorial PDF: 18.** Los textos y trabajos de
+**Version de modelo: 106. Version editorial PDF: 18.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.
