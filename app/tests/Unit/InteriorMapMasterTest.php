@@ -384,10 +384,11 @@ final class InteriorMapMasterTest extends TestCase
             'La cúspide en Libra y la relevancia de Venus' => 'pasos del análisis',
             'Qué implica que el Sol esté en la casa seis' => 'pasos del análisis',
             'Lecciones de autonomía ligadas a la cadena dispositiva' => 'pasos del análisis',
-            'Ejercicios breves para entrenar la complementariedad' => 'ejercicios, prácticas',
+            'Ejercicios breves para entrenar la complementariedad' => 'ejercicios y planes de acción',
+            'Plan de acción para desarrollar confianza' => 'ejercicios y planes de acción',
+            'Prácticas para reforzar la iniciativa' => 'ejercicios y planes de acción',
             'El timbre de tu voz como extensión de seguridad' => 'rasgos corporales',
             'Tu voz grave como extensión de seguridad' => 'rasgos corporales',
-            'Cómo se manifiesta la falta de impulso y qué necesitas' => 'carencias',
             'Atracción por personas que gestionan recursos' => 'otras personas',
         ];
         foreach ($titles as $title => $message) {
@@ -419,6 +420,25 @@ final class InteriorMapMasterTest extends TestCase
         }
         $this->assertStringContainsString('íntegramente en español', $master->systemPrompt());
         $this->assertStringContainsString('La voz propia como metáfora', $master->systemPrompt());
+    }
+
+    public function test_descriptive_habits_and_external_absence_are_not_rejected_as_advice_or_deficiencies(): void
+    {
+        $master = new InteriorMapMaster;
+        foreach ([
+            'Rutinas pequeñas que sostienen la energía creativa',
+            'Sensibilidad al rechazo y gestión del ánimo ante la falta de respuesta',
+            'Horarios que aportan estabilidad emocional',
+            'Tareas compartidas que refuerzan la confianza',
+            'Pasos pequeños que expresan tu perseverancia',
+            'La falta de reconocimiento y su impacto emocional',
+            'Acompañar la carencia afectiva sin perder autonomía',
+        ] as $title) {
+            $content = self::chapter('luna');
+            $content['concepts'][0]['characteristics'][0]['title'] = $title;
+            $this->assertNull($master->validate($content), $title);
+        }
+        $this->assertStringContainsString('supuestas carencias deducidas de la polaridad', $master->systemPrompt());
     }
 
     public function test_bilingual_title_with_parentheses_is_rejected(): void

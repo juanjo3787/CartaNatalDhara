@@ -114,8 +114,10 @@ Escribe en segunda persona ("tú"), sin deducir género, con lenguaje claro, cá
 Evita adjetivos y participios con marca de género referidos al lector (seguro, cansado, valorada): usa construcciones neutras
 como "sentirte en seguridad" o "que se reconozca tu valor".
 En los títulos de las características no nombres casas numeradas, cúspides, regentes, dispositores, ocupantes, dignidades ni aspectos:
-esos datos fundamentan los párrafos. Tampoco titules con ejercicios, prácticas, rutinas o planes, rasgos corporales, carencias
-ni descripciones de otras personas.
+esos datos fundamentan los párrafos. No conviertas los títulos en ejercicios o planes de acción ni atribuyas rasgos corporales,
+carencias deducidas de la polaridad o descripciones de otras personas.
+Describir hábitos o rutinas como manifestaciones de un rasgo es válido; no equivale a prescribir ejercicios.
+La falta de respuesta o de reconocimiento describe un contexto posible, no una carencia personal deducida de un signo.
 Explica cada término técnico (casa, cúspide, regente, dispositor, aspecto, orbe, dignidad) la primera vez que aparezca en el bloque.
 Nunca escribas nombres internos de campos o datos: positions, houses, aspects, rulers, occupants, snapshot, current_report,
 maximum_orb, time_precision, time_source, ASTROLOGICAL_FACTS ni identificadores con guiones bajos. Tradúcelos a lenguaje natural.
@@ -449,7 +451,7 @@ PROMPT;
             $problems['Las características nombran vivencias, no pasos del análisis: casas numeradas, cúspides, regentes, dispositores, ocupantes, dignidades y aspectos fundamentan los párrafos, no los títulos. Reescribe como rasgos vividos estos títulos: «'.implode('», «', $titleIssues['jargon']).'».'] = true;
         }
         if ($titleIssues['advice'] !== []) {
-            $problems['Las características interpretan significados; los ejercicios, prácticas, rutinas o planes solo pueden aparecer brevemente dentro de un párrafo. Sustituye estas características por manifestaciones interpretativas: «'.implode('», «', $titleIssues['advice']).'».'] = true;
+            $problems['Las características interpretan significados; los ejercicios y planes de acción solo pueden aparecer brevemente dentro de un párrafo. Describir hábitos o rutinas no equivale a prescribirlos. Sustituye estas características por manifestaciones interpretativas: «'.implode('», «', $titleIssues['advice']).'».'] = true;
         }
         if ($titleIssues['inference'] !== []) {
             $problems['No atribuyas rasgos corporales por signo, carencias deducidas de la polaridad ni rasgos de otras personas: describe tu forma de vivir el factor. Reescribe estos títulos: «'.implode('», «', $titleIssues['inference']).'».'] = true;
@@ -591,9 +593,9 @@ PROMPT;
             $issues['technical'][] = $title;
         } elseif (preg_match('/\b(?:dignidad\w*|ca[ií]da|detrimento|exaltaci[oó]n|domicilio|dispositor\w*|dispositiv[oa]s?|cadente|angular|regentes?|regencias?|orbes?|c[uú]spides?|ocupantes?|cadena|sextil|tr[ií]gono|cuadratura|quincuncio)\b|\bcasas? (?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|[IVX]+|\d+)\b/ui', $title)) {
             $issues['jargon'][] = $title;
-        } elseif (preg_match('/^(?:ejercicios?|pr[aá]cticas?|rutinas?|horarios?|planes?|talleres?|cronogramas?|tareas?|pasos)\b|\bv[ií]as pr[aá]cticas\b|\bc[oó]mo corregir/ui', $title)) {
+        } elseif (preg_match('/^(?:ejercicios?|talleres?|cronogramas?)\b|^plan(?:es)? de acci[oó]n\b|^pr[aá]cticas? (?:para|de)\b|\bv[ií]as pr[aá]cticas\b|\bc[oó]mo corregir/ui', $title)) {
             $issues['advice'][] = $title;
-        } elseif (preg_match('/\b(?:tu cuerpo|timbre de (?:tu |la )?voz|cualidades f[ií]sicas de (?:tu |la )?voz|voz (?:grave|aguda|ronca)|apariencia|constituci[oó]n|complexi[oó]n|rasgos f[ií]sicos|falta de|carencia|careces?|personas que|parejas? que|socios que)\b/ui', $title)) {
+        } elseif (preg_match('/\b(?:tu cuerpo|timbre de (?:tu |la )?voz|cualidades f[ií]sicas de (?:tu |la )?voz|voz (?:grave|aguda|ronca)|apariencia|constituci[oó]n|complexi[oó]n|rasgos f[ií]sicos|personas que|parejas? que|socios que)\b/ui', $title)) {
             $issues['inference'][] = $title;
         }
         $key = mb_strtolower(trim($title));

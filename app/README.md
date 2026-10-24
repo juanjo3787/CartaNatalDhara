@@ -127,8 +127,11 @@ Los controles locales verifican estructura, campos no vacios, titulos excluidos,
 limite tecnico, parrafos literalmente duplicados y afirmaciones reconocibles
 de signo, casa y aspecto. Tambien rechazan titulos con pasos del analisis
 (casas numeradas, cuspides, regentes, dispositores, ocupantes, dignidades o
-aspectos), con ejercicios, practicas, rutinas o planes, con rasgos corporales,
-con carencias deducidas de la polaridad o con descripciones de otras personas.
+aspectos), con ejercicios o planes de accion explicitos, con rasgos corporales
+o con descripciones de otras personas. Describir rutinas, horarios o tareas
+no equivale a prescribir ejercicios. Las expresiones falta de respuesta o
+carencia no bastan para rechazar un titulo: la auditoria de IA revisa si
+existe una carencia personal inferida sin sustento de la polaridad.
 La palabra voz no se rechaza por si sola: su uso figurado como expresion o
 afirmacion es valido; se detectan referencias fisicas explicitas como el timbre
 de voz. El prompt y los reintentos exigen titulos y parrafos solo en espanol,
