@@ -27,7 +27,7 @@ final class ReportPdfRefreshTest extends TestCase
         $this->saveChapters($chart);
         $report = app(PhaseOneReportService::class)->build($chart, storedOnly: true);
         $html = view('reports.phase-one.template', ['chart' => $chart, 'report' => $report, 'pdf' => true])->render();
-        $cover = explode('<section class="report-page report-reading">', $html)[0];
+        $cover = explode('<section class="report-page report-reading report-contents">', $html)[0];
         $this->assertStringContainsString('<h2>Informe I</h2>', $cover);
         foreach (['Sol · Luna · Ascendente · Descendente', 'Opuestos complementarios', 'Identidad y voluntad', 'Necesidades emocionales', 'Ritmo propio y vínculos'] as $removed) {
             $this->assertStringNotContainsString($removed, $cover);
@@ -61,7 +61,7 @@ final class ReportPdfRefreshTest extends TestCase
         })->once();
     }
 
-    public function test_compact_blocks_flow_without_forcing_a_fresh_page_for_each_block(): void
+    public function test_each_block_starts_on_a_new_page_without_blank_pages(): void
     {
         Storage::fake('local');
         $chart = $this->chart();
@@ -78,13 +78,39 @@ final class ReportPdfRefreshTest extends TestCase
             if ($message !== 'Phase 1 PDF rendered.') {
                 return false;
             }
-            $shared = [];
             foreach (array_slice(InteriorMapMaster::CHAPTERS, 1) as $index => $chapter) {
-                $shared = [...$shared, ...array_intersect($context['chapter_pages'][InteriorMapMaster::CHAPTERS[$index]], $context['chapter_pages'][$chapter])];
+                $previousPages = $context['chapter_pages'][InteriorMapMaster::CHAPTERS[$index]];
+                $this->assertSame([], array_intersect($previousPages, $context['chapter_pages'][$chapter]));
+                $this->assertSame(max($previousPages) + 1, $context['index_pages'][$chapter]);
             }
-            $this->assertNotEmpty($shared, 'El siguiente bloque debe poder continuar en una página con contenido del anterior.');
             $this->assertSame([], $context['blank_pages']);
             $this->assertSame(3, $context['index_pages']['sol']);
+
+            return true;
+        })->once();
+    }
+
+    public function test_sections_have_extra_spacing_without_changing_paragraph_spacing(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $report = app(PhaseOneReportService::class)->build($chart, storedOnly: true);
+        foreach ([false, true] as $pdf) {
+            $html = view('reports.phase-one.template', compact('chart', 'report', 'pdf'))->render();
+            $this->assertStringContainsString('.report-reading .report-block-body > ul + h3 { margin-top: 32pt; page-break-before: auto; }', $html);
+            $this->assertStringContainsString('page-break-after: avoid', $html);
+        }
+        Storage::fake('local');
+        Log::spy();
+        app(ReportPdfService::class)->store($chart, 105);
+        Log::shouldHaveReceived('info')->withArgs(function (string $message, array $context): bool {
+            if ($message !== 'Phase 1 PDF rendered.') {
+                return false;
+            }
+            $this->assertNotEmpty($context['section_gaps_pt']);
+            foreach ($context['section_gaps_pt'] as $gap) {
+                $this->assertGreaterThanOrEqual(31.9, $gap, 'Separacion real entre palabras clave y el siguiente apartado.');
+            }
 
             return true;
         })->once();

@@ -54,6 +54,8 @@ class ReportPdfService
         $contentPages = [];
         $chapterPages = [];
         $coverRegions = [];
+        $sectionGaps = [];
+        $keywordEnds = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
             ->pluck('key')
@@ -105,8 +107,18 @@ class ReportPdfService
             },
         ], [
             'event' => 'end_frame',
-            'f' => static function ($frame, $canvas) use (&$coverRegions): void {
+            'f' => static function ($frame, $canvas) use (&$coverRegions, &$sectionGaps, &$keywordEnds): void {
                 $node = $frame->get_node();
+                if ($node instanceof \DOMElement && $node->parentNode instanceof \DOMElement && $node->parentNode->hasAttribute('data-section-id')) {
+                    $section = $node->parentNode->getAttribute('data-section-id');
+                    [$x, $y, $width, $height] = $frame->get_border_box();
+                    $page = $canvas->get_page_number();
+                    if ($node->tagName === 'ul') {
+                        $keywordEnds[$section] = ['page' => $page, 'bottom' => $y + $height];
+                    } elseif ($node->tagName === 'h3' && isset($keywordEnds[$section]) && $keywordEnds[$section]['page'] === $page) {
+                        $sectionGaps[] = $y - $keywordEnds[$section]['bottom'];
+                    }
+                }
                 if ($node instanceof \DOMElement && $node->hasAttribute('data-cover-region')) {
                     [$x, $y, $width, $height] = $frame->get_border_box();
                     $coverRegions[$node->getAttribute('data-cover-region')] = [
@@ -169,6 +181,7 @@ class ReportPdfService
             'content_pages' => array_keys($contentPages),
             'chapter_pages' => array_map('array_keys', $chapterPages),
             'cover_regions' => $coverRegions,
+            'section_gaps_pt' => $sectionGaps,
             'blank_pages' => [],
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);

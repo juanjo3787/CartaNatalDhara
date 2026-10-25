@@ -112,7 +112,9 @@ La interfaz de la aplicacion exporta web/PDF A4; los Word editables de referenci
 y la entrega regenerada se conservan como documentos aparte. Su paginacion no
 se infiere del PDF. El renderizado PDF registra las paginas reales del indice y
 rechaza paginas sin contenido, sin insertar paginas vacias para llegar a siete.
-Los bloques fluyen sin saltos de pagina obligatorios entre ellos; los titulos
+Cada uno de los cinco bloques empieza en pagina nueva, sin insertar paginas
+vacias entre bloques. Los apartados dentro de cada bloque tienen 32 pt de margen
+superior desde el segundo apartado, incluido Estados de expresion; los titulos
 permanecen unidos a su contenido. El indice toma la pagina real del encabezado,
 no la de un contenedor que pudiera empezar antes del titulo.
 Se conservan la rueda, la matriz, los colores y los encabezados/pies editoriales.
@@ -233,7 +235,12 @@ no separables de Quill para conservar los rotulos y el ajuste de linea, e
 invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 110. Version editorial PDF: 24.** Los textos y trabajos de
+Los titulos de apartado se renderizan como bloques, no tablas, con el selector
+adyacente `ul + h3`, compatible con Dompdf en lugar de `:not(:first-child)`.
+Las pruebas miden al menos 32 pt de separacion real
+entre la lista de palabras clave y el siguiente titulo en la misma pagina.
+
+**Version de modelo: 110. Version editorial PDF: 27.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.

@@ -186,8 +186,9 @@
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-index-item a { color: inherit; text-decoration: none; }
-    .report-door { page-break-before: auto; page-break-after: auto; }
-    .report-chapter { page-break-before: auto; page-break-after: auto; }
+    .report-door { page-break-before: always; page-break-after: auto; }
+    .report-chapter { page-break-before: always; page-break-after: auto; }
+    .report-contents { page-break-after: auto; }
     .report-last-page { page-break-after: auto; }
     .report-door-heading { page-break-inside: avoid; page-break-after: avoid; }
     .report-page h2 { font-size: 14pt; background: #f8dfcc; } .report-page h3 { font-size: 12pt; }
@@ -217,6 +218,7 @@
     .report-document .report-table th, .report-document .report-note { background: #fff; box-shadow: none; }
     @endif
     @media print {
+        .report-door, .report-chapter { page-break-before: always; }
         /* Original heading appearance from 7ec25a2, before responsive and ink-saving overrides. */
         .report-page .report-block-title, .report-page .report-section-title {
             background: #f8dfcc;
@@ -229,7 +231,8 @@
     .report-reading ul, .report-reading ol { margin-top: 4pt; margin-bottom: 8pt; line-height: 1.48; }
     .report-reading h2 { margin-top: 8pt; margin-bottom: 6pt; }
     .report-reading h3 { margin-top: 9pt; margin-bottom: 4pt; }
-    .report-reading .report-block-body > h3 { display: table; padding: 6pt 10pt; background: #f8dfcc; box-shadow: 3pt 3pt 0 rgba(122, 86, 61, .12); }
+    .report-reading .report-block-body > h3 { display: block; padding: 6pt 10pt; background: #f8dfcc; box-shadow: 3pt 3pt 0 rgba(122, 86, 61, .12); }
+    .report-reading .report-block-body > ul + h3 { margin-top: 32pt; page-break-before: auto; }
     .report-reading h4 { margin-top: 7pt; margin-bottom: 4pt; }
     .report-reading .report-door-heading { margin-bottom: 12pt; padding-bottom: 8pt; }
     .report-reading .report-gray { margin: 8pt 0; }
@@ -278,7 +281,7 @@
         </div>
         <div class="report-cover-meta" data-cover-region="metadata">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
-    <section class="report-page report-reading"><h1>Índice</h1>
+    <section class="report-page report-reading report-contents"><h1>Índice</h1>
         <div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">&#160;</span>@endif</div>@endforeach</div>
         @unless ($report['complete'])<div class="report-note">Este Informe I todavía no está generado con el Manual Maestro Universal. Regenera el informe completo de cinco bloques.</div>@endunless
     </section>
