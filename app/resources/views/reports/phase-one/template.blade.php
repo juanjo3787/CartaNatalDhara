@@ -41,7 +41,6 @@
     .report-page.report-cover h2 { display: block; width: auto; min-width: 0; max-width: none; margin: 0; padding: 0; background: transparent; box-shadow: none; color: #695c52; font: 400 1.35rem/1.5 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-cover > div:first-child { display: flex; flex: 1; flex-direction: column; }
     .report-cover-kicker { margin-top: 1.5rem; }
-    .report-cover-name { margin-top: auto; padding-top: 1rem; font-size: .92rem; line-height: 1.2; }
     .report-cover-visuals { display: block; width: 100%; margin: .75rem auto .5rem; background: #fffdf9; }
     .report-cover-visuals > div { display: block; width: 100%; padding: 0; border: 0; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
@@ -127,10 +126,10 @@
     .report-brand, .report-kicker { font-size: 8.5pt; }
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
-    .report-cover-matrix-cell { padding: 3mm 0 0 !important; }
-    .report-cover-wheel { display: block; width: 116mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
-    .report-cover-wheel-container { width: 116mm; height: 116mm; background: transparent; }
-    .report-cover-wheel-image { display: block; width: 116mm; height: 116mm; max-width: none; background: transparent; }
+    .report-cover-matrix-cell { padding: 6mm 0 0 !important; }
+    .report-cover-wheel { display: block; width: 138mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
+    .report-cover-wheel-container { width: 138mm; height: 138mm; background: transparent; }
+    .report-cover-wheel-image { display: block; width: 138mm; height: 138mm; max-width: none; background: transparent; }
     .report-cover-wheel-actions { display: none; }
     .report-cover-kicker { margin-top: 1mm; }
     .report-cover h1 { margin: 1mm 0; font-size: 25pt; }
@@ -183,7 +182,6 @@
     .report-expansion-closing > ol > li { page-break-inside: avoid; }
     .report-cover-kicker { margin-top: .5rem; }
     .report-cover h1 { margin: 2mm 0; font-size: 25pt; line-height: 1.12; }
-    .report-cover-name { position: static; margin: 3mm 0 0; padding: 0; font-size: 9.5pt; line-height: 1.3; }
     .report-cover-meta { position: absolute; left: 14mm; right: 14mm; bottom: 10mm; margin: 0; font-size: 8.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
@@ -255,7 +253,7 @@
                 <div class="report-brand">ASTROLOGÍA SARANA VEDA</div>
                 <div class="report-cover-kicker"><span class="report-kicker">Mapa interior</span></div>
                 <h1>Carta natal de<br>{{ $report['name'] }}</h1>
-                <h2>Informe I<br>Sol · Luna · Ascendente · Descendente<br>Opuestos complementarios</h2>
+                <h2>Informe I</h2>
             </div>
             <div class="report-cover-visuals">
                 <div class="report-cover-wheel-cell">
@@ -277,7 +275,6 @@
                     @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true, 'pdf' => $pdf])
                 </div>
             </div>
-            <div class="report-cover-name" data-cover-region="themes">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div>
         </div>
         <div class="report-cover-meta" data-cover-region="metadata">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>

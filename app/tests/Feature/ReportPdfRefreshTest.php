@@ -25,6 +25,13 @@ final class ReportPdfRefreshTest extends TestCase
         $chart->person->update(['full_name' => 'Pastora María Villarreal Muñiz']);
         $chart->birthData->place->update(['name' => 'Hospital Universitario Virgen Macarena']);
         $this->saveChapters($chart);
+        $report = app(PhaseOneReportService::class)->build($chart, storedOnly: true);
+        $html = view('reports.phase-one.template', ['chart' => $chart, 'report' => $report, 'pdf' => true])->render();
+        $cover = explode('<section class="report-page report-reading">', $html)[0];
+        $this->assertStringContainsString('<h2>Informe I</h2>', $cover);
+        foreach (['Sol · Luna · Ascendente · Descendente', 'Opuestos complementarios', 'Identidad y voluntad', 'Necesidades emocionales', 'Ritmo propio y vínculos'] as $removed) {
+            $this->assertStringNotContainsString($removed, $cover);
+        }
         Log::spy();
         app(ReportPdfService::class)->store($chart->fresh(), 104);
         Log::shouldHaveReceived('info')->withArgs(function (string $message, array $context): bool {
@@ -36,9 +43,10 @@ final class ReportPdfRefreshTest extends TestCase
             $this->assertEqualsWithDelta(0, $regions['page']['y'], 0.5);
             $this->assertEqualsWithDelta(595.28, $regions['page']['width'], 0.5);
             $this->assertEqualsWithDelta(841.89, $regions['page']['height'], 1);
-            $this->assertEqualsWithDelta(116 * 72 / 25.4, $regions['wheel']['width'], 0.5);
+            $this->assertEqualsWithDelta(138 * 72 / 25.4, $regions['wheel']['width'], 0.5);
+            $this->assertGreaterThan(190 * 72 / 25.4, $regions['matrix']['y']);
             $previousBottom = 0;
-            foreach (['heading', 'wheel', 'matrix', 'themes', 'metadata'] as $key) {
+            foreach (['heading', 'wheel', 'matrix', 'metadata'] as $key) {
                 $region = $regions[$key];
                 $this->assertSame(1, $region['page'], $key);
                 $this->assertGreaterThan(0, $region['height'], $key);

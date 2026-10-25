@@ -118,7 +118,8 @@ no la de un contenedor que pudiera empezar antes del titulo.
 Se conservan la rueda, la matriz, los colores y los encabezados/pies editoriales.
 La portada PDF usa una primera pagina A4 sin margenes: el fondo beige cubre
 los 210 por 297 mm, con contenido protegido por margenes interiores. La rueda
-mide 116 mm; las etiquetas AC/MC no se parten. Se registran las cajas reales
+mide 138 mm, con la matriz desplazada hacia abajo y sin los antiguos textos
+de bloques y temas bajo el titulo y la matriz; las etiquetas AC/MC no se parten. Se registran las cajas reales
 de los elementos de portada para comprobar que no se solapan; las paginas
 interiores mantienen sus margenes, encabezados y pies habituales.
 
@@ -232,7 +233,7 @@ no separables de Quill para conservar los rotulos y el ajuste de linea, e
 invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 110. Version editorial PDF: 23.** Los textos y trabajos de
+**Version de modelo: 110. Version editorial PDF: 24.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.
