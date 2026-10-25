@@ -201,6 +201,12 @@ completo de todas las formulaciones del lenguaje natural.
 Los rechazos guardan motivo y borrador en el trabajo actual. El siguiente
 intento recibe ambos para corregirlo; al aceptar el bloque se retiran. No se
 publican borradores rechazados ni se silencian errores de salida truncada.
+La generacion, el esquema y la auditoria excluyen apartados de vias practicas
+y planes de accion. Ante ese rechazo, el reintento exige revisar tanto el
+titulo como los parrafos: no basta con renombrar consejos como si fueran
+interpretaciones. Se conservan las descripciones de habitos y rutinas, y solo
+caben sugerencias breves integradas. Esta correccion mantiene el contrato 110
+y permite reanudar los trabajos compatibles sin repetir bloques aceptados.
 La preparacion termina en el 10% y el Sol se acepta en el 20%; el progreso
 incluye la auditoria como etapa independiente.
 

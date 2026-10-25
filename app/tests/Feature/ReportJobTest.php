@@ -245,6 +245,72 @@ final class ReportJobTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_advice_rejection_can_resume_without_regenerating_the_saved_sun(): void
+    {
+        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
+        Queue::fake();
+        Http::preventStrayRequests();
+        $calls = 0;
+        $rejected = self::chapter('luna');
+        $rejected['concepts'][0]['characteristics'][0]['title'] = 'Vías prácticas para sostener el cambio';
+        $rejected['concepts'][0]['characteristics'][0]['paragraphs'] = ['Haz una lista de objetivos y revisa tus avances cada semana.'];
+        Http::fake(function ($request) use (&$calls, $rejected) {
+            $input = json_decode($request['messages'][1]['content'], true);
+            $this->assertSame('luna', $input['chapter']);
+            $this->assertSame(['sol' => self::chapter('sol')], $input['current_report']);
+            $this->assertStringContainsString('Vías prácticas para sostener el cambio', $input['interpretation_contract']);
+            $this->assertStringContainsString('revisa también sus párrafos', $request['messages'][0]['content']);
+            $schema = $request['response_format']['json_schema']['schema'];
+            $characteristic = $schema['properties']['concepts']['items']['properties']['characteristics']['items'];
+            $this->assertStringContainsString('no una intervención', $characteristic['properties']['title']['description']);
+            $this->assertStringContainsString('No una secuencia de tareas', $characteristic['properties']['paragraphs']['items']['description']);
+            if (++$calls === 1) {
+                $this->assertArrayNotHasKey('previous_validation_error', $input);
+                $content = $rejected;
+            } else {
+                $this->assertStringContainsString('«Vías prácticas para sostener el cambio»', $input['previous_validation_error']);
+                $this->assertSame($rejected, $input['revision_candidate']);
+                $this->assertStringContainsString('reescribe tanto el título como los párrafos', $input['retry_instruction']);
+                $this->assertStringContainsString('no basta con renombrar los consejos', $input['retry_instruction']);
+                $content = self::chapter('luna');
+            }
+
+            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode($content)]]]]);
+        });
+        $chart = $this->chart();
+        $service = app(ReportJobService::class);
+        $job = $service->start($chart, User::factory()->create()->id, InteriorMapMaster::DOORS);
+        app(PhaseOneReportService::class)->storeChapter($chart, 'sol', self::chapter('sol'));
+        $job->update([
+            'cursor' => 2,
+            'drafts' => array_replace($job->drafts, ['sol' => self::chapter('sol')]),
+        ]);
+        $originals = $chart->interpretations()->get()->map->getAttributes()->all();
+        $step = new ProcessReportStep($job->id, 2);
+        try {
+            $step->handle($service);
+            $this->fail('Advice must not be stored as an interpretation.');
+        } catch (ReportContentValidationException $exception) {
+            $this->assertStringContainsString('ejercicios y planes de acción', $exception->getMessage());
+        }
+        $this->assertSame($originals, $chart->interpretations()->get()->map->getAttributes()->all());
+        $step->failed(new ReportContentValidationException('Vías prácticas para sostener el cambio'));
+        $job->refresh();
+        $this->assertSame('failed', $job->status);
+        $this->assertSame(2, $service->retry($job)->cursor);
+        $step->handle($service);
+        $job->refresh();
+        $this->assertSame(3, $job->cursor);
+        $this->assertSame(self::chapter('sol'), $job->drafts['sol']);
+        $this->assertSame(self::chapter('luna'), $job->drafts['luna']);
+        $this->assertArrayNotHasKey('luna', $job->drafts['_validation_feedback']);
+        $this->assertArrayNotHasKey('luna', $job->drafts['_validation_candidate']);
+        foreach ($originals as $original) {
+            $this->assertDatabaseHas('interpretations', $original);
+        }
+        Http::assertSentCount(2);
+    }
+
     public function test_exhausted_content_validation_attempts_expose_the_actual_reason(): void
     {
         $job = app(ReportJobService::class)->start($this->chart(), User::factory()->create()->id, InteriorMapMaster::DOORS);

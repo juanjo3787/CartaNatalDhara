@@ -65,6 +65,7 @@ final class PhaseOneAiGenerationService
         $input['audit_chapter'] = $target;
         $input['audit_instruction'] = 'Revisa a fondo el bloque solicitado con los cinco como contexto, no solo sus títulos. Devuelve su reemplazo completo si requiere correcciones, o replacements vacío; no modifiques otro bloque. '
             .'Elimina reiteraciones sobre reconocimiento, límites, rutina y confianza que no aporten matices, y reduce consejos de productividad. '
+            .'No admitas apartados o características de ejercicios, vías prácticas ni planes de acción. Si aparecen, reescribe tanto el título como los párrafos como una manifestación interpretativa sustentada; no conserves una lista de consejos bajo un título nuevo. Suprime el apartado si carece de soporte propio o repite otro. '
             .'Retira números técnicos superfluos y argumentos sobre precisión horaria: una coordenada no acredita la hora y Ascendente=cúspide I es definitorio, no un refuerzo. '
             .'Comprueba aspectos reales (compartir casa no es conjunción), orbe frente a separación y polaridades zodiacales. '
             .'Nombra los planetas relevantes; no los ocultes tras expresiones vagas. La fase natal no describe una etapa actual. '
@@ -142,6 +143,7 @@ final class PhaseOneAiGenerationService
             'chapter' => $chapter,
             'analysis_coverage' => $this->master->analysisCoverage($chapter),
             'heading_contract' => 'analysis_coverage es investigación interna, no un índice que debas copiar. Tanto title de concepts como title de characteristics nombran vivencias: transforma «Dispositor en detrimento» en un rasgo sustentado como «Deseos que piden confianza», «Trígono con Saturno» en «Estabilidad para sostener lo que sientes» y «Cercanía a la cúspide» en el significado vivido que los datos permitan. No uses esos ejemplos como plantilla fija. Conserva la fundamentación técnica dentro de los párrafos.',
+            'interpretation_contract' => 'Interpreta manifestaciones, no diseñes intervenciones. No generes apartados ni características de ejercicios, vías prácticas o planes de acción, tampoco «Vías prácticas para sostener el cambio». Describe cómo puedes vivir el cambio y qué recursos o tensiones muestra la carta, sin prescribir tareas. Describir hábitos y rutinas es válido. Una sugerencia breve solo cabe dentro de un párrafo interpretativo; nunca como tema de una característica.',
             'ASTROLOGICAL_FACTS' => $this->master->facts($chart),
             'current_report' => [],
         ];
@@ -151,6 +153,7 @@ final class PhaseOneAiGenerationService
             $input['revision_candidate'] = $job->drafts['_validation_candidate'][$feedbackKey] ?? null;
             $input['measured_word_count'] = $this->master->wordCount($input['revision_candidate'] ?? []);
             $input['retry_instruction'] = 'Edita el borrador del mismo trabajo para corregir el rechazo y revisa a la vez TODOS los títulos y párrafos con la misma regla: '
+                .'atiende primero previous_validation_error. Si señala ejercicios, vías prácticas o planes de acción, reescribe tanto el título como los párrafos afectados como una manifestación interpretativa sustentada; no basta con renombrar los consejos. Suprime la característica si repite otra o carece de soporte propio, sin inventar un rasgo sustituto. '
                 .'escribe todo íntegramente en español, sin inglés ni traducciones bilingües; sustituye títulos como «Alliances that amplify your reach (Alianzas que amplifican tu alcance)» por «Alianzas que amplifican tu alcance». '
                 .'títulos en lenguaje llano que nombren rasgos vividos, sin introducciones, síntesis, resúmenes ni cierres, sin grados, cifras técnicas, comillas ni paréntesis '
                 .'(si un título cita la casa, el signo o el aspecto entre paréntesis, elimina el paréntesis y explica ese dato en el párrafo); '

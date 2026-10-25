@@ -149,6 +149,12 @@ Nombra los planetas y relaciones cuando aclaren el significado, sin ocultarlos t
 Evita la jerga, las frases vacías y las fórmulas repetidas al comenzar párrafos.
 Los ejercicios, recomendaciones o prácticas solo pueden aparecer de forma breve e integrada; nunca dominan una característica.
 No dediques características a ejercicios, cronogramas, talleres, productividad o planes de acción. Prioriza explicar significados y matices.
+No crees apartados ni características titulados Vías prácticas para sostener el cambio, Prácticas para reforzar la iniciativa
+o Plan de acción: convierten la interpretación en asesoramiento. Si aparece uno en un borrador, revisa también sus párrafos;
+no basta con cambiar el título y conservar instrucciones. Desarrolla la manifestación sustentada por la carta
+(por ejemplo, La constancia ante los cambios, solo si los datos la respaldan), sus matices y sus posibles tensiones.
+Suprime el apartado si repite otro o no tiene soporte propio. Una sugerencia breve puede integrarse en un párrafo interpretativo,
+pero no constituir el tema del apartado ni una secuencia de tareas. No confundas esto con describir hábitos o rutinas vividos.
 
 INTENSIDAD Y PERSONALIZACIÓN
 Expresa la intensidad en lenguaje natural (muy marcada, destacada, moderada, sutil), nunca en porcentajes ni puntuaciones.
@@ -412,14 +418,14 @@ PROMPT;
                 'type' => 'array', 'minItems' => 1,
                 'items' => [
                     'type' => 'object', 'properties' => [
-                        'title' => ['type' => 'string', 'description' => 'Apartado de vivencia personal, sin numeración ni vocabulario del procedimiento: nunca cúspide, regente, dispositor, ocupante, dignidad, aspecto o casa numerada. Las categorías de investigación no son títulos.'],
+                        'title' => ['type' => 'string', 'description' => 'Apartado de vivencia personal, sin numeración ni vocabulario del procedimiento: nunca cúspide, regente, dispositor, ocupante, dignidad, aspecto o casa numerada. Las categorías de investigación no son títulos. Tampoco ejercicios, vías prácticas ni planes de acción.'],
                         'keywords' => $keywords,
                         'characteristics' => [
                             'type' => 'array', 'minItems' => 1, 'maxItems' => self::MAX_CHARACTERISTICS,
                             'items' => [
                                 'type' => 'object', 'properties' => [
-                                    'title' => ['type' => 'string', 'description' => 'Rasgo vivido y específico en lenguaje cotidiano, sin número, paréntesis ni jerga astrológica. Por ejemplo: Serenidad para sostener tus decisiones. Nunca titules con casas, cúspides, regentes, dispositores, dignidades, sextiles, trígonos o cuadraturas.'],
-                                    'paragraphs' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string']],
+                                    'title' => ['type' => 'string', 'description' => 'Rasgo vivido y específico en lenguaje cotidiano, sin número, paréntesis ni jerga astrológica. Por ejemplo: Serenidad para sostener tus decisiones. Nunca titules con casas, cúspides, regentes, dispositores, dignidades, sextiles, trígonos o cuadraturas. No ejercicios, vías prácticas ni planes de acción: describe una manifestación, no una intervención.'],
+                                    'paragraphs' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string', 'description' => 'Interpretación sustentada de la manifestación: situaciones posibles, necesidades, recursos y tensiones. No una secuencia de tareas o recomendaciones bajo un título interpretativo; solo cabe una sugerencia breve integrada.']],
                                 ],
                                 'required' => ['title', 'paragraphs'], 'additionalProperties' => false,
                             ],

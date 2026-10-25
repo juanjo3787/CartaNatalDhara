@@ -437,6 +437,7 @@ final class InteriorMapMasterTest extends TestCase
             'Ejercicios breves para entrenar la complementariedad' => 'ejercicios y planes de acción',
             'Plan de acción para desarrollar confianza' => 'ejercicios y planes de acción',
             'Prácticas para reforzar la iniciativa' => 'ejercicios y planes de acción',
+            'Vías prácticas para sostener el cambio' => 'ejercicios y planes de acción',
             'El timbre de tu voz como extensión de seguridad' => 'rasgos corporales',
             'Tu voz grave como extensión de seguridad' => 'rasgos corporales',
             'Tu apariencia física como expresión del signo' => 'rasgos corporales',
