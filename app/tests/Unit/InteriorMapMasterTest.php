@@ -334,6 +334,7 @@ final class InteriorMapMasterTest extends TestCase
     {
         return array_map(static fn (string $text): array => [$text], [
             'Técnicamente: la polaridad no exige Luna en Acuario ni Sol en Libra.',
+            'No existe polaridad Libra-Tauro.',
             'No hay una oposición Sol-Luna dentro del orbe utilizado.',
             'Leerlo como si Júpiter en Piscis, casa VII, fuera un dato sería un error.',
             'La polaridad no requiere una Luna en Acuario.',
@@ -342,6 +343,13 @@ final class InteriorMapMasterTest extends TestCase
             'La casa VI como taller (con Sol, Venus, Plutón), casa VII ocupada por Saturno.',
             'La Luna, junto con Júpiter en Piscis, casa XII.',
         ]);
+    }
+
+    public function test_verified_aspects_and_valid_polarities_are_checked_independently(): void
+    {
+        $content = self::chapter('opposites');
+        $content['states']['harmonious']['paragraphs'] = ['La polaridad Libra-Aries no es una oposición planetaria. La conjunción de Venus con Plutón es un aspecto distinto.'];
+        $this->assertNull((new InteriorMapMaster)->validateFacts($content, $this->facts()));
     }
 
     public function test_negation_does_not_leak_between_paragraphs(): void

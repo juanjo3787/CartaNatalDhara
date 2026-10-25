@@ -52,6 +52,7 @@ class ReportPdfService
         $indexStartPages = [];
         $indexPageLabels = [];
         $contentPages = [];
+        $chapterPages = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
             ->pluck('key')
@@ -59,10 +60,19 @@ class ReportPdfService
         $expectedIndexKeys = array_column($report['index'], 'key');
         $dompdf->setCallbacks([[
             'event' => 'begin_frame',
-            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$contentPages): void {
+            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$contentPages, &$chapterPages): void {
                 $node = $frame->get_node();
                 if ($node instanceof \DOMText && trim($node->textContent) !== '') {
                     $contentPages[$canvas->get_page_number()] = true;
+                    $ancestor = $node->parentNode;
+                    while ($ancestor instanceof \DOMElement) {
+                        if ($ancestor->hasAttribute('data-section-id')) {
+                            $chapter = explode('.', $ancestor->getAttribute('data-section-id'))[0];
+                            $chapterPages[$chapter][$canvas->get_page_number()] = true;
+                            break;
+                        }
+                        $ancestor = $ancestor->parentNode;
+                    }
                 }
                 if (! $node instanceof \DOMElement) {
                     return;
@@ -143,6 +153,7 @@ class ReportPdfService
             'pages' => $canvas->get_page_count(),
             'index_pages' => $indexStartPages,
             'content_pages' => array_keys($contentPages),
+            'chapter_pages' => array_map('array_keys', $chapterPages),
             'blank_pages' => [],
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);

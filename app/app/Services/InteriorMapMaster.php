@@ -56,7 +56,7 @@ final class InteriorMapMaster
             'luna' => ['Función lunar', 'Signo ocupado', 'Casa ocupada', 'Integración signo-casa', 'Dispositor lunar', 'Contexto de la casa', 'Aspectos y fase lunar calculada', 'Desarrollo afectivo'],
             'ascendente' => ['Función del ángulo', 'Signo ascendente', 'Casa I y proximidad real al ángulo', 'Regente del Ascendente', 'Aspectos y condiciones', 'Integración contextual', 'Conductas y recursos simbólicos', 'Relación axial sin duplicar el Descendente'],
             'descendente' => ['Función del ángulo', 'Signo descendente', 'Casa VII y grado del ángulo', 'Regentes del Descendente', 'Aspectos y condiciones', 'Dinámicas vinculares', 'Proyección como hipótesis', 'Integración axial sin duplicar el Ascendente'],
-            'opposites' => ['Definición de polaridad', 'Polaridad solar', 'Polaridad lunar', 'Eje angular', 'Distinción entre polaridad y oposición planetaria', 'Complementariedad bidireccional', 'Compensación y proyección hipotéticas', 'Integración local de configuraciones sin conclusión global'],
+            'opposites' => ['Diálogo complementario contextual, sin introducción teórica', 'Polaridad solar', 'Polaridad lunar', 'Eje angular', 'Distinción entre polaridad y oposición planetaria', 'Complementariedad bidireccional', 'Compensación y proyección hipotéticas', 'Integración local de configuraciones sin conclusión global'],
         ];
 
         return $chapter === 'audit' ? $coverage : [$chapter => $coverage[$chapter] ?? throw new RuntimeException('Bloque de investigación no válido.')];
@@ -109,6 +109,7 @@ La aplicación muestra esa lista con viñetas bajo Palabras clave al final del a
 Después de todos los conceptos incluye states con harmonious, excess y deficit, cada uno con paragraphs y keywords.
 Se representan bajo Estados de expresión: Estado armónico; Estado desarmónico por exceso; Estado desarmónico por defecto.
 Desarrolla cada estado con párrafos específicos y sustentados, y su propia lista de cinco a diez palabras clave de una palabra.
+No repitas el rótulo del estado dentro de sus párrafos: la aplicación ya lo representa como subtítulo.
 Describe recursos flexibles y proporcionados, tendencias sobredimensionadas o rígidas y recursos difíciles de reconocer o expresar.
 Son posibilidades contextuales, no etiquetas fijas, moralidad ni diagnósticos. No equipares armonía a trígonos,
 exceso a cuadraturas ni defecto a caída o detrimento. No añadas conclusión después de los estados.

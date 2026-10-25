@@ -18,6 +18,35 @@ final class ReportPdfRefreshTest extends TestCase
 {
     use InteriorMapFixture, RefreshDatabase;
 
+    public function test_compact_blocks_flow_without_forcing_a_fresh_page_for_each_block(): void
+    {
+        Storage::fake('local');
+        $chart = $this->chart();
+        foreach (InteriorMapMaster::CHAPTERS as $chapter) {
+            $content = self::chapter($chapter);
+            $content['concepts'] = [array_replace($content['concepts'][0], ['characteristics' => [
+                ['title' => 'Un matiz propio de '.$chapter, 'paragraphs' => [$chapter.' '.str_repeat('Desarrollo sintético del contenido para verificar su continuación natural. ', 20)]],
+            ]])];
+            app(PhaseOneReportService::class)->storeChapter($chart, $chapter === 'opposites' ? null : $chapter, $content);
+        }
+        Log::spy();
+        app(ReportPdfService::class)->store($chart, 103);
+        Log::shouldHaveReceived('info')->withArgs(function (string $message, array $context): bool {
+            if ($message !== 'Phase 1 PDF rendered.') {
+                return false;
+            }
+            $shared = [];
+            foreach (array_slice(InteriorMapMaster::CHAPTERS, 1) as $index => $chapter) {
+                $shared = [...$shared, ...array_intersect($context['chapter_pages'][InteriorMapMaster::CHAPTERS[$index]], $context['chapter_pages'][$chapter])];
+            }
+            $this->assertNotEmpty($shared, 'El siguiente bloque debe poder continuar en una página con contenido del anterior.');
+            $this->assertSame([], $context['blank_pages']);
+            $this->assertSame(3, $context['index_pages']['sol']);
+
+            return true;
+        })->once();
+    }
+
     public function test_extended_blocks_have_real_index_pages_without_blank_pages_or_fixed_page_counts(): void
     {
         Storage::fake('local');

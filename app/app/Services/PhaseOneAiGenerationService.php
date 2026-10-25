@@ -63,7 +63,16 @@ final class PhaseOneAiGenerationService
         $input = $this->input($chart, 'audit', $job, 'audit.'.$target);
         $input['mode'] = 'audit';
         $input['audit_chapter'] = $target;
-        $input['audit_instruction'] = 'Revisa el bloque solicitado con los cinco como contexto. Devuelve solo su reemplazo completo si requiere correcciones, o replacements vacío. No modifiques ningún otro bloque.';
+        $input['audit_instruction'] = 'Revisa a fondo el bloque solicitado con los cinco como contexto, no solo sus títulos. Devuelve su reemplazo completo si requiere correcciones, o replacements vacío; no modifiques otro bloque. '
+            .'Elimina reiteraciones sobre reconocimiento, límites, rutina y confianza que no aporten matices, y reduce consejos de productividad. '
+            .'Retira números técnicos superfluos y argumentos sobre precisión horaria: una coordenada no acredita la hora y Ascendente=cúspide I es definitorio, no un refuerzo. '
+            .'Comprueba aspectos reales (compartir casa no es conjunción), orbe frente a separación y polaridades zodiacales. '
+            .'Nombra los planetas relevantes; no los ocultes tras expresiones vagas. La fase natal no describe una etapa actual. '
+            .'Describe tu experiencia posible, no lo que otras personas perciben, sienten o harán ni una reputación, atracción o resultado garantizados. '
+            .'En Los opuestos complementarios desarrolla directamente el diálogo bidireccional de cada par, sin introducción teórica ni repetir los otros bloques; el signo contrario no demuestra una carencia. '
+            .'Los tres estados son posibilidades contextuales, nunca déficits inevitables, pérdidas de autoestima anunciadas ni correspondencias automáticas de caída con defecto. '
+            .'No repitas el rótulo del estado al principio de su explicación. '
+            .'Conserva párrafos específicos y las listas de palabras clave de cada apartado y estado; no sustituyas profundidad por listas ni por repeticiones.';
         foreach (InteriorMapMaster::CHAPTERS as $chapter) {
             $input['current_report'][$chapter] = $job->drafts[$chapter] ?? throw new RuntimeException("Falta el bloque {$chapter} para auditar.");
         }

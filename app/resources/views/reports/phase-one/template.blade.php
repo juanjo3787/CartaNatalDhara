@@ -188,8 +188,8 @@
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-index-item a { color: inherit; text-decoration: none; }
-    .report-door { page-break-before: auto; }
-    .report-chapter { page-break-before: auto; }
+    .report-door { page-break-before: auto; page-break-after: auto; }
+    .report-chapter { page-break-before: auto; page-break-after: auto; }
     .report-last-page { page-break-after: auto; }
     .report-door-heading { page-break-inside: avoid; page-break-after: avoid; }
     .report-page h2 { font-size: 14pt; background: #f8dfcc; } .report-page h3 { font-size: 12pt; }
@@ -238,7 +238,7 @@
     .report-reading .report-index-item { padding-top: 5pt; padding-bottom: 5pt; margin-bottom: 5pt; }
     @if ($pdf)
     .report-page.report-reading { padding-left: 0; padding-right: 0; }
-    .report-page.report-door, .report-page.report-chapter { padding-top: 18mm; }
+    .report-page.report-door, .report-page.report-chapter { padding-top: 6mm; }
     .report-reading .report-block { margin: 6pt 0 8pt; }
     .report-reading p { margin-bottom: 4pt; line-height: 1.35; }
     .report-reading ul, .report-reading ol { margin-top: 3pt; margin-bottom: 5pt; line-height: 1.35; }
@@ -285,8 +285,8 @@
     </section>
     @foreach ($report['doors'] as $door)
         @continue(!($report['sections'][$door['key']]['enabled'] ?? false))
-        <section class="report-page report-door report-reading" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}">
-            <div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
+        <section class="report-page report-door report-reading" id="report-section-{{ $door['key'] }}">
+            <div class="report-door-heading" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
             @foreach ($door['blocks'] as $block => $paragraphs)
                 <div class="report-block report-block-body" data-section-id="{{ $door['key'] }}.{{ $block }}">
                     @foreach ($paragraphs as $html)
@@ -296,8 +296,8 @@
             @endforeach
         </section>
     @endforeach
-    <section class="report-page report-chapter report-last-page report-reading" id="report-section-opposites" data-index-key="opposites">
-        <div class="report-door-heading"><h1>{{ $report['sections']['opposites']['title'] }}</h1></div>
+    <section class="report-page report-chapter report-last-page report-reading" id="report-section-opposites">
+        <div class="report-door-heading" data-index-key="opposites"><h1>{{ $report['sections']['opposites']['title'] }}</h1></div>
         @foreach ($report['opposites'] as $block => $paragraphs)
             <div class="report-block report-block-body" data-section-id="opposites.{{ $block }}">@foreach ($paragraphs as $html){!! $html !!}@endforeach</div>
         @endforeach
