@@ -18,6 +18,41 @@ final class ReportPdfRefreshTest extends TestCase
 {
     use InteriorMapFixture, RefreshDatabase;
 
+    public function test_cover_fills_a4_with_larger_wheel_and_separate_text_regions(): void
+    {
+        Storage::fake('local');
+        $chart = $this->chart();
+        $chart->person->update(['full_name' => 'Pastora María Villarreal Muñiz']);
+        $chart->birthData->place->update(['name' => 'Hospital Universitario Virgen Macarena']);
+        $this->saveChapters($chart);
+        Log::spy();
+        app(ReportPdfService::class)->store($chart->fresh(), 104);
+        Log::shouldHaveReceived('info')->withArgs(function (string $message, array $context): bool {
+            if ($message !== 'Phase 1 PDF rendered.') {
+                return false;
+            }
+            $regions = $context['cover_regions'];
+            $this->assertEqualsWithDelta(0, $regions['page']['x'], 0.5);
+            $this->assertEqualsWithDelta(0, $regions['page']['y'], 0.5);
+            $this->assertEqualsWithDelta(595.28, $regions['page']['width'], 0.5);
+            $this->assertEqualsWithDelta(841.89, $regions['page']['height'], 1);
+            $this->assertEqualsWithDelta(116 * 72 / 25.4, $regions['wheel']['width'], 0.5);
+            $previousBottom = 0;
+            foreach (['heading', 'wheel', 'matrix', 'themes', 'metadata'] as $key) {
+                $region = $regions[$key];
+                $this->assertSame(1, $region['page'], $key);
+                $this->assertGreaterThan(0, $region['height'], $key);
+                $this->assertGreaterThanOrEqual($previousBottom, $region['y'], 'Solapamiento en '.$key);
+                $previousBottom = $region['y'] + $region['height'];
+                $this->assertLessThan(841.89, $previousBottom, $key);
+            }
+            $this->assertSame(3, $context['index_pages']['sol']);
+            $this->assertSame([], $context['blank_pages']);
+
+            return true;
+        })->once();
+    }
+
     public function test_compact_blocks_flow_without_forcing_a_fresh_page_for_each_block(): void
     {
         Storage::fake('local');

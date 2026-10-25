@@ -53,6 +53,7 @@ class ReportPdfService
         $indexPageLabels = [];
         $contentPages = [];
         $chapterPages = [];
+        $coverRegions = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
             ->pluck('key')
@@ -99,6 +100,19 @@ class ReportPdfService
                         'x' => $x,
                         'y' => $y,
                         'width' => $frame->get_margin_width(),
+                    ];
+                }
+            },
+        ], [
+            'event' => 'end_frame',
+            'f' => static function ($frame, $canvas) use (&$coverRegions): void {
+                $node = $frame->get_node();
+                if ($node instanceof \DOMElement && $node->hasAttribute('data-cover-region')) {
+                    [$x, $y, $width, $height] = $frame->get_border_box();
+                    $coverRegions[$node->getAttribute('data-cover-region')] = [
+                        'page' => $canvas->get_page_number(),
+                        'x' => (float) $x, 'y' => (float) $y,
+                        'width' => (float) $width, 'height' => (float) $height,
                     ];
                 }
             },
@@ -154,6 +168,7 @@ class ReportPdfService
             'index_pages' => $indexStartPages,
             'content_pages' => array_keys($contentPages),
             'chapter_pages' => array_map('array_keys', $chapterPages),
+            'cover_regions' => $coverRegions,
             'blank_pages' => [],
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);

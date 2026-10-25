@@ -123,13 +123,14 @@
     .report-action-primary { background: #795c48; color: #fff; }
     @endif
     @if ($pdf)
+    @page :first { margin: 0; background-color: #fffdf9; }
     .report-brand, .report-kicker { font-size: 8.5pt; }
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: 3mm 0 0 !important; }
-    .report-cover-wheel { display: block; width: 90mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
-    .report-cover-wheel-container { width: 90mm; height: 90mm; background: transparent; }
-    .report-cover-wheel-image { display: block; width: 90mm; height: 90mm; max-width: none; background: transparent; }
+    .report-cover-wheel { display: block; width: 116mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
+    .report-cover-wheel-container { width: 116mm; height: 116mm; background: transparent; }
+    .report-cover-wheel-image { display: block; width: 116mm; height: 116mm; max-width: none; background: transparent; }
     .report-cover-wheel-actions { display: none; }
     .report-cover-kicker { margin-top: 1mm; }
     .report-cover h1 { margin: 1mm 0; font-size: 25pt; }
@@ -146,7 +147,7 @@
     .report-cover .aspect-section--cover .aspect-position dt,
     .report-cover .aspect-section--cover .aspect-position dd { display: table-cell; vertical-align: middle; }
     .report-cover .aspect-section--cover .aspect-position dt { width: 50%; }
-    .report-cover .aspect-section--cover .aspect-position-glyph { display: inline-block; width: 3mm; font-size: 6.8pt; }
+    .report-cover .aspect-section--cover .aspect-position-glyph { display: inline-block; width: 5mm; font-size: 6.8pt; white-space: nowrap; }
     .report-cover .aspect-section--cover .aspect-position dd { width: 50%; margin: 0; font-size: 6.8pt; text-align: right; }
     .report-cover .aspect-section--cover .aspect-matrix-table { font-size: 6.5pt; }
     .report-cover .aspect-section--cover .aspect-matrix-table th,
@@ -171,20 +172,19 @@
     .page-shell, .card { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: #fff; box-shadow: none; }
     .report-document { width: 174mm; margin: 0 auto; padding: 0; font-size: 10.5pt; line-height: 1.48; }
     .report-page { width: auto; min-height: 0; height: auto; margin: 0; padding: 0 10mm; border: 0; page-break-after: always; box-sizing: border-box; }
-    .report-page.report-cover { padding: 4mm 10mm; }
+    .report-page.report-cover { width: 210mm; margin-left: -18mm; padding: 0; }
     .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
-    /* Dompdf reserves the 28mm vertical padding in addition to this content height. */
-    .report-cover { display: block; position: relative; min-height: 0; height: 250mm; padding: 4mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
-    .report-cover > div:first-child { display: block; }
+    .report-cover { display: block; position: relative; min-height: 0; height: 297mm; page-break-after: always; background: #fffdf9; }
+    .report-cover > div:first-child { display: block; padding: 10mm 14mm 0; }
     .report-worksheet { page-break-inside: avoid; }
     .report-expansion-closing > h2 { margin-top: 2rem; }
     .report-expansion-closing > p { page-break-inside: avoid; }
     .report-expansion-closing > ol > li { page-break-inside: avoid; }
     .report-cover-kicker { margin-top: .5rem; }
-    .report-cover h1 { margin: 2mm 0; font-size: 28pt; }
-    .report-cover-name { position: static; margin: 5mm 0 0; padding: 0; font-size: 9.5pt; line-height: 1.2; }
-    .report-cover-meta { position: absolute; left: 10mm; right: 10mm; bottom: 3mm; margin-top: 0; font-size: 8.5pt; line-height: 1.3; }
+    .report-cover h1 { margin: 2mm 0; font-size: 25pt; line-height: 1.12; }
+    .report-cover-name { position: static; margin: 3mm 0 0; padding: 0; font-size: 9.5pt; line-height: 1.3; }
+    .report-cover-meta { position: absolute; left: 14mm; right: 14mm; bottom: 10mm; margin: 0; font-size: 8.5pt; line-height: 1.3; }
     .report-index-grid { display: block; }
     .report-index-item { display: inline-block; width: 47%; margin: 0 1.5% 1rem; vertical-align: top; }
     .report-index-item a { color: inherit; text-decoration: none; }
@@ -249,15 +249,17 @@
 </style>
 
 <div class="report-document">
-    <section class="report-page report-cover">
+    <section class="report-page report-cover" data-cover-region="page">
         <div>
-            <div class="report-brand">ASTROLOGÍA SARANA VEDA</div>
-            <div class="report-cover-kicker"><span class="report-kicker">Mapa interior</span></div>
-            <h1>Carta natal de<br>{{ $report['name'] }}</h1>
-            <h2>Informe I<br>Sol · Luna · Ascendente · Descendente<br>Opuestos complementarios</h2>
+            <div data-cover-region="heading">
+                <div class="report-brand">ASTROLOGÍA SARANA VEDA</div>
+                <div class="report-cover-kicker"><span class="report-kicker">Mapa interior</span></div>
+                <h1>Carta natal de<br>{{ $report['name'] }}</h1>
+                <h2>Informe I<br>Sol · Luna · Ascendente · Descendente<br>Opuestos complementarios</h2>
+            </div>
             <div class="report-cover-visuals">
                 <div class="report-cover-wheel-cell">
-                    <div class="report-cover-wheel" data-wheel-panel>
+                    <div class="report-cover-wheel" data-wheel-panel data-cover-region="wheel">
                         <div class="report-cover-wheel-container nocturna-wheel-container" data-background-color="#fffdf9" @if (!$pdf && (empty($wheelImage) || ! str_starts_with($wheelImage, 'data:image/png;base64,'))) data-natal-wheel data-chart="{{ json_encode($coverWheelData + ['backgroundColor' => '#fffdf9'], JSON_HEX_APOS | JSON_HEX_QUOT) }}" @endif>
                             @if (!$pdf && ! empty($wheelImage) && str_starts_with($wheelImage, 'data:image/png;base64,'))
                                 <img class="report-cover-wheel-image" src="{{ $wheelImage }}" alt="Rueda astrológica">
@@ -271,13 +273,13 @@
                         @endif
                     </div>
                 </div>
-                <div class="report-cover-matrix-cell">
+                <div class="report-cover-matrix-cell" data-cover-region="matrix">
                     @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true, 'pdf' => $pdf])
                 </div>
             </div>
-            <div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div>
+            <div class="report-cover-name" data-cover-region="themes">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div>
         </div>
-        <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
+        <div class="report-cover-meta" data-cover-region="metadata">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
     <section class="report-page report-reading"><h1>Índice</h1>
         <div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">&#160;</span>@endif</div>@endforeach</div>
