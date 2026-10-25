@@ -18,7 +18,7 @@ final class PhaseOneManualSaveService
             abort_if($chart->report_is_stale, 409, 'Regenera el Informe I con los datos actuales antes de editarlo.');
             $reports = app(PhaseOneReportService::class);
             $reports->build($chart, storedOnly: true);
-            abort_if(array_keys($shared) !== ['concepts'], 422, 'El bloque V debe contener conceptos y características, sin introducción ni síntesis.');
+            abort_if(array_keys($shared) !== ['concepts'], 422, 'Los opuestos complementarios debe conservar apartados, características, palabras clave y estados, sin introducción ni síntesis.');
             abort_if(array_diff(InteriorMapMaster::DOORS, array_keys($doors)) || count($doors) !== 4, 422, 'Se requieren los cuatro bloques de factores natales.');
             $master = app(InteriorMapMaster::class);
             $facts = $master->facts($chart);
@@ -27,7 +27,7 @@ final class PhaseOneManualSaveService
                 $field = $chapter === 'opposites' ? 'shared' : 'doors';
                 try {
                     if (! is_array($blocks) || array_keys($blocks) !== ['concepts'] || ! is_string($blocks['concepts'])) {
-                        throw new RuntimeException('Cada bloque debe conservar exclusivamente sus conceptos y características.');
+                        throw new RuntimeException('Cada bloque debe conservar sus apartados, características, palabras clave y estados de expresión.');
                     }
                     $chapters[$chapter] = $reports->parseChapter($blocks['concepts']);
                     $master->validateFacts($chapters[$chapter], $facts, $chapter === 'opposites' ? null : $chapter);

@@ -30,7 +30,7 @@ final class PhaseOneAiGenerationService
             'word_target' => InteriorMapMaster::CHAPTER_TARGET_WORDS,
             'pages' => 'Siete páginas Word orientativas; sin paginación garantizada ni mínimo obligatorio de palabras.',
             'maximum_words' => InteriorMapMaster::CHAPTER_MAX_WORDS,
-            'instruction' => 'Entre cinco y ocho características por concepto cuando los datos lo sostengan, con dos o tres párrafos sustanciales cada una. Omite lo que no tenga soporte; no rellenes para alcanzar el objetivo.',
+            'instruction' => 'Entre cinco y ocho características por apartado cuando haya soporte, subtítulos sin numerar y párrafos sustanciales. Cada apartado termina con cinco a diez palabras clave de una palabra. Incluye los tres estados desarrollados con sus propias palabras clave; cuentan para las siete páginas. No rellenes.',
         ];
         foreach (array_slice(InteriorMapMaster::CHAPTERS, 0, $index) as $previous) {
             $input['current_report'][$previous] = $job->drafts[$previous] ?? throw new RuntimeException("Falta el bloque anterior {$previous} del trabajo actual.");
@@ -46,31 +46,39 @@ final class PhaseOneAiGenerationService
         DB::transaction(function () use ($chart, $chapter, $result, $job, $system, $user, $usage): void {
             $this->reports->storeChapter($chart, $chapter === 'opposites' ? null : $chapter, $result);
             $drafts = array_replace($job->drafts ?? [], [$chapter => $result]);
-            unset($drafts['_validation_feedback'][$chapter], $drafts['_validation_candidate'][$chapter], $drafts['_audited']);
+            unset($drafts['_validation_feedback'][$chapter], $drafts['_validation_candidate'][$chapter], $drafts['_audited'], $drafts['_audited_chapters']);
             $job->update(['drafts' => $drafts]);
             $this->recordGeneration($chart, $chapter, $system, $user, $usage);
         });
     }
 
-    public function auditReport(Chart $chart, ReportJob $job): void
+    public function auditReport(Chart $chart, ReportJob $job): bool
     {
-        $input = $this->input($chart, 'audit', $job);
+        $completed = $job->drafts['_audited_chapters'] ?? [];
+        $remaining = array_values(array_diff(InteriorMapMaster::CHAPTERS, $completed));
+        if ($remaining === []) {
+            return true;
+        }
+        $target = $remaining[0];
+        $input = $this->input($chart, 'audit', $job, 'audit.'.$target);
         $input['mode'] = 'audit';
+        $input['audit_chapter'] = $target;
+        $input['audit_instruction'] = 'Revisa el bloque solicitado con los cinco como contexto. Devuelve solo su reemplazo completo si requiere correcciones, o replacements vacío. No modifiques ningún otro bloque.';
         foreach (InteriorMapMaster::CHAPTERS as $chapter) {
             $input['current_report'][$chapter] = $job->drafts[$chapter] ?? throw new RuntimeException("Falta el bloque {$chapter} para auditar.");
         }
-        [$result, $system, $user, $usage] = $this->request($input, $this->master->auditSchema(), $chart, $job, 'audit');
+        [$result, $system, $user, $usage] = $this->request($input, $this->master->auditSchema($target), $chart, $job, 'audit');
         $chapters = $input['current_report'];
         try {
-            if (array_keys($result) !== ['replacements'] || ! is_array($result['replacements']) || ! array_is_list($result['replacements'])) {
-                throw new RuntimeException('La auditoría debe devolver una lista de reemplazos completos.');
+            if (array_keys($result) !== ['replacements'] || ! is_array($result['replacements']) || ! array_is_list($result['replacements']) || count($result['replacements']) > 1) {
+                throw new RuntimeException('La auditoría debe devolver como máximo el reemplazo completo del bloque solicitado.');
             }
             $seen = [];
             foreach ($result['replacements'] as $replacement) {
                 if (! is_array($replacement) || count($replacement) !== 2
                     || ! isset($replacement['chapter'], $replacement['content'])
                     || ! is_string($replacement['chapter'])
-                    || ! in_array($replacement['chapter'], InteriorMapMaster::CHAPTERS, true)
+                    || $replacement['chapter'] !== $target
                     || isset($seen[$replacement['chapter']]) || ! is_array($replacement['content'])) {
                     throw new RuntimeException('La auditoría contiene un bloque inválido o repetido.');
                 }
@@ -83,17 +91,22 @@ final class PhaseOneAiGenerationService
             }
             $this->master->assertNoDuplicateParagraphs($chapters);
         } catch (RuntimeException $exception) {
-            $this->reject($job, 'audit', $result, $exception);
+            $this->reject($job, 'audit.'.$target, $result, $exception);
         }
-        DB::transaction(function () use ($chart, $job, $chapters, $result, $system, $user, $usage): void {
+        $completed[] = $target;
+        $finished = count($completed) === count(InteriorMapMaster::CHAPTERS);
+        DB::transaction(function () use ($chart, $job, $chapters, $result, $system, $user, $usage, $completed, $finished, $target): void {
             foreach ($result['replacements'] as $replacement) {
                 $this->reports->storeChapter($chart, $replacement['chapter'] === 'opposites' ? null : $replacement['chapter'], $replacement['content']);
             }
-            $drafts = array_replace($job->drafts, $chapters, ['_audited' => true]);
+            $drafts = array_replace($job->drafts, $chapters, ['_audited_chapters' => $completed, '_audited' => $finished]);
             unset($drafts['_validation_feedback']['audit'], $drafts['_validation_candidate']['audit']);
+            unset($drafts['_validation_feedback']['audit.'.$target], $drafts['_validation_candidate']['audit.'.$target]);
             $job->update(['drafts' => $drafts]);
             $this->recordGeneration($chart, 'audit', $system, $user, $usage);
         });
+
+        return $finished;
     }
 
     public function validateReport(ReportJob $job): void
@@ -113,18 +126,20 @@ final class PhaseOneAiGenerationService
         $this->reports->build($job->chart, storedOnly: true);
     }
 
-    private function input(Chart $chart, string $chapter, ReportJob $job): array
+    private function input(Chart $chart, string $chapter, ReportJob $job, ?string $feedbackKey = null): array
     {
         $input = [
             'master_version' => InteriorMapMaster::VERSION,
             'chapter' => $chapter,
             'analysis_coverage' => $this->master->analysisCoverage($chapter),
+            'heading_contract' => 'analysis_coverage es investigación interna, no un índice que debas copiar. Tanto title de concepts como title de characteristics nombran vivencias: transforma «Dispositor en detrimento» en un rasgo sustentado como «Deseos que piden confianza», «Trígono con Saturno» en «Estabilidad para sostener lo que sientes» y «Cercanía a la cúspide» en el significado vivido que los datos permitan. No uses esos ejemplos como plantilla fija. Conserva la fundamentación técnica dentro de los párrafos.',
             'ASTROLOGICAL_FACTS' => $this->master->facts($chart),
             'current_report' => [],
         ];
-        if (isset($job->drafts['_validation_feedback'][$chapter])) {
-            $input['previous_validation_error'] = $job->drafts['_validation_feedback'][$chapter];
-            $input['revision_candidate'] = $job->drafts['_validation_candidate'][$chapter] ?? null;
+        $feedbackKey ??= $chapter;
+        if (isset($job->drafts['_validation_feedback'][$feedbackKey])) {
+            $input['previous_validation_error'] = $job->drafts['_validation_feedback'][$feedbackKey];
+            $input['revision_candidate'] = $job->drafts['_validation_candidate'][$feedbackKey] ?? null;
             $input['measured_word_count'] = $this->master->wordCount($input['revision_candidate'] ?? []);
             $input['retry_instruction'] = 'Edita el borrador del mismo trabajo para corregir el rechazo y revisa a la vez TODOS los títulos y párrafos con la misma regla: '
                 .'escribe todo íntegramente en español, sin inglés ni traducciones bilingües; sustituye títulos como «Alliances that amplify your reach (Alianzas que amplifican tu alcance)» por «Alianzas que amplifican tu alcance». '
@@ -137,7 +152,8 @@ final class PhaseOneAiGenerationService
                 .'Describir rutinas como hábitos es válido; la falta de respuesta o reconocimiento es un contexto posible, no una carencia personal. No elimines esas interpretaciones solo por esas palabras. '
                 .'La voz propia en sentido figurado de expresión o afirmación no es un rasgo corporal: conserva ese significado si está sustentado. '
                 .'La apariencia como imagen social o contraste con la autenticidad no describe el físico y no debe eliminarse por esa palabra. '
-                .'Hazlo sin añadir relleno y sin perder el formato concepto/característica/párrafos.';
+                .'Conserva keywords en cada apartado y los tres states con paragraphs y keywords. No confundas Estados de expresión con una conclusión: es obligatorio. No numeres y no uses voseo. '
+                .'Hazlo sin añadir relleno y sin perder el formato apartado/característica/párrafos/palabras clave/estados.';
         }
 
         return $input;

@@ -8,9 +8,9 @@ use RuntimeException;
 
 final class InteriorMapMaster
 {
-    public const VERSION = 109;
+    public const VERSION = 110;
 
-    public const MANUAL_SHA256 = 'B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED';
+    public const MANUAL_SHA256 = '543957875C9540BD0EBEFE350BA2940033FC6BF973E1DA43106DEDB43F9F9BDA';
 
     public const DOORS = ['sol', 'luna', 'ascendente', 'descendente'];
 
@@ -21,6 +21,12 @@ final class InteriorMapMaster
     public const CHAPTER_TARGET_WORDS = 3200;
 
     public const MAX_CHARACTERISTICS = 8;
+
+    public const STATES = [
+        'harmonious' => 'Estado armónico',
+        'excess' => 'Estado desarmónico por exceso',
+        'deficit' => 'Estado desarmónico por defecto',
+    ];
 
     private const INTERNAL_FIELD_NAMES = '/\b(?:[a-z]+_[a-z_]+|ASTROLOGICAL_FACTS|positions|houses|aspects|rulers|rulership|occupants|snapshot|lunar_phase)\b/u';
 
@@ -61,7 +67,7 @@ final class InteriorMapMaster
         return <<<'PROMPT'
 Eres analista de astrología natal simbólica, psicológica y evolutiva de ASTROLOGÍA SARANA VEDA.
 Este es el único prompt maestro activo del INFORME I. Incorpora las especificaciones del
-Manual Maestro Universal de Interpretación Natal Copilot, edición revisada, que prevalecen como contrato editorial.
+Manual Maestro Universal Informe I actualizado, que prevalecen como contrato editorial.
 La aplicación incorpora sus reglas: no afirmes haber abierto un Word ni consultado fuentes externas durante la generación.
 
 JERARQUÍA DE INSTRUCCIONES
@@ -70,13 +76,14 @@ Este prompt aplica el Manual Maestro; sus instrucciones operativas de formato no
 Si dos reglas chocan, aplica ese orden. Nunca sacrifiques la exactitud para cumplir extensión o formato.
 
 ALCANCE Y EVIDENCIA
-Cinco bloques, por este orden: I El Sol; II La Luna; III El Ascendente; IV El Descendente; V Los opuestos complementarios.
-Los títulos de bloque no llevan la palabra "natal". Redacta exclusivamente el bloque solicitado.
+Cinco bloques, por este orden: El Sol; La Luna; El Ascendente; El Descendente; Los opuestos complementarios.
+Los títulos no llevan "natal", números ni etiquetas Bloque o Puerta. Redacta exclusivamente el bloque solicitado.
 Objetivo editorial: equivalente aproximado de siete páginas Word por bloque.
 La extensión es flexible: la exactitud, consistencia técnica, universalidad, personalización y profundidad prevalecen sobre las páginas.
 El objetivo de palabras de la solicitud es orientativo, nunca una cuota que obligue a rellenar o repetir. No garantices paginación Word.
 Sin introducciones, prólogos, resúmenes, recapitulaciones, cierres, conclusiones ni síntesis finales, ni generales ni por bloque.
-No uses el esquema anterior de armonía/defecto/exceso, DON/NECESIDAD/SOMBRA/RECURSO, fichas ni listas de adjetivos.
+No uses fichas DON/NECESIDAD/SOMBRA/RECURSO ni listas de adjetivos como sustituto de la explicación.
+El apartado final Estados de expresión es obligatorio y sustituye expresamente cualquier prohibición anterior de armonía/exceso/defecto.
 La astrología es un marco simbólico de autoconocimiento, no diagnóstico científico ni predicción inevitable.
 No inventes biografía, acontecimientos, profesión, salud, estado civil, hijos ni características de parejas.
 Las referencias a defensas psicológicas, apego, infancia, trauma o proyección son hipótesis cautelosas, nunca hechos atribuidos.
@@ -94,7 +101,17 @@ Si un concepto no admite cinco características genuinamente distintas, desarrol
 Debajo de cada característica escribe normalmente dos o tres párrafos sustanciales que integren con naturalidad:
 cómo se manifiesta, en qué situaciones cotidianas puede reconocerse, qué necesita, qué fortaleza aporta, qué dificultad puede generar,
 cómo la modulan otros factores de la carta y cómo puede desarrollarse conscientemente. No conviertas esa lista en subtítulos fijos.
-La aplicación distingue conceptos mediante encabezados y características mediante puntos numerados; escribe solo sus nombres.
+La aplicación representa apartados con encabezados y características con subtítulos en negrita, sin enumeración.
+No numeres apartados, características ni estados con cifras, romanos o letras consecutivas.
+Cada concepto incluye keywords: entre cinco y diez palabras distintas, una sola palabra por elemento, sin guiones,
+barras, paréntesis, frases ni explicaciones. Cada palabra representa algo desarrollado en sus párrafos.
+La aplicación muestra esa lista con viñetas bajo Palabras clave al final del apartado, no tras cada característica.
+Después de todos los conceptos incluye states con harmonious, excess y deficit, cada uno con paragraphs y keywords.
+Se representan bajo Estados de expresión: Estado armónico; Estado desarmónico por exceso; Estado desarmónico por defecto.
+Desarrolla cada estado con párrafos específicos y sustentados, y su propia lista de cinco a diez palabras clave de una palabra.
+Describe recursos flexibles y proporcionados, tendencias sobredimensionadas o rígidas y recursos difíciles de reconocer o expresar.
+Son posibilidades contextuales, no etiquetas fijas, moralidad ni diagnósticos. No equipares armonía a trígonos,
+exceso a cuadraturas ni defecto a caída o detrimento. No añadas conclusión después de los estados.
 TÍTULOS: el concepto nombra el tema interpretativo en lenguaje llano, por ejemplo "Tu identidad y voluntad consciente";
 la característica nombra una manifestación concreta, por ejemplo "La exigencia de hacer bien las cosas", nunca una ficha técnica.
 Estos ejemplos solo ilustran los niveles de escritura, no son contenidos que deban incluirse en todas las cartas.
@@ -103,15 +120,16 @@ Los títulos no contienen grados, orbes, cifras, símbolos de grado, comillas, p
 nunca entre paréntesis en el título: escribe "Cómo se activa tu energía en lo cotidiano", no "Cómo se activa tu energía en lo cotidiano (casa VI)".
 La dignidad personal y el cierre de una etapa vital son expresiones cotidianas válidas; solo se excluyen como títulos los cierres del informe
 y las dignidades o caídas astrológicas.
-Ningún título ni característica puede usar las palabras introducción, prólogo, presentación, resumen, síntesis,
-conclusión, cierre ni recapitulación, ni funcionar como apertura o balance del bloque o del concepto.
+No crees apartados de introducción, prólogo, resumen, síntesis, conclusión o recapitulación.
+El cierre de un ciclo vital o la presentación personal pueden describirse como vivencias, no como balance del documento.
 No dediques conceptos ni características solo a datos técnicos (posición exacta, grado, orbe, dignidad, precisión horaria):
 cada característica describe cómo se vive un rasgo y justifica su base astrológica dentro del texto.
 No muestres la matriz interna de análisis. Los títulos de los bloques y el formato los aplica la aplicación.
 Devuelve exclusivamente el JSON solicitado. Títulos y párrafos son texto plano, sin HTML, Markdown ni numeración artificial.
 
 ESTILO Y LENGUAJE
-Escribe todos los títulos y párrafos íntegramente en español, sin encabezados en inglés ni traducciones bilingües.
+Escribe todos los títulos y párrafos íntegramente en español de España, sin encabezados en inglés ni traducciones bilingües.
+Usa tú, tienes, puedes, ejerces, eliges y sientes. No uses vos, tenés, podés, ejercés, sabés, sos ni voseo equivalente.
 Escribe en segunda persona ("tú"), sin deducir género, con lenguaje claro, cálido y comprensible para quien no sabe astrología.
 Evita adjetivos y participios con marca de género referidos al lector (seguro, cansado, valorada): usa construcciones neutras
 como "sentirte en seguridad" o "que se reconozca tu valor".
@@ -120,11 +138,13 @@ esos datos fundamentan los párrafos. No conviertas los títulos en ejercicios o
 carencias deducidas de la polaridad o descripciones de otras personas.
 Describir hábitos o rutinas como manifestaciones de un rasgo es válido; no equivale a prescribir ejercicios.
 La falta de respuesta o de reconocimiento describe un contexto posible, no una carencia personal deducida de un signo.
-Explica cada término técnico (casa, cúspide, regente, dispositor, aspecto, orbe, dignidad) la primera vez que aparezca en el bloque.
+Aclara un término técnico brevemente solo cuando sea necesario para entender la interpretación, sin repetir definiciones entre bloques.
+No dediques apartados a Comprender los términos, Términos técnicos, Tres dimensiones para valorar ni al procedimiento.
 Nunca escribas nombres internos de campos o datos: positions, houses, aspects, rulers, occupants, snapshot, current_report,
 maximum_orb, time_precision, time_source, ASTROLOGICAL_FACTS ni identificadores con guiones bajos. Tradúcelos a lenguaje natural.
-No uses coordenadas con segundos salvo cuando aclaren un matiz técnico; expresa posiciones y orbes en grados y minutos
-(por ejemplo, "a menos de un grado" o "5° 23′"), nunca con decimales.
+Retira del cuerpo grados, minutos, segundos, orbes y cifras técnicas superfluas; la ficha técnica separada conserva posiciones.
+Si necesitas indicar proximidad, usa palabras y distingue orbe (desviación del aspecto) de separación angular entre planetas.
+Nombra los planetas y relaciones cuando aclaren el significado, sin ocultarlos tras energías o planetas anónimos.
 Evita la jerga, las frases vacías y las fórmulas repetidas al comenzar párrafos.
 Los ejercicios, recomendaciones o prácticas solo pueden aparecer de forma breve e integrada; nunca dominan una característica.
 No dediques características a ejercicios, cronogramas, talleres, productividad o planes de acción. Prioriza explicar significados y matices.
@@ -141,7 +161,7 @@ contradicciones internas, vías de integración y proceso de maduración. Ningun
 
 DATOS Y UNIVERSALIDAD
 Usa exclusivamente ASTROLOGICAL_FACTS: la aplicación verifica posiciones y calcula casas, aspectos y orbes antes de redactar.
-Menciona dentro de los párrafos, cuando aporte claridad, los criterios utilizados (zodiaco, casas, regencias, grados, aspectos y orbes),
+Menciona dentro de los párrafos, cuando aporte claridad, los criterios utilizados (zodiaco, casas, regencias y aspectos),
 siempre explicados en lenguaje sencillo y sin crear características técnicas aisladas.
 La escuela es simbólica occidental, con regencias tradicionales prioritarias y modernas complementarias; dignidades mayores clásicas.
 No cambies el sistema calculado. Interpreta las cúspides conforme a Placidus y distingue signo de cúspide, signo del planeta y casa ocupada.
@@ -162,6 +182,10 @@ La voz propia como metáfora de expresión, afirmación o comunicación sí pued
 La apariencia como imagen social o contraste con la autenticidad tampoco equivale a una descripción del físico.
 Una distancia pequeña a una cúspide no prueba sensibilidad a acontecimientos concretos ni justifica por sí sola una característica.
 La polaridad conceptual entre signos no equivale a una oposición planetaria ni al eje geométrico Ascendente-Descendente.
+Los pares zodiacales son exclusivamente Aries-Libra, Tauro-Escorpio, Géminis-Sagitario, Cáncer-Capricornio, Leo-Acuario y Virgo-Piscis.
+Libra y Tauro comparten regente, pero no son polos complementarios. No llames conjunción a una combinación sin aspecto verificado.
+En Placidus el Ascendente define la cúspide I: su coincidencia no añade un refuerzo especial ni prueba intensidad.
+La fase lunar natal describe la configuración de nacimiento, no una etapa actual; no introduzcas tránsitos ni predicciones.
 La pertenencia a un signo no implica carencia de las cualidades de su opuesto: complementariedad no significa corregir un defecto.
 
 CASAS, CÚSPIDES Y REGENTES (procedimiento obligatorio para cada casa pertinente)
@@ -225,8 +249,13 @@ omisiones de categorías de investigación pertinentes cuando los datos permitan
 características que solo enumeren datos o pasos del análisis, recomendaciones que sustituyan interpretación, inferencias por casas vacías,
 rasgos corporales atribuidos por signo y supuestas carencias deducidas de la polaridad. Revisa también que cada concepto organice
 un tema distinto y cada característica aporte una manifestación específica, sin multiplicar sinónimos para llegar a cinco.
-nombres internos de datos, excepciones no universales, listas sin desarrollo e introducciones/síntesis. Devuelve solo replacements de bloques que requieran corrección;
-cada reemplazo es el bloque completo corregido. Si no hacen falta cambios, devuelve una lista vacía. No añadas conclusión.
+nombres internos de datos, excepciones no universales, listas sin desarrollo e introducciones/síntesis.
+Cada llamada recibe audit_chapter: revisa ese bloque en el contexto de los cinco bloques de current_report,
+pero devuelve como máximo un reemplazo, exclusivamente de audit_chapter. Conserva los matices exclusivos de los otros bloques;
+si detectas una repetición, corrige el bloque solicitado sin modificar los demás.
+Cada reemplazo es el bloque completo corregido. Si el bloque solicitado no requiere cambios, devuelve una lista vacía.
+No devuelvas los cinco bloques ni añadas conclusión. Conserva y corrige keywords y los tres states obligatorios;
+no elimines Estados de expresión por confundirlo con una síntesis final. Comprueba quince estados en total.
 PROMPT;
     }
 
@@ -353,9 +382,10 @@ PROMPT;
                 'aspect_source' => 'calculados a partir de longitudes del snapshot actual; mismo umbral que la matriz visual',
                 'time_source' => $birth?->time_source ?? 'unknown',
                 'time_precision' => $birth?->time_precision ?? 'unknown',
-                'angles_houses_conditional' => ($birth?->time_precision ?? 'unknown') !== 'exact',
+                'angles_houses_conditional' => ($birth?->time_precision ?? 'unknown') !== 'exact'
+                    || ! in_array($birth?->time_source, ['document', 'family'], true),
                 'unknown_conditions' => ['aplicación/separación', 'velocidades', 'retrogradación', 'combustión', 'dignidades menores'],
-                'sources' => ['Manual Maestro Universal incorporado en el prompt, edición revisada', 'Snapshot calculado de la carta actual; motor: '.($chart->engine_version ?? 'no identificado')],
+                'sources' => ['Manual Maestro Universal Informe I actualizado, incorporado en el prompt', 'Snapshot calculado de la carta actual; motor: '.($chart->engine_version ?? 'no identificado')],
                 'manual_sha256' => self::MANUAL_SHA256,
             ],
             'positions' => $positions, 'houses' => $houseFacts, 'aspects' => $aspectFacts,
@@ -365,40 +395,60 @@ PROMPT;
 
     public function schema(): array
     {
+        $keywords = ['type' => 'array', 'minItems' => 5, 'maxItems' => 10, 'items' => ['type' => 'string']];
+        $state = [
+            'type' => 'object',
+            'properties' => [
+                'paragraphs' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string']],
+                'keywords' => $keywords,
+            ],
+            'required' => ['paragraphs', 'keywords'], 'additionalProperties' => false,
+        ];
+
         return [
             'type' => 'object',
             'properties' => ['concepts' => [
                 'type' => 'array', 'minItems' => 1,
                 'items' => [
                     'type' => 'object', 'properties' => [
-                        'title' => ['type' => 'string'],
+                        'title' => ['type' => 'string', 'description' => 'Apartado de vivencia personal, sin numeración ni vocabulario del procedimiento: nunca cúspide, regente, dispositor, ocupante, dignidad, aspecto o casa numerada. Las categorías de investigación no son títulos.'],
+                        'keywords' => $keywords,
                         'characteristics' => [
-                            'type' => 'array', 'minItems' => 1,
+                            'type' => 'array', 'minItems' => 1, 'maxItems' => self::MAX_CHARACTERISTICS,
                             'items' => [
                                 'type' => 'object', 'properties' => [
-                                    'title' => ['type' => 'string'],
+                                    'title' => ['type' => 'string', 'description' => 'Rasgo vivido y específico en lenguaje cotidiano, sin número, paréntesis ni jerga astrológica. Por ejemplo: Serenidad para sostener tus decisiones. Nunca titules con casas, cúspides, regentes, dispositores, dignidades, sextiles, trígonos o cuadraturas.'],
                                     'paragraphs' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string']],
                                 ],
                                 'required' => ['title', 'paragraphs'], 'additionalProperties' => false,
                             ],
                         ],
                     ],
-                    'required' => ['title', 'characteristics'], 'additionalProperties' => false,
+                    'required' => ['title', 'characteristics', 'keywords'], 'additionalProperties' => false,
                 ],
+            ], 'states' => [
+                'type' => 'object',
+                'properties' => array_fill_keys(array_keys(self::STATES), $state),
+                'required' => array_keys(self::STATES), 'additionalProperties' => false,
             ]],
-            'required' => ['concepts'], 'additionalProperties' => false,
+            'required' => ['concepts', 'states'], 'additionalProperties' => false,
         ];
     }
 
-    public function auditSchema(): array
+    public function auditSchema(?string $chapter = null): array
     {
+        if ($chapter !== null && ! in_array($chapter, self::CHAPTERS, true)) {
+            throw new RuntimeException('Bloque de auditoría no válido.');
+        }
+
         return [
             'type' => 'object',
             'properties' => ['replacements' => [
                 'type' => 'array',
+                'maxItems' => $chapter === null ? count(self::CHAPTERS) : 1,
                 'items' => [
                     'type' => 'object', 'properties' => [
-                        'chapter' => ['type' => 'string', 'enum' => self::CHAPTERS],
+                        'chapter' => ['type' => 'string', 'enum' => $chapter === null ? self::CHAPTERS : [$chapter]],
                         'content' => $this->schema(),
                     ],
                     'required' => ['chapter', 'content'], 'additionalProperties' => false,
@@ -410,9 +460,7 @@ PROMPT;
 
     public function validate(array $content): void
     {
-        if (array_keys($content) !== ['concepts']) {
-            throw new RuntimeException('El bloque debe contener exclusivamente conceptos con características desarrolladas.');
-        }
+        $this->requireObject($content, ['concepts', 'states']);
         $this->requireList($content['concepts']);
         $headings = [];
         $titleIssues = ['closing' => [], 'technical' => [], 'jargon' => [], 'advice' => [], 'inference' => []];
@@ -425,7 +473,8 @@ PROMPT;
             }
         };
         foreach ($content['concepts'] as $concept) {
-            $this->requireObject($concept, ['title', 'characteristics']);
+            $this->requireObject($concept, ['title', 'characteristics', 'keywords']);
+            $check(fn () => $this->validateKeywords($concept['keywords']));
             $check(function () use ($concept, &$headings, &$titleIssues): void {
                 $this->validateHeading($concept['title'], $headings, $titleIssues);
             });
@@ -443,6 +492,16 @@ PROMPT;
                     $check(fn () => $this->validateText($paragraph));
                 }
             }
+        }
+        $this->requireObject($content['states'], array_keys(self::STATES));
+        foreach (self::STATES as $key => $label) {
+            $state = $content['states'][$key];
+            $this->requireObject($state, ['paragraphs', 'keywords']);
+            $this->requireList($state['paragraphs']);
+            foreach ($state['paragraphs'] as $paragraph) {
+                $check(fn () => $this->validateText($paragraph));
+            }
+            $check(fn () => $this->validateKeywords($state['keywords']));
         }
         if ($titleIssues['closing'] !== []) {
             $problems['El Informe I no admite introducciones, resúmenes ni síntesis o cierres. Renombra como rasgos vividos, sin esas palabras, estos títulos: «'.implode('», «', $titleIssues['closing']).'».'] = true;
@@ -497,7 +556,7 @@ PROMPT;
         $aspectNames = 'conjunción|sextil|cuadratura|trígono|trino|oposición';
         $types = ['conjunción' => 'conjunction', 'sextil' => 'sextile', 'cuadratura' => 'square', 'trígono' => 'trine', 'trino' => 'trine', 'oposición' => 'opposition'];
         $patterns = [
-            '/\b(?<type>'.$aspectNames.')\s+(?:entre\s+)?(?:el\s+|la\s+)?(?<first>'.$names.')\s*(?:[-–—]|y|con|a|al)\s*(?:el\s+|la\s+)?(?<second>'.$names.')\b/ui',
+            '/\b(?<type>'.$aspectNames.')\s+(?:(?:entre|de)\s+)?(?:el\s+|la\s+)?(?<first>'.$names.')\s*(?:[-–—]|y|con|a|al)\s*(?:el\s+|la\s+)?(?<second>'.$names.')\b/ui',
             '/\b(?<first>'.$names.')\s+(?:(?:forma|hace)\s+|(?:está\s+)?en\s+)?(?:un[ao]?\s+)?(?<type>'.$aspectNames.')\s+(?:con|a|al)\s+(?:el\s+|la\s+)?(?<second>'.$names.')\b/ui',
         ];
         $keysByLabel = [];
@@ -517,6 +576,20 @@ PROMPT;
                     && (($aspect['first'] === $first && $aspect['second'] === $second) || ($aspect['first'] === $second && $aspect['second'] === $first)));
                 if ($matches === []) {
                     throw new RuntimeException('El texto atribuye un aspecto no verificado: '.$claim[0]);
+                }
+            }
+        }
+        $polarities = [
+            '/\b(?:polaridad|polos?\s+complementarios?|eje\s+zodiacal)\s+(?:entre\s+|de\s+)?('.$signs.')\s*(?:[-–—]|y|con)\s*('.$signs.')\b/ui',
+            '/\b('.$signs.')\s+y\s+('.$signs.')\s+(?:son|forman|constituyen)\s+(?:una?\s+)?(?:polaridad|polos?\s+complementarios?)\b/ui',
+        ];
+        $signLabels = array_map('mb_strtolower', array_values(self::SIGNS));
+        foreach ($polarities as $pattern) {
+            foreach ($this->assertedClaims($pattern, $text) as $claim) {
+                $first = array_search(mb_strtolower($claim[1]), $signLabels, true);
+                $second = array_search(mb_strtolower($claim[2]), $signLabels, true);
+                if (abs($first - $second) !== 6) {
+                    throw new RuntimeException('La polaridad zodiacal no corresponde a signos opuestos: '.$claim[0]);
                 }
             }
         }
@@ -583,13 +656,19 @@ PROMPT;
     private function requireObject(mixed $value, array $keys): void
     {
         if (! is_array($value) || count($value) !== count($keys) || array_diff($keys, array_keys($value))) {
-            throw new RuntimeException('La estructura debe conservar concepto, característica y párrafos sin secciones adicionales.');
+            throw new RuntimeException('La estructura debe conservar apartados, características, párrafos, palabras clave y tres estados de expresión completos, sin campos adicionales.');
         }
     }
 
     private function validateHeading(mixed $title, array &$seen, array &$issues): void
     {
         $this->validateText($title);
+        if (preg_match('/^\s*(?:\d+|[IVXLCDM]+|[a-z])\s*[.)—:-]\s+/ui', $title)) {
+            throw new RuntimeException('Los apartados, características y estados no se enumeran.');
+        }
+        if (in_array(mb_strtolower(trim($title)), ['estados de expresión', 'palabras clave', 'comprender los términos', 'términos técnicos', 'tres dimensiones para valorar'], true)) {
+            throw new RuntimeException('No añadas apartados de procedimiento ni rótulos estructurales como conceptos o características.');
+        }
         if (preg_match('/\b(introducci[oó]n|pr[oó]logo|resumen|s[ií]ntesis|conclusi[oó]n|recapitulaci[oó]n)\b|^\s*presentaci[oó]n\b|^\s*cierre\b|\bcierre\s+(?:del|de la)\s+(?:bloque|cap[ií]tulo|informe|documento)\b/ui', $title)) {
             $issues['closing'][] = $title;
         } elseif (preg_match('/[°′″"\'“”«»()\[\]]|\d+[.,]\d+/u', $title)) {
@@ -610,7 +689,7 @@ PROMPT;
 
     private function validateText(mixed $text): void
     {
-        if (! is_string($text) || trim($text) === '' || preg_match('/<[^>]*>|^\s*(?:#{1,6}\s|[-*•]\s)/mu', $text)) {
+        if (! is_string($text) || trim($text) === '' || preg_match('/<[^>]*>|^\s*(?:#{1,6}\s|[-*•]\s|(?:\d+|[IVXLCDM]+|[a-z])[.)]\s)/mu', $text)) {
             throw new RuntimeException('El contenido debe ser texto plano no vacío, sin listas de adjetivos ni formato incrustado.');
         }
         if (preg_match(self::INTERNAL_FIELD_NAMES, $text, $match)) {
@@ -618,6 +697,31 @@ PROMPT;
         }
         if (preg_match('/\d+[.,]\d+\s*°|\borb\b/u', $text)) {
             throw new RuntimeException('Expresa grados y orbes en grados y minutos o con palabras (por ejemplo, «a menos de un grado» o «5° 23′»), sin decimales ni la palabra inglesa «orb».');
+        }
+        if (preg_match('/\b(?:vos|tenés|podés|ejercés|sabés|sos|sentís|elegís|querés|hacés|decís|buscás|necesitás|podís)\b/ui', $text)) {
+            throw new RuntimeException('Escribe en español de España y segunda persona con tú, sin voseo.');
+        }
+        if (preg_match('/\x{FFFD}|Ã[\x{0080}-\x{00BF}]|Â[°º]|â€|[\p{L}]\?[\p{L}]/u', $text)) {
+            throw new RuntimeException('El texto contiene caracteres corruptos; restaura la palabra original sin sustituir interrogantes legítimos.');
+        }
+    }
+
+    private function validateKeywords(mixed $keywords): void
+    {
+        if (! is_array($keywords) || ! array_is_list($keywords) || count($keywords) < 5 || count($keywords) > 10) {
+            throw new RuntimeException('Cada apartado y estado necesita entre cinco y diez palabras clave.');
+        }
+        $seen = [];
+        foreach ($keywords as $keyword) {
+            if (! is_string($keyword) || ! preg_match('/^\p{L}[\p{L}\p{M}]*$/u', $keyword)) {
+                throw new RuntimeException('Cada palabra clave debe ser una sola palabra, sin cifras, frases, barras, guiones ni paréntesis.');
+            }
+            $this->validateText($keyword);
+            $normalized = mb_strtolower($keyword);
+            if (isset($seen[$normalized])) {
+                throw new RuntimeException('No repitas palabras clave dentro del mismo apartado o estado.');
+            }
+            $seen[$normalized] = true;
         }
     }
 

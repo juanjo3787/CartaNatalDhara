@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Exceptions\AiGenerationException;
 use App\Exceptions\ReportContentValidationException;
 use App\Jobs\ProcessReportStep;
+use App\Models\ChartTemplate;
 use App\Models\ReportJob;
 use App\Models\User;
 use App\Services\InteriorMapMaster;
@@ -39,6 +40,27 @@ final class ReportJobTest extends TestCase
         $this->actingAs(User::factory()->create())->getJson($first->json('status_url'))->assertForbidden();
     }
 
+    public function test_new_contract_keeps_old_interpretations_and_original_pdf_without_reusing_them(): void
+    {
+        Queue::fake();
+        Storage::fake('local');
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $originals = $chart->interpretations()->get()->map->getAttributes()->all();
+        ChartTemplate::where('version', InteriorMapMaster::VERSION)->update(['version' => InteriorMapMaster::VERSION - 1]);
+        Storage::disk('local')->put('pdfs/original.pdf', '%PDF-original');
+        $chart->update(['phase_one_pdf' => 'pdfs/original.pdf']);
+        app(ReportJobService::class)->start($chart, User::factory()->create()->id, InteriorMapMaster::DOORS);
+        $this->assertSame($originals, $chart->interpretations()->get()->map->getAttributes()->all());
+        $this->assertSame('%PDF-original', Storage::disk('local')->get('pdfs/original.pdf'));
+        $this->assertFalse(app(PhaseOneReportService::class)->build($chart)['complete']);
+        app(PhaseOneReportService::class)->storeChapter($chart, 'sol', self::chapter('sol'));
+        $this->assertDatabaseCount('interpretations', 6);
+        foreach ($originals as $original) {
+            $this->assertDatabaseHas('interpretations', ['id' => $original['id'], 'content' => $original['content'], 'template_id' => $original['template_id']]);
+        }
+    }
+
     public function test_worker_generates_five_chapters_and_a_real_pdf_without_historical_input(): void
     {
         config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
@@ -55,9 +77,17 @@ final class ReportJobTest extends TestCase
             if ($input['chapter'] === 'audit') {
                 $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($input['analysis_coverage']));
                 $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($input['current_report']));
-                $corrected = self::chapter('sol');
-                $corrected['concepts'][0]['characteristics'][0]['paragraphs'][] = 'Corrección específica de la auditoría conjunta.';
-                $content = ['replacements' => [['chapter' => 'sol', 'content' => $corrected]]];
+                $target = $input['audit_chapter'];
+                $this->assertSame([$target], $request['response_format']['json_schema']['schema']['properties']['replacements']['items']['properties']['chapter']['enum']);
+                $this->assertSame(1, $request['response_format']['json_schema']['schema']['properties']['replacements']['maxItems']);
+                $content = ['replacements' => []];
+                if ($target === 'sol') {
+                    $corrected = self::chapter('sol');
+                    $corrected['concepts'][0]['characteristics'][0]['paragraphs'][] = 'Corrección específica de la auditoría conjunta.';
+                    $content['replacements'][] = ['chapter' => 'sol', 'content' => $corrected];
+                } else {
+                    $this->assertStringContainsString('Corrección específica', json_encode($input['current_report']['sol'], JSON_UNESCAPED_UNICODE));
+                }
                 $this->assertSame(16000, $request['max_completion_tokens']);
             } else {
                 $this->assertSame([$input['chapter']], array_keys($input['analysis_coverage']));
@@ -75,7 +105,7 @@ final class ReportJobTest extends TestCase
         $chart = $this->chart();
         $snapshot = $chart->snapshot;
         $job = app(ReportJobService::class)->start($chart, User::factory()->create()->id, InteriorMapMaster::DOORS);
-        for ($i = 0; $i < 12; $i++) {
+        for ($i = 0; $i < 16; $i++) {
             $queued = Queue::connection('reports')->pop('reports');
             if (! $queued) {
                 break;
@@ -91,6 +121,7 @@ final class ReportJobTest extends TestCase
         $this->assertSame($snapshot, $chart->fresh()->snapshot);
         $this->assertDatabaseCount('interpretations', 5);
         $this->assertTrue($job->drafts['_audited']);
+        $this->assertSame(InteriorMapMaster::CHAPTERS, $job->drafts['_audited_chapters']);
         $this->assertStringContainsString('Corrección específica', app(PhaseOneReportService::class)->editableContent($chart->fresh())['doors']['sol']['concepts']);
         $this->assertStringStartsWith('%PDF-', Storage::disk('local')->get($chart->fresh()->phase_one_pdf));
         $opposites = $chart->reportGenerations()->where('filename', 'natal-universal-opposites')->firstOrFail();
@@ -98,9 +129,9 @@ final class ReportJobTest extends TestCase
             ->assertOk()->assertSee('Los opuestos complementarios')->assertSee('Auditoría conjunta');
         $this->get(route('charts.report.prompts', [$chart, $opposites]))
             ->assertOk()->assertSee('Los opuestos complementarios')->assertSee('único prompt maestro');
-        Http::assertSentCount(6);
+        Http::assertSentCount(10);
         (new ProcessReportStep($job->id, 1))->handle(app(ReportJobService::class));
-        Http::assertSentCount(6);
+        Http::assertSentCount(10);
     }
 
     public function test_obsolete_jobs_cannot_be_retried(): void
@@ -297,7 +328,19 @@ final class ReportJobTest extends TestCase
         $job = ReportJob::create(['chart_id' => $chart->id, 'user_id' => User::factory()->create()->id, 'doors' => InteriorMapMaster::DOORS, 'status' => 'auditing', 'drafts' => $drafts]);
         $candidate = self::chapter('sol');
         $candidate['concepts'][0]['characteristics'][0]['paragraphs'][] = 'Tu Sol en Libra.';
-        Http::fake(['*' => Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode(['replacements' => [['chapter' => 'sol', 'content' => $candidate]]])]]]])]);
+        $auditCalls = 0;
+        Http::fake(function ($request) use ($candidate, &$auditCalls) {
+            $content = ['replacements' => [['chapter' => 'sol', 'content' => $candidate]]];
+            if (++$auditCalls > 1) {
+                $input = json_decode($request['messages'][1]['content'], true);
+                $this->assertSame('sol', $input['audit_chapter']);
+                $this->assertStringContainsString('posición canónica', $input['previous_validation_error']);
+                $this->assertSame('sol', $input['revision_candidate']['replacements'][0]['chapter']);
+                $content = ['replacements' => []];
+            }
+
+            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode($content)]]]]);
+        });
         $previous = app(PhaseOneReportService::class)->editableContent($chart);
         try {
             app(PhaseOneAiGenerationService::class)->auditReport($chart, $job);
@@ -308,5 +351,87 @@ final class ReportJobTest extends TestCase
         $this->assertArrayNotHasKey('_audited', $job->fresh()->drafts);
         $this->assertSame($drafts['sol'], $job->fresh()->drafts['sol']);
         $this->assertSame($previous, app(PhaseOneReportService::class)->editableContent($chart->fresh()));
+        $this->assertFalse(app(PhaseOneAiGenerationService::class)->auditReport($chart, $job->fresh()));
+        $this->assertSame(['sol'], $job->fresh()->drafts['_audited_chapters']);
+        $this->assertArrayNotHasKey('audit.sol', $job->fresh()->drafts['_validation_feedback']);
+    }
+
+    public function test_audit_retry_resumes_at_the_failed_block_without_regenerating_or_reauditing_saved_blocks(): void
+    {
+        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
+        Http::preventStrayRequests();
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $drafts = [
+            '_master_version' => InteriorMapMaster::VERSION,
+            '_chart_fingerprint' => app(InteriorMapMaster::class)->fingerprint($chart),
+        ];
+        foreach (InteriorMapMaster::CHAPTERS as $chapter) {
+            $drafts[$chapter] = self::chapter($chapter);
+        }
+        $user = User::factory()->create();
+        $job = ReportJob::create([
+            'chart_id' => $chart->id, 'active_chart_id' => $chart->id, 'user_id' => $user->id,
+            'doors' => InteriorMapMaster::DOORS, 'cursor' => 6, 'progress' => 60,
+            'status' => 'auditing', 'drafts' => $drafts,
+        ]);
+        $targets = [];
+        Http::fake(function ($request) use (&$targets) {
+            $input = json_decode($request['messages'][1]['content'], true);
+            $targets[] = $input['audit_chapter'];
+            if (count($targets) === 2) {
+                return Http::response(['choices' => [['finish_reason' => 'length', 'message' => ['content' => '']]]]);
+            }
+
+            return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => '{"replacements":[]}']]]]);
+        });
+        $service = app(ReportJobService::class);
+        (new ProcessReportStep($job->id, 6))->handle($service);
+        $this->assertSame(['sol'], $job->fresh()->drafts['_audited_chapters']);
+        $this->assertFalse($job->fresh()->drafts['_audited']);
+        $this->assertSame(6, $job->fresh()->cursor);
+
+        $step = (new ProcessReportStep($job->id, 6))->withFakeQueueInteractions();
+        $step->handle($service);
+        $this->assertSame('failed', $job->fresh()->status);
+        $this->assertSame(['sol'], $job->fresh()->drafts['_audited_chapters']);
+        $this->actingAs($user)->postJson(route('reports.jobs.retry', $job))->assertAccepted();
+        (new ProcessReportStep($job->id, 6))->handle($service);
+
+        $this->assertSame(['sol', 'luna', 'luna'], $targets);
+        $this->assertSame(['sol', 'luna'], $job->fresh()->drafts['_audited_chapters']);
+        $this->assertFalse($job->fresh()->drafts['_audited']);
+        $this->assertSame(6, $job->fresh()->cursor);
+        $this->assertSame($drafts['sol'], $job->fresh()->drafts['sol']);
+        $this->assertDatabaseCount('interpretations', 5);
+        $this->getJson(route('reports.jobs.show', $job))->assertOk()
+            ->assertJsonPath('message', 'Auditando Luna — bloque 2 de 5');
+    }
+
+    public function test_scoped_audit_rejects_changes_to_a_different_block(): void
+    {
+        config(['ai.enabled' => true, 'ai.api_key' => 'test-key']);
+        Http::preventStrayRequests();
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $drafts = [];
+        foreach (InteriorMapMaster::CHAPTERS as $chapter) {
+            $drafts[$chapter] = self::chapter($chapter);
+        }
+        $job = ReportJob::create([
+            'chart_id' => $chart->id, 'user_id' => User::factory()->create()->id,
+            'doors' => InteriorMapMaster::DOORS, 'status' => 'auditing', 'drafts' => $drafts,
+        ]);
+        Http::fake(['*' => Http::response(['choices' => [['finish_reason' => 'stop', 'message' => [
+            'content' => json_encode(['replacements' => [['chapter' => 'luna', 'content' => self::chapter('luna')]]]),
+        ]]]])]);
+        try {
+            app(PhaseOneAiGenerationService::class)->auditReport($chart, $job);
+            $this->fail('A scoped audit must not modify another block.');
+        } catch (ReportContentValidationException $exception) {
+            $this->assertStringContainsString('bloque inválido', $exception->getMessage());
+        }
+        $this->assertArrayNotHasKey('_audited_chapters', $job->fresh()->drafts);
+        $this->assertSame($drafts['luna'], $job->fresh()->drafts['luna']);
     }
 }

@@ -76,22 +76,19 @@
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
     .report-page h2 { display: table; width: fit-content; min-width: 52%; max-width: 100%; margin: 0 0 2rem; padding: .7rem 1.4rem; background: #f8dfcc; box-shadow: 4px 4px 0 rgba(122, 86, 61, .12); color: #202020; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; text-align: center; }
     .report-page h3 { margin: 2.5rem 0 1rem; font: 700 1.2rem/1.3 Aptos, 'Segoe UI', sans-serif; }
-    .report-block-body h3 { counter-reset: report-characteristic; }
-    .report-block-body h4 { counter-increment: report-characteristic; }
-    .report-block-body h4::before { content: counter(report-characteristic) '. '; }
+    .report-block-body h4 { font-weight: 700; }
     .report-page p { max-width: 72ch; margin: 0 auto 1.25rem; text-indent: 1.5em; font-size: 1rem; line-height: 1.75; }
     .report-page p, .report-page li { orphans: 3; widows: 3; }
     .report-page h1, .report-page h2, .report-page h3, .report-page h4, .report-block-title, .report-arrow-title { page-break-after: avoid; }
     .report-tail-group { page-break-inside: avoid; }
     .report-page ul, .report-page ol { max-width: 68ch; margin: 1rem auto 1.5rem; padding-left: 1.5rem; line-height: 1.7; }
     .report-page ul { list-style: disc; }
-    .report-page ol { list-style: decimal; }
+    .report-block-body > ul { page-break-before: avoid; }
     .report-index-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .report-index-item { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; padding: 1.1rem; border-bottom: 1px solid #ded7cf; }
+    .report-index-item { display: block; padding: 1.1rem; border-bottom: 1px solid #ded7cf; }
     .report-index-item-pdf { position: relative; padding-right: 3rem; }
     .report-index-item a { color: inherit; text-decoration: none; }
     .report-index-item a:hover strong, .report-index-item a:focus-visible strong { text-decoration: underline; }
-    .report-index-number { font: 700 1.5rem Aptos, 'Segoe UI', sans-serif; color: #9d7659; }
     .report-index-item strong { display: block; font-size: 1.05rem; }
     .report-index-item span { color: #766b64; font: .88rem Aptos, 'Segoe UI', sans-serif; }
     .report-index-page { display: none; color: #fff; font: 700 .9rem Aptos, 'Segoe UI', sans-serif; text-align: right; }
@@ -181,7 +178,6 @@
     .report-cover { display: block; position: relative; min-height: 0; height: 250mm; padding: 4mm 10mm; box-sizing: border-box; page-break-after: always; background: #fffdf9; }
     .report-cover > div:first-child { display: block; }
     .report-worksheet { page-break-inside: avoid; }
-    .report-pdf-blank-page { height: 260mm; min-height: 0; padding: 0; border: 0; page-break-inside: avoid; }
     .report-expansion-closing > h2 { margin-top: 2rem; }
     .report-expansion-closing > p { page-break-inside: avoid; }
     .report-expansion-closing > ol > li { page-break-inside: avoid; }
@@ -283,16 +279,14 @@
         </div>
         <div class="report-cover-meta">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
     </section>
-    @if ($pdf)<section class="report-page report-pdf-blank-page" data-report-blank-page="cover"></section>@endif
     <section class="report-page report-reading"><h1>Índice</h1>
-        <div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><div class="report-index-number">{{ $item['number'] }}</div><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">00</span>@endif</div>@endforeach</div>
+        <div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">&#160;</span>@endif</div>@endforeach</div>
         @unless ($report['complete'])<div class="report-note">Este Informe I todavía no está generado con el Manual Maestro Universal. Regenera el informe completo de cinco bloques.</div>@endunless
     </section>
-            @if ($pdf)<section class="report-page report-pdf-blank-page" data-report-blank-page="index"></section>@endif
     @foreach ($report['doors'] as $door)
         @continue(!($report['sections'][$door['key']]['enabled'] ?? false))
         <section class="report-page report-door report-reading" id="report-section-{{ $door['key'] }}" data-door-key="{{ $door['key'] }}" data-index-key="{{ $door['key'] }}">
-            <div class="report-door-heading"><h1>BLOQUE {{ $report['sections'][$door['key']]['number'] }} — {{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
+            <div class="report-door-heading"><h1>{{ $door['title'] }}</h1><div class="report-door-subtitle">{{ $door['subtitle'] }}</div></div>
             @foreach ($door['blocks'] as $block => $paragraphs)
                 <div class="report-block report-block-body" data-section-id="{{ $door['key'] }}.{{ $block }}">
                     @foreach ($paragraphs as $html)
@@ -303,7 +297,7 @@
         </section>
     @endforeach
     <section class="report-page report-chapter report-last-page report-reading" id="report-section-opposites" data-index-key="opposites">
-        <div class="report-door-heading"><h1>BLOQUE {{ $report['sections']['opposites']['number'] }} — {{ $report['sections']['opposites']['title'] }}</h1></div>
+        <div class="report-door-heading"><h1>{{ $report['sections']['opposites']['title'] }}</h1></div>
         @foreach ($report['opposites'] as $block => $paragraphs)
             <div class="report-block report-block-body" data-section-id="opposites.{{ $block }}">@foreach ($paragraphs as $html){!! $html !!}@endforeach</div>
         @endforeach

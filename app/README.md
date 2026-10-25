@@ -1,8 +1,8 @@
 # ASTROLOGIA SARANA VEDA — Informe I
 
 Aplicacion privada Laravel 13 / PHP 8.3. El modelo activo del Informe I aplica
-el prompt universal y el **Manual Maestro Universal de Interpretacion Natal
-Copilot, edicion revisada**. No reutiliza interpretaciones de Word, PDF ni
+el prompt universal y el **Manual Maestro Universal Informe I actualizado**.
+No reutiliza interpretaciones de Word, PDF ni
 informes historicos.
 
 ## Modelo y referencia
@@ -18,7 +18,11 @@ informes historicos.
   [template.blade.php](resources/views/reports/phase-one/template.blade.php).
 
 Las reglas se incorporaron desde el manual facilitado, identificado por SHA256
-`B1AED789726FC2EE08678DC60C171B70F51DF52D9FBFF6E26D31E05CB847CFED`.
+`543957875C9540BD0EBEFE350BA2940033FC6BF973E1DA43106DEDB43F9F9BDA`,
+correspondiente a
+[Manual_Maestro_Universal_Informe_I_actualizado.docx](../docs/Manual_Maestro_Universal_Informe_I_actualizado.docx).
+El [prompt operativo editable](../docs/Prompt_Operativo_Informe_I_actualizado.docx)
+recoge el mismo contrato. Los originales permanecen intactos.
 No se abre un DOCX en cada llamada: la IA recibe las reglas incorporadas y esta
 procedencia se declara en los hechos. Modificar un Word externo no actualiza
 automaticamente el generador.
@@ -37,24 +41,33 @@ ni la fecha de nacimiento; la aplicacion los incorpora a la portada.
 5. **Los opuestos complementarios:** polaridad solar, polaridad lunar y eje angular,
    con complementariedad bidireccional.
 
-Los titulos de bloque no llevan la palabra "natal". Cada bloque tiene conceptos
+Los titulos de bloque no llevan "natal", numeros ni etiquetas Bloque/Puerta.
+Cada bloque tiene apartados
 principales; cada concepto contiene entre cinco y ocho caracteristicas cuando
 los datos lo sostienen (nunca mas de ocho, validado) y, debajo, normalmente dos
 o tres parrafos sustanciales en segunda persona y lenguaje llano. La aplicacion
-presenta conceptos como encabezados y caracteristicas como puntos numerados,
-sin repetir los rotulos CONCEPTO o Caracteristica. La IA solo escribe los nombres.
+presenta apartados como encabezados y caracteristicas como subtitulos en
+negrita, sin enumeracion ni contadores CSS. Cada apartado termina con
+**Palabras clave** y entre cinco y diez vinetas, de una sola palabra alfabetica
+cada una, sin duplicados dentro de la lista. Las listas complementan los
+parrafos, nunca los sustituyen.
+Cada bloque termina con **Estados de expresion**: Estado armonico, Estado
+desarmonico por exceso y Estado desarmonico por defecto. Cada estado contiene
+parrafos y su propia lista de palabras clave: quince estados en total.
+Los estados son posibilidades contextuales, no diagnosticos ni etiquetas fijas.
+Se exige espanol de Espana, sin voseo.
 Cada solicitud recibe las ocho categorias de investigacion del bloque; la auditoria
 recibe las de los cinco bloques. Son una guia de cobertura, no ocho secciones
 obligatorias ni una verificacion determinista de la calidad semantica.
 Los pasos tecnicos fundamentan los parrafos y no son caracteristicas personales.
-El prompt maestro (version 109) incluye la jerarquia de
+El prompt maestro (version 110) incluye la jerarquia de
 instrucciones conforme al manual (exactitud, consistencia tecnica, universalidad,
 personalizacion, profundidad y extension), la intensidad en lenguaje natural (importancia astrologica,
 intensidad simbolica y manifestacion personal), el procedimiento de 10 pasos
 para casas, cuspides y regentes, las dimensiones constructiva, desequilibrada,
 contradiccion, integracion y maduracion, y la diferenciacion entre bloques.
-El validador rechaza nombres internos de datos (positions, ulers,
-occupants, snapshot, current_report, maximum_orb, 	ime_precision o
+El validador rechaza nombres internos de datos (positions, rulers,
+occupants, snapshot, current_report, maximum_orb, time_precision o
 cualquier identificador con guion bajo). El JSON es:
 
 ```json
@@ -64,14 +77,30 @@ cualquier identificador con guion bajo). El JSON es:
     "characteristics": [{
       "title": "Caracteristica concreta",
       "paragraphs": ["Desarrollo individualizado sustentado en la carta."]
-    }]
-  }]
+    }],
+    "keywords": ["Criterio", "Cooperacion", "Autonomia", "Equilibrio", "Decision"]
+  }],
+  "states": {
+    "harmonious": {
+      "paragraphs": ["Expresion flexible y proporcionada de los recursos del bloque."],
+      "keywords": ["Flexibilidad", "Proporcion", "Criterio", "Apertura", "Cooperacion"]
+    },
+    "excess": {
+      "paragraphs": ["Posibilidades concretas de rigidez o sobreactivacion."],
+      "keywords": ["Rigidez", "Presion", "Control", "Insistencia", "Exigencia"]
+    },
+    "deficit": {
+      "paragraphs": ["Posibilidades concretas de dificultad para utilizar los recursos."],
+      "keywords": ["Reserva", "Duda", "Inhibicion", "Distancia", "Vacilacion"]
+    }
+  }
 }
 ```
 
 No hay introduccion interpretativa, resumen, conclusion ni sintesis final.
-Se retiraron las cuotas de cinco conductas y las secciones obligatorias de
-armonia/defecto/exceso, DON/NECESIDAD/SOMBRA/RECURSO y practica de cierre.
+La estructura de estados sustituye expresamente la antigua prohibicion de
+armonia/exceso/defecto. No se recuperan las cuotas de cinco conductas,
+DON/NECESIDAD/SOMBRA/RECURSO ni una practica de cierre obligatoria.
 La portada y el indice no incorporan interpretaciones adicionales.
 
 El objetivo editorial es **siete paginas Word orientativas por bloque**, no
@@ -79,8 +108,9 @@ una paginacion garantizada. Se propone una referencia flexible de 3200 palabras;
 no hay minimo obligatorio por bloque, caracteristica o informe que fuerce
 relleno. El limite tecnico de seguridad es 6000 palabras por bloque. La
 profundidad debe ajustarse a los datos y no alcanzarse repitiendo ideas.
-No se exporta Word ni se verifica su paginacion: el producto de la aplicacion
-es web/PDF A4. El renderizado PDF registra las paginas reales del indice y
+La interfaz de la aplicacion exporta web/PDF A4; los Word editables de referencia
+y la entrega regenerada se conservan como documentos aparte. Su paginacion no
+se infiere del PDF. El renderizado PDF registra las paginas reales del indice y
 rechaza paginas sin contenido, sin insertar paginas vacias para llegar a siete.
 Se conservan la rueda, la matriz, los colores y los encabezados/pies editoriales.
 
@@ -115,14 +145,27 @@ y valoraciones automaticas de aspectos como buenos o malos.
 
 ## Generacion, auditoria y edicion
 
-La cola `reports` ejecuta cinco llamadas estructuradas, una por bloque, y una
-sexta llamada de auditoria conjunta, seguidas de validacion, montaje y PDF.
+La cola `reports` ejecuta cinco llamadas estructuradas de generacion, una por
+bloque, y cinco llamadas de auditoria con contexto conjunto, seguidas de
+validacion, montaje y PDF.
 Cada bloque recibe los anteriores del **mismo trabajo**, nunca informes
 historicos. Si falta ese contexto, se detiene la generacion.
 
-La auditoria recibe los cinco bloques y devuelve reemplazos completos solo
-donde hacen falta correcciones. Se validan todos los reemplazos antes de
-guardarlos en una transaccion. El trabajo no se completa sin esa auditoria.
+Cada llamada de auditoria recibe los cinco bloques actualizados, pero solo
+puede devolver un reemplazo del bloque solicitado, o una lista vacia si no
+necesita cambios. El esquema JSON y el validador impiden corregir otros bloques.
+Se valida el informe completo antes de guardar cada resultado en una transaccion.
+Cada bloque auditado se registra en los borradores; el worker encola la siguiente
+llamada por separado y un reintento continua desde la auditoria pendiente.
+La etapa se mantiene al 60 % mientras el panel indica el bloque auditado, de 1 a 5.
+No se marca el informe como auditado hasta completar los cinco bloques.
+Un reintento conserva las etapas de la misma version. Un trabajo del contrato
+109 no puede reutilizarse como 110: sus bloques no contienen estados ni palabras
+clave. Hay que iniciar una generacion nueva. Las interpretaciones de versiones
+anteriores se conservan por su plantilla, pero no se mezclan con las actuales.
+El presupuesto de salida ya no tiene que alojar cinco reemplazos en una respuesta.
+Sigue incluyendo razonamiento y texto: esta division no garantiza evitar todo
+limite de tokens, y las cinco lecturas del contexto pueden aumentar el coste.
 Los controles locales verifican estructura, campos no vacios, titulos excluidos,
 limite tecnico, parrafos literalmente duplicados y afirmaciones reconocibles
 de signo, casa y aspecto. Tambien rechazan titulos con pasos del analisis
@@ -166,12 +209,16 @@ operacion en curso, la cancelacion es cooperativa: el worker la completa en el
 siguiente limite seguro, no inicia otra etapa y conserva los borradores
 guardados. Los trabajos en cola se cancelan de inmediato.
 
-El editor conserva conceptos H3, caracteristicas H4 y parrafos. Valida tambien
-el bloque V, contradicciones y duplicaciones entre bloques antes de guardar.
-Conserva enfasis en linea, elimina atributos HTML e invalida el PDF. Guardar o
+El editor conserva apartados H3, caracteristicas y estados H4, parrafos y
+vinetas UL/LI. Quill exporta HTML semantico, no sus listas OL internas.
+Valida tambien Los opuestos complementarios, contradicciones y duplicaciones
+entre bloques antes de guardar. Conserva enfasis en linea, elimina atributos
+HTML (tambien al recuperar un formulario rechazado), normaliza los espacios
+no separables de Quill para conservar los rotulos y el ajuste de linea, e
+invalida el PDF. Guardar o
 recrear el PDF no vuelve a interpretar.
 
-**Version de modelo: 109. Version editorial PDF: 20.** Los textos y trabajos de
+**Version de modelo: 110. Version editorial PDF: 21.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.

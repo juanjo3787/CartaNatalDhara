@@ -8,7 +8,7 @@
     foreach ($report['doors'] as $door) {
         $editorChapters[] = ['title' => $door['title'], 'prefix' => 'doors[' . $door['key'] . ']', 'old_prefix' => 'doors.' . $door['key'], 'id' => $door['key'], 'blocks' => $editable['doors'][$door['key']]];
     }
-    $editorChapters[] = ['title' => 'V — Los opuestos complementarios', 'prefix' => 'shared', 'old_prefix' => 'shared', 'id' => 'shared', 'blocks' => $editable['shared']];
+    $editorChapters[] = ['title' => 'Los opuestos complementarios', 'prefix' => 'shared', 'old_prefix' => 'shared', 'id' => 'shared', 'blocks' => $editable['shared']];
 @endphp
 
 @section('content')
@@ -41,6 +41,7 @@
         </form>
     </div>
     <p class="ai-generation-status" data-ai-generation-status role="status" aria-live="polite"></p>
+    <p>Conserva los apartados y los tres estados de cada bloque. Cada apartado y cada estado termina con «Palabras clave» y entre cinco y diez viñetas de una sola palabra. No utilices numeración.</p>
 
     @if ($errors->any())
         <div class="note"><strong>Revisa el formulario:</strong><ul>@foreach ($errors->all() as $error)<li class="error">{{ $error }}</li>@endforeach</ul></div>
@@ -59,8 +60,9 @@
                         <div id="toolbar-{{ $chapter['id'] }}-{{ $block }}" class="quill-toolbar">
                             <span class="ql-formats"><select class="ql-header"><option value="3">Concepto</option><option value="4">Característica</option><option selected>Párrafo</option></select></span>
                             <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
+                            <span class="ql-formats"><button class="ql-list" value="bullet" aria-label="Viñetas de palabras clave"></button></span>
                         </div>
-                        <div id="{{ $chapter['id'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! old($chapter['old_prefix'] . '.' . $block, $content) !!}</div>
+                        <div id="{{ $chapter['id'] }}-{{ $block }}" class="rich-editor" data-rich-editor>{!! app(\App\Services\PhaseOneReportService::class)->sanitizeChapterHtml(old($chapter['old_prefix'] . '.' . $block, $content)) !!}</div>
                         <textarea name="{{ $chapter['prefix'] }}[{{ $block }}]" data-editor-value="{{ $chapter['id'] }}-{{ $block }}" hidden></textarea>
                     </div>
                 @endforeach
@@ -77,6 +79,7 @@
         document.querySelectorAll('[data-rich-editor]').forEach((element) => {
             const quill = new Quill(element, {
                 theme: 'snow',
+                formats: ['header', 'bold', 'italic', 'underline', 'list'],
                 modules: { toolbar: `#toolbar-${element.id}` },
             });
             editors.set(element.id, quill);
@@ -86,7 +89,7 @@
         form?.addEventListener('submit', () => {
             document.querySelectorAll('[data-editor-value]').forEach((field) => {
                 const editor = editors.get(field.dataset.editorValue);
-                field.value = editor?.root.innerHTML || '';
+                field.value = editor?.getSemanticHTML() || '';
             });
         });
 

@@ -51,7 +51,6 @@ class ReportPdfService
         $doorStartPages = [];
         $indexStartPages = [];
         $indexPageLabels = [];
-        $blankPages = [];
         $contentPages = [];
         $expectedDoors = collect($report['doors'])
             ->filter(fn (array $door): bool => $report['sections'][$door['key']]['enabled'] ?? false)
@@ -60,17 +59,13 @@ class ReportPdfService
         $expectedIndexKeys = array_column($report['index'], 'key');
         $dompdf->setCallbacks([[
             'event' => 'begin_frame',
-            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$blankPages, &$contentPages): void {
+            'f' => static function ($frame, $canvas) use (&$renderedDoors, &$doorStartPages, &$indexStartPages, &$indexPageLabels, &$contentPages): void {
                 $node = $frame->get_node();
                 if ($node instanceof \DOMText && trim($node->textContent) !== '') {
                     $contentPages[$canvas->get_page_number()] = true;
                 }
                 if (! $node instanceof \DOMElement) {
                     return;
-                }
-
-                if ($node->hasAttribute('data-report-blank-page')) {
-                    $blankPages[] = $canvas->get_page_number();
                 }
 
                 if ($node->hasAttribute('data-door-key')) {
@@ -106,12 +101,12 @@ class ReportPdfService
             throw new \RuntimeException('No se pudieron determinar las páginas de todos los apartados del índice.');
         }
         $canvas = $dompdf->getCanvas();
-        if (array_diff(range(1, $canvas->get_page_count()), array_keys($contentPages), $blankPages) !== []) {
+        if (array_diff(range(1, $canvas->get_page_count()), array_keys($contentPages)) !== []) {
             throw new \RuntimeException('El PDF contiene una página sin contenido. Revisa la paginación sin insertar páginas vacías.');
         }
         $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans', 'normal');
         $header = 'SARANA VEDA · '.mb_strtoupper($report['name']);
-        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels, $blankPages): void {
+        $canvas->page_script(static function (int $pageNumber, int $pageCount, $pageCanvas) use ($font, $header, $indexStartPages, $indexPageLabels): void {
             foreach ($indexPageLabels as $key => $label) {
                 if ($label['page'] === $pageNumber && isset($indexStartPages[$key])) {
                     $pageText = (string) $indexStartPages[$key];
@@ -127,7 +122,7 @@ class ReportPdfService
                 }
             }
 
-            if ($pageNumber === 1 || in_array($pageNumber, $blankPages, true)) {
+            if ($pageNumber === 1) {
                 return;
             }
             $width = $pageCanvas->get_width();
@@ -148,7 +143,7 @@ class ReportPdfService
             'pages' => $canvas->get_page_count(),
             'index_pages' => $indexStartPages,
             'content_pages' => array_keys($contentPages),
-            'blank_pages' => $blankPages,
+            'blank_pages' => [],
             'duration_seconds' => round((hrtime(true) - $renderStartedAt) / 1_000_000_000, 2),
         ]);
 

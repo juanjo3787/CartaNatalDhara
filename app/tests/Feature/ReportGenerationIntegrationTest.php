@@ -40,15 +40,20 @@ final class ReportGenerationIntegrationTest extends TestCase
             $html = view('reports.phase-one.template', compact('chart', 'report', 'pdf'))->render();
             $this->assertSame(1, substr_count($html, 'data-section-id="sol.concepts"'));
             $this->assertSame(1, substr_count($html, 'data-index-key="opposites"'));
-            $this->assertStringContainsString('BLOQUE I — El Sol', $html);
-            $this->assertStringContainsString('BLOQUE V — Los opuestos complementarios', $html);
+            $this->assertStringContainsString('<h1>El Sol</h1>', $html);
+            $this->assertStringContainsString('<h1>Los opuestos complementarios</h1>', $html);
             $this->assertStringNotContainsString('Sol natal', $html);
-            $this->assertStringContainsString("content: counter(report-characteristic) '. '", $html);
+            $this->assertStringNotContainsString('report-characteristic', $html);
             $this->assertStringNotContainsString("content: 'CONCEPTO: '", $html);
             $this->assertStringNotContainsString("content: 'Característica '", $html);
             $this->assertStringNotContainsString('data-report-blank-page="9"', $html);
             $this->assertStringContainsString('#f8dfcc', $html);
-            $this->assertStringContainsString('Inicio de la casa 7', $html);
+            $this->assertStringNotContainsString('Inicio de la casa 7', $html);
+            $this->assertSame(5, substr_count($html, '<h3>Estados de expresión</h3>'));
+            $this->assertSame(15, substr_count($html, '<h4>Estado '));
+            $this->assertSame(25, substr_count($html, '<strong>Palabras clave</strong>'));
+            $this->assertStringNotContainsString('data-report-blank-page', $html);
+            $this->assertStringNotContainsString('>00</span>', $html);
             $this->assertStringContainsString('<h3>Concepto sol 1</h3><h4>Característica sol 1 1</h4><p>', $html);
             $this->assertStringNotContainsString('Tu primera lectura', $html);
             $this->assertStringNotContainsString('<strong>DON:</strong>', $html);
@@ -117,13 +122,13 @@ final class ReportGenerationIntegrationTest extends TestCase
         $this->saveChapters($chart);
         $service = app(PhaseOneReportService::class);
         $editable = $service->editableContent($chart);
-        $editable['shared']['concepts'] .= '<p>La polaridad no exige Luna en Acuario.</p>';
+        $editable['shared']['concepts'] = preg_replace('/<p>/', '<p>La polaridad no exige Luna en Acuario.</p><p>', $editable['shared']['concepts'], 1);
         app(PhaseOneManualSaveService::class)->save($chart, $editable['shared'], $editable['doors']);
         $saved = $service->editableContent($chart->fresh());
         $this->assertStringContainsString('no exige Luna en Acuario', $saved['shared']['concepts']);
 
         $editable = $saved;
-        $editable['shared']['concepts'] .= '<p>No es un diagnóstico, pero tu Sol en Libra expresa tu identidad.</p>';
+        $editable['shared']['concepts'] = preg_replace('/<p>/', '<p>No es un diagnóstico, pero tu Sol en Libra expresa tu identidad.</p><p>', $editable['shared']['concepts'], 1);
         $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)
             ->assertSessionHasErrors('shared');
         $this->assertSame($saved, $service->editableContent($chart->fresh()));
@@ -154,6 +159,8 @@ final class ReportGenerationIntegrationTest extends TestCase
         $this->assertSame('estimated', $facts['technical']['time_source']);
         $chart->birthData->update(['time_precision' => 'exact', 'time_source' => 'document']);
         $this->assertFalse(app(InteriorMapMaster::class)->facts($chart)['technical']['angles_houses_conditional']);
+        $chart->birthData->update(['time_source' => 'unknown']);
+        $this->assertTrue(app(InteriorMapMaster::class)->facts($chart)['technical']['angles_houses_conditional']);
     }
 
     public function test_editor_preserves_inline_emphasis_and_removes_html_attributes(): void
@@ -162,10 +169,63 @@ final class ReportGenerationIntegrationTest extends TestCase
         $this->saveChapters($chart);
         $service = app(PhaseOneReportService::class);
         $editable = $service->editableContent($chart);
-        $editable['doors']['sol']['concepts'] .= '<p onclick="invalid()"><strong>Un matiz propio</strong> conserva su énfasis.</p>';
+        $editable['doors']['sol']['concepts'] = preg_replace('/<p>/', '<p onclick="invalid()"><strong>Un matiz propio</strong> conserva su énfasis.</p><p>', $editable['doors']['sol']['concepts'], 1);
         app(PhaseOneManualSaveService::class)->save($chart, $editable['shared'], $editable['doors']);
         $saved = $service->editableContent($chart->fresh())['doors']['sol']['concepts'];
         $this->assertStringContainsString('<p><strong>Un matiz propio</strong> conserva su énfasis.</p>', $saved);
         $this->assertStringNotContainsString('onclick', $saved);
+    }
+
+    public function test_keywords_and_states_survive_edit_save_reopen_without_unsafe_html(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $reports = app(PhaseOneReportService::class);
+        $editable = $reports->editableContent($chart);
+        $before = $reports->parseChapter($editable['doors']['sol']['concepts']);
+        $editable['doors']['sol']['concepts'] = str_replace('<li>', '<li onclick="alert(1)" style="color:red">', $editable['doors']['sol']['concepts']);
+        $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)->assertRedirect();
+        $saved = $reports->editableContent($chart->fresh())['doors']['sol']['concepts'];
+        $this->assertSame($before, $reports->parseChapter($saved));
+        $this->assertStringNotContainsString('onclick', $saved);
+        $this->assertStringNotContainsString('style=', $saved);
+        $this->assertSame(5, substr_count($saved, '<ul>'));
+        $this->get(route('charts.report.edit', $chart))->assertOk()->assertSee('getSemanticHTML', false);
+        $this->get(route('charts.report', $chart))->assertOk()->assertSee('Estado desarmónico por defecto');
+    }
+
+    public function test_ordered_keyword_lists_are_not_accepted_as_unordered_bullets(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $reports = app(PhaseOneReportService::class);
+        $html = $reports->editableContent($chart)['doors']['sol']['concepts'];
+        $this->expectException(\RuntimeException::class);
+        $reports->parseChapter(str_replace(['<ul>', '</ul>'], ['<ol>', '</ol>'], $html));
+    }
+
+    public function test_quill_semantic_nonbreaking_spaces_do_not_break_headings_or_pdf_wrapping(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $reports = app(PhaseOneReportService::class);
+        $editable = $reports->editableContent($chart);
+        $original = $editable['doors']['sol']['concepts'];
+        $editable['doors']['sol']['concepts'] = str_replace(' ', '&nbsp;', $original);
+        $this->actingAs(User::factory()->create())->put(route('charts.report.save', $chart), $editable)->assertRedirect();
+        $saved = $reports->editableContent($chart->fresh())['doors']['sol']['concepts'];
+        $this->assertSame($original, $saved);
+        $this->assertStringNotContainsString('&nbsp;', $saved);
+        $this->assertStringNotContainsString("\u{00A0}", $saved);
+    }
+
+    public function test_rejected_editor_input_cannot_restore_untrusted_tags_or_attributes(): void
+    {
+        $chart = $this->chart();
+        $this->saveChapters($chart);
+        $this->actingAs(User::factory()->create())
+            ->withSession(['_old_input' => ['doors' => ['sol' => ['concepts' => '<p onclick="invalid()">Texto</p><img src="x" onerror="invalid()">']]]])
+            ->get(route('charts.report.edit', $chart))->assertOk()
+            ->assertSee('<p>Texto</p>', false)->assertDontSee('onclick=', false)->assertDontSee('onerror=', false);
     }
 }

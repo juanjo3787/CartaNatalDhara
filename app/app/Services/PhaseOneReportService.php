@@ -21,7 +21,6 @@ final class PhaseOneReportService
             ->whereHas('template', fn ($query) => $query->where('version', InteriorMapMaster::VERSION))
             ->orderBy('id')->get()->keyBy(fn ($row) => ($row->door ?? 'shared').'.'.$row->block);
         $titles = ['sol' => 'El Sol', 'luna' => 'La Luna', 'ascendente' => 'El Ascendente', 'descendente' => 'El Descendente'];
-        $numbers = ['I', 'II', 'III', 'IV'];
         $doors = [];
         $sections = [];
         $index = [];
@@ -34,12 +33,11 @@ final class PhaseOneReportService
             } else {
                 $missing[] = $door.'.concepts';
             }
-            $number = $numbers[count($doors)];
-            $sections[$door] = ['enabled' => true, 'number' => $number, 'title' => $title];
-            $index[] = ['key' => $door, 'number' => $number, 'title' => $title];
+            $sections[$door] = ['enabled' => true, 'title' => $title];
+            $index[] = ['key' => $door, 'title' => $title];
             $doors[] = [
                 'key' => $door, 'title' => $title,
-                'subtitle' => $facts[$door]['position'].' · '.(in_array($door, ['ascendente', 'descendente'], true) ? 'Inicio de la casa ' : 'Casa ').$facts[$door]['house'],
+                'subtitle' => $facts[$door]['sign'],
                 'blocks' => $blocks,
             ];
         }
@@ -53,11 +51,11 @@ final class PhaseOneReportService
         if ($storedOnly && $missing !== []) {
             throw new RuntimeException('Faltan secciones del nuevo Informe I: '.implode(', ', $missing));
         }
-        $sections['opposites'] = ['enabled' => true, 'number' => 'V', 'title' => 'Los opuestos complementarios'];
-        $index[] = ['key' => 'opposites', 'number' => 'V', 'title' => 'Los opuestos complementarios'];
+        $sections['opposites'] = ['enabled' => true, 'title' => 'Los opuestos complementarios'];
+        $index[] = ['key' => 'opposites', 'title' => 'Los opuestos complementarios'];
 
         return [
-            'report_schema_version' => InteriorMapMaster::VERSION, 'prompt_version' => 'natal-universal-2',
+            'report_schema_version' => InteriorMapMaster::VERSION, 'prompt_version' => 'informe-i-states-keywords-1',
             'name' => $chart->person->full_name ?: $chart->person->alias,
             'doors' => $doors, 'sections' => $sections, 'index' => $index,
             'opposites' => $opposites, 'complete' => $missing === [], 'facts' => $facts,
@@ -93,9 +91,9 @@ final class PhaseOneReportService
     {
         $this->master->validate($content);
         $this->master->validateFacts($content, $this->master->facts($chart), $door);
-        $html = $this->renderConcepts($content['concepts']);
+        $html = $this->renderChapter($content);
         if ($editedHtml !== null) {
-            $html = preg_replace('/<(p|strong|em|u|br|h3|h4)\b[^>]*>/i', '<$1>', strip_tags($editedHtml, '<p><strong><em><u><br><h3><h4>'));
+            $html = $this->sanitizeChapterHtml($editedHtml);
             if ($this->parseChapter($html) !== $content) {
                 throw new RuntimeException('El formato editado no conserva los conceptos y características validados.');
             }
@@ -106,21 +104,36 @@ final class PhaseOneReportService
                 ['door' => $door, 'block' => 'concepts', 'content_type' => 'interior_map', 'status' => 'published', 'content' => 'Informe I — Manual Maestro Universal.'],
             );
             $chart->interpretations()->updateOrCreate(
-                ['phase' => 'fase-1', 'door' => $door, 'block' => 'concepts'],
+                ['phase' => 'fase-1', 'door' => $door, 'block' => 'concepts', 'template_id' => $template->id],
                 ['template_id' => $template->id, 'content' => $html, 'ai_assisted' => $assisted, 'rulers_used' => []],
             );
             $chart->update(['phase_one_pdf' => null, 'phase_one_pdf_generated_at' => null]);
         });
     }
 
+    public function sanitizeChapterHtml(string $html): string
+    {
+        return $this->normalizeEditorSpaces(preg_replace('/<(p|strong|em|u|br|h3|h4|ul|li)\b[^>]*>/i', '<$1>', strip_tags($html, '<p><strong><em><u><br><h3><h4><ul><li>')));
+    }
+
+    private function normalizeEditorSpaces(string $html): string
+    {
+        // Quill's semantic export encodes ordinary spaces as non-breaking spaces.
+        return str_replace(["\u{00A0}", '&nbsp;', '&#160;', '&#xA0;', '&#xa0;'], ' ', $html);
+    }
+
     public function parseChapter(string $html): array
     {
         $document = new DOMDocument;
-        $document->loadHTML('<?xml encoding="UTF-8"><html><body>'.$html.'</body></html>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+        $document->loadHTML('<?xml encoding="UTF-8"><html><body>'.$this->normalizeEditorSpaces($html).'</body></html>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
         $body = $document->getElementsByTagName('body')->item(0);
         $concepts = [];
         $conceptIndex = -1;
         $characteristicIndex = -1;
+        $states = [];
+        $inStates = false;
+        $stateKey = null;
+        $awaitingKeywords = false;
         foreach ($body->childNodes as $node) {
             if (trim($node->textContent) === '') {
                 continue;
@@ -129,29 +142,73 @@ final class PhaseOneReportService
                 throw new RuntimeException('Conserva títulos de concepto (H3), características (H4) y párrafos debajo de cada característica.');
             }
             $text = trim($node->textContent);
-            if ($node->tagName === 'h3') {
-                $concepts[] = ['title' => $text, 'characteristics' => []];
+            if ($awaitingKeywords) {
+                if ($node->tagName !== 'ul') {
+                    throw new RuntimeException('Al rótulo Palabras clave debe seguir una lista de viñetas.');
+                }
+                $keywords = [];
+                foreach ($node->childNodes as $item) {
+                    if (trim($item->textContent) === '') {
+                        continue;
+                    }
+                    if (! $item instanceof DOMElement || $item->tagName !== 'li' || $item->getElementsByTagName('ul')->length || $item->getElementsByTagName('ol')->length) {
+                        throw new RuntimeException('Las palabras clave requieren viñetas simples sin sublistas.');
+                    }
+                    $keywords[] = trim($item->textContent);
+                }
+                if ($inStates && $stateKey !== null) {
+                    $states[$stateKey]['keywords'] = $keywords;
+                } elseif (! $inStates && $conceptIndex >= 0) {
+                    $concepts[$conceptIndex]['keywords'] = $keywords;
+                } else {
+                    throw new RuntimeException('La lista de palabras clave debe pertenecer a un apartado o estado.');
+                }
+                $awaitingKeywords = false;
+
+                continue;
+            }
+            if ($node->tagName === 'h3' && $text === 'Estados de expresión' && ! $inStates) {
+                $inStates = true;
+            } elseif ($node->tagName === 'h3' && ! $inStates) {
+                $concepts[] = ['title' => $text, 'characteristics' => [], 'keywords' => []];
                 $conceptIndex++;
                 $characteristicIndex = -1;
-            } elseif ($node->tagName === 'h4' && $conceptIndex >= 0) {
+            } elseif ($node->tagName === 'h4' && $inStates) {
+                $key = array_search($text, InteriorMapMaster::STATES, true);
+                if ($key === false || isset($states[$key]) || count($states) !== array_search($key, array_keys(InteriorMapMaster::STATES), true)) {
+                    throw new RuntimeException('Conserva los tres estados y su orden: armónico, exceso y defecto.');
+                }
+                $stateKey = $key;
+                $states[$key] = ['paragraphs' => [], 'keywords' => []];
+            } elseif ($node->tagName === 'h4' && $conceptIndex >= 0 && $concepts[$conceptIndex]['keywords'] === []) {
                 $concepts[$conceptIndex]['characteristics'][] = ['title' => $text, 'paragraphs' => []];
                 $characteristicIndex++;
-            } elseif ($node->tagName === 'p' && $characteristicIndex >= 0) {
+            } elseif ($node->tagName === 'p' && $text === 'Palabras clave' && ($conceptIndex >= 0 || $stateKey !== null)) {
+                if (($inStates && ($stateKey === null || $states[$stateKey]['keywords'] !== [])) || (! $inStates && $concepts[$conceptIndex]['keywords'] !== [])) {
+                    throw new RuntimeException('Cada apartado o estado lleva una única lista de palabras clave.');
+                }
+                $awaitingKeywords = true;
+            } elseif ($node->tagName === 'p' && $inStates && $stateKey !== null && $states[$stateKey]['keywords'] === []) {
+                $states[$stateKey]['paragraphs'][] = $text;
+            } elseif ($node->tagName === 'p' && ! $inStates && $characteristicIndex >= 0 && $concepts[$conceptIndex]['keywords'] === []) {
                 $concepts[$conceptIndex]['characteristics'][$characteristicIndex]['paragraphs'][] = $text;
             } else {
                 throw new RuntimeException('Cada concepto requiere características (H4) y párrafos explicativos; no se admiten introducciones ni listas sin desarrollo.');
             }
         }
-        $content = ['concepts' => $concepts];
+        if ($awaitingKeywords) {
+            throw new RuntimeException('Falta la lista de palabras clave.');
+        }
+        $content = ['concepts' => $concepts, 'states' => $states];
         $this->master->validate($content);
 
         return $content;
     }
 
-    private function renderConcepts(array $concepts): string
+    public function renderChapter(array $content): string
     {
         $html = '';
-        foreach ($concepts as $concept) {
+        foreach ($content['concepts'] as $concept) {
             $html .= '<h3>'.e($concept['title']).'</h3>';
             foreach ($concept['characteristics'] as $characteristic) {
                 $html .= '<h4>'.e($characteristic['title']).'</h4>';
@@ -159,8 +216,22 @@ final class PhaseOneReportService
                     $html .= '<p>'.e($paragraph).'</p>';
                 }
             }
+            $html .= $this->renderKeywords($concept['keywords']);
+        }
+        $html .= '<h3>Estados de expresión</h3>';
+        foreach (InteriorMapMaster::STATES as $key => $label) {
+            $html .= '<h4>'.e($label).'</h4>';
+            foreach ($content['states'][$key]['paragraphs'] as $paragraph) {
+                $html .= '<p>'.e($paragraph).'</p>';
+            }
+            $html .= $this->renderKeywords($content['states'][$key]['keywords']);
         }
 
         return $html;
+    }
+
+    private function renderKeywords(array $keywords): string
+    {
+        return '<p><strong>Palabras clave</strong></p><ul>'.implode('', array_map(static fn (string $word): string => '<li>'.e($word).'</li>', $keywords)).'</ul>';
     }
 }

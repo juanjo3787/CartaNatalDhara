@@ -29,7 +29,6 @@ class ReportJobService
             app(InteriorMapMaster::class)->facts($chart);
             if ($doors !== []) {
                 $chart->update(['report_is_stale' => true, 'phase_one_pdf' => null, 'phase_one_pdf_generated_at' => null]);
-                $chart->interpretations()->where('phase', 'fase-1')->delete();
             } else {
                 abort_unless(app(PhaseOneReportService::class)->build($chart)['complete'], 409, 'Genera el Informe I completo antes de guardar un PDF.');
             }
@@ -136,12 +135,16 @@ class ReportJobService
         }
         $step = $this->steps($job)[$job->cursor];
         $section = isset($step['door']) ? $step['door'].'.'.$step['stage'] : $step['status'];
+        if ($step['status'] === 'auditing') {
+            $pending = array_values(array_diff(InteriorMapMaster::CHAPTERS, $job->drafts['_audited_chapters'] ?? []));
+            $section = 'auditing.'.($pending[0] ?? 'complete');
+        }
         $metrics = app(ReportMetrics::class);
         $id = $metrics->begin($job->id, 'step', $section);
         $started = hrtime(true);
         $error = null;
         try {
-            $this->processStep($job);
+            $this->processStep($job, $section);
         } catch (\Throwable $exception) {
             $error = $exception;
             throw $exception;
@@ -150,16 +153,16 @@ class ReportJobService
         }
     }
 
-    private function processStep(ReportJob $job): void
+    private function processStep(ReportJob $job, string $section): void
     {
         $steps = $this->steps($job);
         $step = $steps[$job->cursor];
-        $claimed = DB::transaction(function () use ($job, $step): bool {
+        $claimed = DB::transaction(function () use ($job, $step, $section): bool {
             $current = ReportJob::whereKey($job->id)->lockForUpdate()->firstOrFail();
             if (in_array($current->status, ['cancelling', 'cancelled', 'completed', 'failed'], true)) {
                 return false;
             }
-            $current->update(['status' => $step['status'], 'current_section' => isset($step['door']) ? $step['door'].'.'.$step['stage'] : $step['status'], 'started_at' => $current->started_at ?? now()]);
+            $current->update(['status' => $step['status'], 'current_section' => $section, 'started_at' => $current->started_at ?? now()]);
 
             return true;
         });
@@ -169,12 +172,13 @@ class ReportJobService
             return;
         }
         $chart = $job->chart;
+        $stepComplete = true;
         if (isset($step['door'])) {
             app(PhaseOneAiGenerationService::class)->generateChapter($chart, $step['door'], $job);
         } elseif ($step['status'] === 'generating_opposites') {
             app(PhaseOneAiGenerationService::class)->generateChapter($chart, 'opposites', $job);
         } elseif ($step['status'] === 'auditing') {
-            app(PhaseOneAiGenerationService::class)->auditReport($chart, $job);
+            $stepComplete = app(PhaseOneAiGenerationService::class)->auditReport($chart, $job);
         } elseif (in_array($step['status'], ['validating', 'building_document'], true)) {
             $reportService = app(PhaseOneReportService::class);
             if ($job->doors !== []) {
@@ -190,7 +194,7 @@ class ReportJobService
                 && array_diff($allDoors, $job->doors) === [];
             app(ReportPdfService::class)->store($chart, $job->id, $completeReport);
         }
-        DB::transaction(function () use ($job, $steps): void {
+        DB::transaction(function () use ($job, $steps, $stepComplete): void {
             $current = ReportJob::whereKey($job->id)->lockForUpdate()->firstOrFail();
             if ($current->status === 'cancelling') {
                 $current->update([
@@ -203,7 +207,7 @@ class ReportJobService
 
                 return;
             }
-            $next = $current->cursor + 1;
+            $next = $current->cursor + ($stepComplete ? 1 : 0);
             $complete = $next === count($steps);
             $current->update(['cursor' => $next, 'progress' => (int) floor(100 * $next / count($steps)), 'status' => $complete ? 'completed' : $current->status, 'active_chart_id' => $complete ? null : $current->chart_id, 'completed_at' => $complete ? now() : null, 'error_code' => null, 'error_message' => null]);
             if (! $complete) {

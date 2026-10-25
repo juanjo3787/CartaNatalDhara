@@ -36,9 +36,9 @@ final class ReportPdfRefreshTest extends TestCase
             }
             $this->assertGreaterThan(7, $context['pages']);
             $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($context['index_pages']));
-            $this->assertSame([2, 4], $context['blank_pages']);
-            $this->assertEqualsCanonicalizing(array_values(array_diff(range(1, $context['pages']), [2, 4])), $context['content_pages']);
-            $this->assertSame(5, $context['index_pages']['sol']);
+            $this->assertSame([], $context['blank_pages']);
+            $this->assertEqualsCanonicalizing(range(1, $context['pages']), $context['content_pages']);
+            $this->assertSame(3, $context['index_pages']['sol']);
             $starts = array_values($context['index_pages']);
             $sorted = $starts;
             sort($sorted);

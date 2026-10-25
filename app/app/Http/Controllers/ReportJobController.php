@@ -81,6 +81,16 @@ class ReportJobController extends Controller
     {
         $messages = ['queued' => 'En cola', 'preparing' => 'Preparando informe', 'generating_sun' => 'Generando Sol', 'generating_moon' => 'Generando Luna', 'generating_ascendant' => 'Generando Ascendente', 'generating_descendant' => 'Generando Descendente', 'generating_opposites' => 'Generando opuestos complementarios', 'auditing' => 'Auditando los cinco bloques', 'validating' => 'Validando contenido', 'building_document' => 'Montando documento', 'generating_pdf' => 'Generando PDF', 'cancelling' => 'Deteniendo al finalizar la operación actual', 'cancelled' => 'Trabajo cancelado; se conservan las etapas guardadas', 'completed' => 'Informe disponible', 'failed' => 'Generación interrumpida'];
 
-        return ['job_id' => $job->id, 'report_id' => $job->chart_id, 'status' => $job->status, 'current_section' => $job->current_section, 'progress' => $job->progress, 'message' => $messages[$job->status] ?? $job->status, 'error_code' => $job->error_code, 'error_message' => $job->error_message, 'status_url' => route('reports.jobs.show', $job), 'retry_url' => route('reports.jobs.retry', $job), 'cancel_url' => route('reports.jobs.cancel', $job), 'report_url' => route('charts.report', $job->chart_id), 'pdf_url' => $job->status === 'completed' ? route('charts.report.download', $job->chart_id) : null];
+        $message = $messages[$job->status] ?? $job->status;
+        if ($job->status === 'auditing' && str_starts_with($job->current_section ?? '', 'auditing.')) {
+            $chapter = substr($job->current_section, strlen('auditing.'));
+            $names = ['sol' => 'Sol', 'luna' => 'Luna', 'ascendente' => 'Ascendente', 'descendente' => 'Descendente', 'opposites' => 'Opuestos complementarios'];
+            $number = array_search($chapter, array_keys($names), true);
+            if ($number !== false) {
+                $message = 'Auditando '.$names[$chapter].' — bloque '.($number + 1).' de 5';
+            }
+        }
+
+        return ['job_id' => $job->id, 'report_id' => $job->chart_id, 'status' => $job->status, 'current_section' => $job->current_section, 'progress' => $job->progress, 'message' => $message, 'error_code' => $job->error_code, 'error_message' => $job->error_message, 'status_url' => route('reports.jobs.show', $job), 'retry_url' => route('reports.jobs.retry', $job), 'cancel_url' => route('reports.jobs.cancel', $job), 'report_url' => route('charts.report', $job->chart_id), 'pdf_url' => $job->status === 'completed' ? route('charts.report.download', $job->chart_id) : null];
     }
 }

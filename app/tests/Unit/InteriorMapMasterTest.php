@@ -136,8 +136,8 @@ final class InteriorMapMasterTest extends TestCase
     public function test_schema_has_open_concepts_with_explained_characteristics_and_no_old_sections(): void
     {
         $master = new InteriorMapMaster;
-        $this->assertSame(['concepts'], $master->schema()['required']);
-        $this->assertSame(['title', 'characteristics'], $master->schema()['properties']['concepts']['items']['required']);
+        $this->assertSame(['concepts', 'states'], $master->schema()['required']);
+        $this->assertSame(['title', 'characteristics', 'keywords'], $master->schema()['properties']['concepts']['items']['required']);
         $this->assertSame(InteriorMapMaster::CHAPTERS, $master->auditSchema()['properties']['replacements']['items']['properties']['chapter']['enum']);
         $this->assertStringContainsString('siete páginas', $master->systemPrompt());
         $this->assertStringContainsString('matriz interna', $master->systemPrompt());
@@ -174,7 +174,7 @@ final class InteriorMapMasterTest extends TestCase
 
     public function test_old_schema_and_unexplained_lists_are_rejected(): void
     {
-        $this->expectExceptionMessage('exclusivamente conceptos');
+        $this->expectExceptionMessage('estructura');
         (new InteriorMapMaster)->validate(['harmony' => ['adjetivo'], 'summary' => ['cierre']]);
     }
 
@@ -228,7 +228,9 @@ final class InteriorMapMasterTest extends TestCase
     public function test_prompt_carries_the_corrective_editorial_contract(): void
     {
         $prompt = (new InteriorMapMaster)->systemPrompt();
-        $this->assertStringContainsString('I El Sol; II La Luna; III El Ascendente; IV El Descendente; V Los opuestos complementarios', $prompt);
+        $this->assertStringContainsString('El Sol; La Luna; El Ascendente; El Descendente; Los opuestos complementarios', $prompt);
+        $this->assertStringContainsString('Estado desarmónico por exceso', $prompt);
+        $this->assertStringContainsString('keywords', $prompt);
         $this->assertStringNotContainsString('Sol natal', $prompt);
         $this->assertStringContainsString('entre cinco y ocho características', $prompt);
         $this->assertStringContainsString('dos o tres párrafos', $prompt);
@@ -304,6 +306,9 @@ final class InteriorMapMasterTest extends TestCase
             ['La Luna, regente de Cáncer, está situada en casa VIII.', 'casa verificada'],
             ['Júpiter en Piscis, casa VII.', 'casa verificada'],
             ['La oposición Sol-Luna señala una relación.', 'aspecto no verificado'],
+            ['La conjunción de Venus con Júpiter implica afinidad.', 'aspecto no verificado'],
+            ['La polaridad Libra-Tauro implica complementariedad.', 'polaridad zodiacal'],
+            ['Libra y Tauro son polos complementarios.', 'polaridad zodiacal'],
             ['Sin embargo, tu Sol en Libra expresa tu identidad.', 'posición canónica'],
             ['La polaridad no exige nada. Tu Sol en Libra expresa tu identidad.', 'posición canónica'],
             ['No es un diagnóstico, pero tu Sol en Libra expresa tu identidad.', 'posición canónica'],

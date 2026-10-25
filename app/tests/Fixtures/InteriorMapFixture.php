@@ -33,13 +33,17 @@ trait InteriorMapFixture
     {
         return ['concepts' => array_map(static fn (int $concept): array => [
             'title' => 'Concepto '.$chapter.' '.$concept,
+            'keywords' => ['Criterio', 'Cooperación', 'Autonomía', 'Equilibrio', 'Decisión'],
             'characteristics' => array_map(static fn (int $characteristic): array => [
                 'title' => 'Característica '.$chapter.' '.$concept.' '.$characteristic,
                 'paragraphs' => [
                     $chapter.' '.$concept.' '.$characteristic.' '.implode(' ', array_map(static fn (int $word): string => 'observación'.$chapter.$concept.$characteristic.'x'.$word, range(1, 110))),
                 ],
             ], [1, 2]),
-        ], [1, 2])];
+        ], [1, 2]), 'states' => array_map(static fn (string $label): array => [
+            'paragraphs' => ['En '.$chapter.', '.$label.' permite contrastar una posibilidad simbólica específica sin atribuir hechos biográficos.'],
+            'keywords' => ['Criterio', 'Cooperación', 'Autonomía', 'Equilibrio', 'Decisión'],
+        ], InteriorMapMaster::STATES)];
     }
 
     private function chart(): Chart
