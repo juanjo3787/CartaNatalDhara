@@ -120,10 +120,16 @@ no la de un contenedor que pudiera empezar antes del titulo.
 Se conservan la rueda, la matriz, los colores y los encabezados/pies editoriales.
 La portada PDF usa una primera pagina A4 sin margenes: el fondo beige cubre
 los 210 por 297 mm, con contenido protegido por margenes interiores. La rueda
-mide 138 mm, con la matriz desplazada hacia abajo y sin los antiguos textos
-de bloques y temas bajo el titulo y la matriz; las etiquetas AC/MC no se parten. Se registran las cajas reales
-de los elementos de portada para comprobar que no se solapan; las paginas
-interiores mantienen sus margenes, encabezados y pies habituales.
+mide 194 mm y es el unico grafico de esta pagina; se conservan los textos del
+encabezado y los datos de nacimiento al pie. La segunda pagina contiene la
+matriz de aspectos con sus posiciones y el balance de fuego, tierra, aire y agua.
+El balance cuenta los diez planetas del Sol a Pluton con el mismo peso, muestra
+sus nombres, recuentos y porcentajes, y excluye nodos, Lilith y angulos. Si faltan
+posiciones se avisa y los porcentajes usan solo los planetas disponibles.
+Las etiquetas AC/MC no se parten. Se registran las cajas reales de ambas paginas
+para comprobar que no se solapan; las paginas interiores mantienen sus margenes,
+encabezados y pies habituales. El indice pasa a la tercera pagina y sus numeros
+se calculan con la paginacion real, sin volver a generar los textos con IA.
 
 ## Hechos tecnicos y universalidad
 
@@ -240,7 +246,7 @@ adyacente `ul + h3`, compatible con Dompdf en lugar de `:not(:first-child)`.
 Las pruebas miden al menos 32 pt de separacion real
 entre la lista de palabras clave y el siguiente titulo en la misma pagina.
 
-**Version de modelo: 110. Version editorial PDF: 27.** Los textos y trabajos de
+**Version de modelo: 110. Version editorial PDF: 28.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.

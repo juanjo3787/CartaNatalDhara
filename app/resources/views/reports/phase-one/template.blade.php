@@ -2,6 +2,7 @@
     $pdf = $pdf ?? false;
     $reportSnapshot = $chart->snapshot ?? [];
     $coverAspectMatrix = app(\App\Services\AspectMatrixBuilder::class)->build($reportSnapshot);
+    $elementBalance = app(\App\Services\ElementBalanceBuilder::class)->build($coverAspectMatrix['points']);
     $coverWheelPlanets = collect([
         'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
         'true_node', 'mean_apogee',
@@ -45,31 +46,35 @@
     .report-cover-visuals > div { display: block; width: 100%; padding: 0; border: 0; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
     .report-cover-matrix-cell { padding: .4rem 0 0 !important; }
-    .report-cover-wheel { width: min(100%, 405px); margin: .35rem auto .5rem; padding: .5rem; background: #fffdf9; border: 1px solid #d8cabc; border-radius: 0; }
+    .report-cover-wheel { width: 100%; margin: .35rem auto .5rem; padding: 0; background: #fffdf9; border: 0; }
     .report-cover-wheel-container { width: 100%; aspect-ratio: 1; }
     .report-cover-wheel-image { display: block; width: 100%; height: auto; }
     .report-cover-wheel-actions { display: flex; justify-content: center; margin-top: .75rem; }
-    .report-cover .aspect-section--cover { max-width: 135mm; margin: 0 auto; padding: .35rem; background: #fffdf9; text-align: left; }
-    .report-cover .aspect-section--cover h2 { margin: 0 0 .35rem; font-size: .9rem; text-align: left; }
-    .report-cover .aspect-section--cover .aspect-matrix-layout { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: .5rem; background: #fffdf9; }
-    .report-cover .aspect-section--cover .aspect-matrix-scroll { overflow: visible; }
-    .report-cover .aspect-section--cover .aspect-matrix-table { width: 100%; min-width: 0; margin: 0; border: 0; border-radius: 0; background: #fffdf9; font-size: .62rem; }
-    .report-cover .aspect-section--cover .aspect-matrix-table th,
-    .report-cover .aspect-section--cover .aspect-matrix-table td { width: 3.4mm; min-width: 0; height: 3.4mm; padding: 0; border: .25pt solid #c9c7c1; border-radius: 0; background: #fffdf9; text-align: center; }
-    .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-empty { border: 0; }
-    .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background: #eef1f2; }
-    .report-cover .aspect-section--cover .aspect-glyph { font-family: DejaVu Sans, sans-serif; font-size: 6.5pt; }
-    .report-cover .aspect-section--cover .aspect-position { grid-template-columns: minmax(0, 1fr) auto; gap: .1rem; padding: .1rem 0; font-size: .55rem; line-height: 1.05; }
-    .report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }
-    .report-cover .aspect-section--cover .aspect-position dd { white-space: nowrap; }
-    .report-cover .aspect-section--cover .aspect-position dd { font-size: .52rem; }
-    .report-cover .aspect-section--cover .aspect-position-glyph { width: 1rem; }
-    .report-cover .aspect-section--cover .aspect-glyph--conjunction { color: #c21870; }
-    .report-cover .aspect-section--cover .aspect-glyph--opposition,
-    .report-cover .aspect-section--cover .aspect-glyph--square { color: #c23b36; }
-    .report-cover .aspect-section--cover .aspect-glyph--trine { color: #236bb2; }
-    .report-cover .aspect-section--cover .aspect-glyph--sextile { color: #16834b; }
-    .report-cover .aspect-section--cover .aspect-positions { display: block; margin: 0; background: #fffdf9; }
+    .report-chart-data { background: #fffdf9; }
+    .report-chart-data .aspect-section--cover { margin: 0 auto; padding: 0; text-align: left; }
+    .report-chart-data .aspect-section--cover h2 { margin: 0 0 1rem; }
+    .report-chart-data .aspect-matrix-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .report-chart-data .aspect-matrix-scroll { overflow: visible; }
+    .report-chart-data .aspect-matrix-table { width: 100%; min-width: 0; margin: 0; border-collapse: collapse; font-size: .75rem; }
+    .report-chart-data .aspect-matrix-table th,
+    .report-chart-data .aspect-matrix-table td { height: 5mm; padding: 0; border: .25pt solid #c9c7c1; text-align: center; }
+    .report-chart-data .aspect-matrix-table td.aspect-empty { border: 0; }
+    .report-chart-data .aspect-matrix-table td.aspect-diagonal { background: #eef1f2; }
+    .report-chart-data .aspect-glyph,
+    .report-chart-data .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; white-space: nowrap; }
+    .report-chart-data .aspect-position { display: flex; justify-content: space-between; gap: .5rem; padding: .15rem 0; font-size: .8rem; }
+    .report-chart-data .aspect-position dd { margin: 0; white-space: nowrap; }
+    .report-chart-data .aspect-position-glyph { display: inline-block; width: 1.5rem; }
+    .report-chart-data .aspect-glyph--conjunction { color: #c21870; }
+    .report-chart-data .aspect-glyph--opposition,
+    .report-chart-data .aspect-glyph--square { color: #c23b36; }
+    .report-chart-data .aspect-glyph--trine { color: #236bb2; }
+    .report-chart-data .aspect-glyph--sextile { color: #16834b; }
+    .report-chart-data .aspect-positions { margin: 0; }
+    .report-element-balance { margin-top: 2rem; }
+    .report-element-balance .report-table { table-layout: fixed; font-size: .8rem; }
+    .report-element-balance .report-table th, .report-element-balance .report-table td { padding: .5rem; overflow-wrap: break-word; }
+    .report-element-balance p { text-indent: 0; font-size: .85rem; }
     .report-wheel-refresh { border: 1px solid #b58b67; border-radius: 5px; padding: .55rem .9rem; background: #fffaf5; color: #674b39; cursor: pointer; font: 600 .8rem Aptos, 'Segoe UI', sans-serif; }
     .report-cover-meta { color: #6f665f; font: .78rem/1.35 Aptos, 'Segoe UI', sans-serif; }
     .report-kicker { display: inline-block; padding: .55rem 1.1rem; border: 1px solid #cbbba9; color: #695545; font: 700 .72rem Aptos, 'Segoe UI', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
@@ -126,34 +131,29 @@
     .report-brand, .report-kicker { font-size: 8.5pt; }
     .report-cover-visuals { width: 100%; margin: 1mm auto; }
     .report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }
-    .report-cover-matrix-cell { padding: 6mm 0 0 !important; }
-    .report-cover-wheel { display: block; width: 138mm; max-width: 100%; margin: 0 auto 1mm; padding: 0; border: 0; background: transparent; }
-    .report-cover-wheel-container { width: 138mm; height: 138mm; background: transparent; }
-    .report-cover-wheel-image { display: block; width: 138mm; height: 138mm; max-width: none; background: transparent; }
+    .report-cover-wheel { display: block; width: 194mm; max-width: 100%; margin: 0 auto; padding: 0; border: 0; background: transparent; }
+    .report-cover-wheel-container { width: 194mm; height: 194mm; background: transparent; }
+    .report-cover-wheel-image { display: block; width: 194mm; height: 194mm; max-width: none; background: transparent; }
     .report-cover-wheel-actions { display: none; }
     .report-cover-kicker { margin-top: 1mm; }
     .report-cover h1 { margin: 1mm 0; font-size: 25pt; }
     .report-page.report-cover h2 { font-size: 13pt; line-height: 1.25; }
-    .report-cover .aspect-section--cover { width: 128mm; max-width: 100%; margin: 0 auto; padding: 0; background: #fffdf9; }
-    .report-cover .aspect-section--cover h2 { margin: 0 0 .5mm; font-size: 8pt; }
-    .report-cover .aspect-section--cover .aspect-matrix-layout { display: table; width: 100%; table-layout: fixed; background: #fffdf9; }
-    .report-cover .aspect-section--cover .aspect-matrix-scroll,
-    .report-cover .aspect-section--cover aside { display: table-cell; vertical-align: top; }
-    .report-cover .aspect-section--cover .aspect-matrix-scroll { width: 50%; overflow: visible; }
-    .report-cover .aspect-section--cover aside { width: 50%; padding-left: 1mm; }
-    .report-cover .aspect-section--cover aside h3 { margin: 0 0 1mm; font-size: 8pt; }
-    .report-cover .aspect-section--cover .aspect-position { display: table; width: 100%; table-layout: fixed; gap: 0; padding: .1mm 0; font-size: 6.8pt; line-height: 1.1; }
-    .report-cover .aspect-section--cover .aspect-position dt,
-    .report-cover .aspect-section--cover .aspect-position dd { display: table-cell; vertical-align: middle; }
-    .report-cover .aspect-section--cover .aspect-position dt { width: 50%; }
-    .report-cover .aspect-section--cover .aspect-position-glyph { display: inline-block; width: 5mm; font-size: 6.8pt; white-space: nowrap; }
-    .report-cover .aspect-section--cover .aspect-position dd { width: 50%; margin: 0; font-size: 6.8pt; text-align: right; }
-    .report-cover .aspect-section--cover .aspect-matrix-table { font-size: 6.5pt; }
-    .report-cover .aspect-section--cover .aspect-matrix-table th,
-    .report-cover .aspect-section--cover .aspect-matrix-table td { width: 2.7mm; height: 2.7mm; font-size: 6.5pt; }
-    .report-cover .aspect-section--cover .aspect-matrix-table th,
-    .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal,
-    .report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }
+    .report-chart-data .aspect-matrix-layout { display: table; width: 100%; table-layout: fixed; }
+    .report-chart-data .aspect-matrix-scroll,
+    .report-chart-data aside { display: table-cell; vertical-align: top; }
+    .report-chart-data .aspect-matrix-scroll { width: 52%; }
+    .report-chart-data aside { width: 48%; padding-left: 3mm; }
+    .report-chart-data aside h3 { margin: 0 0 2mm; font-size: 10pt; }
+    .report-chart-data .aspect-position { display: table; width: 100%; table-layout: fixed; padding: .5mm 0; font-size: 7pt; line-height: 1.2; }
+    .report-chart-data .aspect-position dt,
+    .report-chart-data .aspect-position dd { display: table-cell; vertical-align: middle; }
+    .report-chart-data .aspect-position dt { width: 48%; }
+    .report-chart-data .aspect-position dd { width: 52%; text-align: right; font-size: 6.5pt; }
+    .report-chart-data .aspect-position-glyph { width: 4mm; }
+    .report-chart-data .aspect-matrix-table th,
+    .report-chart-data .aspect-matrix-table td { height: 4.5mm; font: 7pt DejaVu Sans, sans-serif; }
+    .report-chart-data .aspect-glyph { font-size: 7pt; }
+    .report-element-balance { margin-top: 12mm; }
     .report-pdf-only { display: block; }
     .report-index-item .report-index-page { position: absolute; top: 1.1rem; right: 1rem; display: block; width: 1.5rem; color: #fff; }
     .report-pdf-indicator { display: block; margin: 1.2rem 0 .65rem; color: #795c48; font: 700 10pt/1.3 Aptos, 'Segoe UI', sans-serif; letter-spacing: .08em; }
@@ -175,7 +175,8 @@
     .report-page > h1, .report-page > .report-arrow-title, .report-door > .report-door-heading { padding-top: 0; }
     /* dompdf no soporta flexbox/grid: se reemplazan por posicionamiento de bloque compatible con A4 */
     .report-cover { display: block; position: relative; min-height: 0; height: 297mm; page-break-after: always; background: #fffdf9; }
-    .report-cover > div:first-child { display: block; padding: 10mm 14mm 0; }
+    .report-cover > div:first-child { display: block; padding: 10mm 8mm 0; }
+    .report-page.report-chart-data { padding: 6mm 0 0; }
     .report-worksheet { page-break-inside: avoid; }
     .report-expansion-closing > h2 { margin-top: 2rem; }
     .report-expansion-closing > p { page-break-inside: avoid; }
@@ -207,17 +208,11 @@
     .report-document .report-cover .report-cover-wheel,
     .report-document .report-cover .report-cover-wheel-container,
     .report-document .report-cover .report-cover-wheel-image,
-    .report-document .report-cover .aspect-section--cover,
-    .report-document .report-cover .aspect-section--cover .aspect-matrix-layout,
-    .report-document .report-cover .aspect-section--cover .aspect-matrix-table,
-    .report-document .report-cover .aspect-section--cover .aspect-matrix-table th,
-    .report-document .report-cover .aspect-section--cover .aspect-matrix-table td,
-    .report-document .report-cover .aspect-section--cover .aspect-positions { background: #fffdf9 !important; }
     .report-document .report-cover * { background-color: #fffdf9 !important; }
-    .report-document .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background-color: #eef1f2 !important; }
     .report-document .report-table th, .report-document .report-note { background: #fff; box-shadow: none; }
     @endif
     @media print {
+        .report-cover, .report-chart-data { page-break-after: always; }
         .report-door, .report-chapter { page-break-before: always; }
         /* Original heading appearance from 7ec25a2, before responsive and ink-saving overrides. */
         .report-page .report-block-title, .report-page .report-section-title {
@@ -274,12 +269,36 @@
                         @endif
                     </div>
                 </div>
-                <div class="report-cover-matrix-cell" data-cover-region="matrix">
-                    @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true, 'pdf' => $pdf])
-                </div>
             </div>
         </div>
         <div class="report-cover-meta" data-cover-region="metadata">{{ $report['technical']['birth_date'] }} · {{ $report['technical']['birth_time'] }} · {{ $report['technical']['place'] }}<br>Zodiaco {{ $report['technical']['zodiac'] }} · Casas {{ $report['technical']['houses'] }}</div>
+    </section>
+    <section class="report-page report-chart-data" data-cover-region="chart-data">
+        <div class="report-cover-matrix-cell" data-cover-region="matrix">
+            @include('components.aspect-matrix', $coverAspectMatrix + ['variant' => 'cover', 'showPositions' => true, 'pdf' => $pdf])
+        </div>
+        <div class="report-element-balance" data-cover-region="elements">
+            <h2>Elementos y su balance</h2>
+            <p>Del Sol a Plutón, los diez planetas tienen el mismo peso. El balance muestra cuántos se sitúan en signos de fuego, tierra, aire y agua.</p>
+            @if ($elementBalance['total'] !== 10)
+                <p role="alert">Balance incompleto: hay posiciones disponibles para {{ $elementBalance['total'] }} de los 10 planetas. Los porcentajes se calculan solo sobre las posiciones disponibles.</p>
+            @endif
+            @if ($elementBalance['total'] > 0)
+                <table class="report-table">
+                    <thead><tr><th scope="col">Elemento</th><th scope="col">Planetas</th><th scope="col">Recuento</th><th scope="col">Porcentaje</th></tr></thead>
+                    <tbody>
+                        @foreach ($elementBalance['elements'] as $element)
+                            <tr>
+                                <th scope="row">{{ $element['label'] }}</th>
+                                <td>{{ implode(', ', $element['planets']) ?: 'Ninguno' }}</td>
+                                <td>{{ $element['count'] }}</td>
+                                <td>{{ number_format($element['percentage'], $elementBalance['total'] === 10 ? 0 : 1, ',', '') }} %</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </div>
     </section>
     <section class="report-page report-reading report-contents"><h1>Índice</h1>
         <div class="report-index-grid">@foreach ($report['index'] as $item)<div class="report-index-item {{ $pdf ? 'report-index-item-pdf' : '' }}"><a href="#report-section-{{ $item['key'] }}"><strong>{{ $item['title'] }}</strong></a>@if ($pdf)<span class="report-index-page" data-index-page-label="{{ $item['key'] }}">&#160;</span>@endif</div>@endforeach</div>

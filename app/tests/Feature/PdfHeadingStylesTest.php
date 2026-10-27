@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Services\AspectMatrixBuilder;
+use App\Models\BirthData;
+use App\Models\Chart;
+use App\Models\Place;
 use Dompdf\Dompdf;
 use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
@@ -27,7 +29,7 @@ class PdfHeadingStylesTest extends TestCase
     /** @return array<string, array<string, mixed>> */
     private function renderHeadings(string $css): array
     {
-        $content = '<div class="report-document"><section class="report-page">';
+        $content = '<div style="page-break-after: always">Portada</div><div class="report-document"><section class="report-page">';
         $titles = ['Función y posición', 'Qué necesita este signo', 'La casa y el territorio de experiencia', 'El regente y su posición', 'Integración de las piezas', 'Expresión Armónica', 'Expresión Des-Armónica por defecto', 'Expresión Des-Armónica por exceso', 'Armonización e integración final', 'Las cuatro puertas'];
         foreach ($titles as $index => $title) {
             $class = $index === 9 ? 'report-section-title' : 'report-block-title';
@@ -78,73 +80,93 @@ class PdfHeadingStylesTest extends TestCase
 
     }
 
-    public function test_pdf_cover_stacks_the_wheel_and_aspect_matrix_on_cream(): void
+    public function test_report_splits_the_cover_and_chart_data_in_web_and_pdf(): void
     {
-        $template = file_get_contents(resource_path('views/reports/phase-one/template.blade.php'));
-        $style = substr($template, strpos($template, '<style>'), strpos($template, '</style>') + 8 - strpos($template, '<style>'));
-        $pdfStyle = Blade::render($style, ['pdf' => true]);
-        $cover = substr($template, strpos($template, '<section class="report-page report-cover">'), strpos($template, '</section>') - strpos($template, '<section class="report-page report-cover">'));
-
-        $this->assertStringContainsString('.report-cover-visuals { width: 100%;', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-wheel-cell, .report-cover-matrix-cell { width: 100%; }', $pdfStyle);
-        $this->assertStringContainsString('<div class="report-cover-visuals">', $cover);
-        $this->assertStringNotContainsString('<table class="report-cover-visuals">', $cover);
-        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position dt { white-space: normal; overflow-wrap: break-word; }', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-wheel-container { width: 90mm; height: 90mm; background: transparent; }', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-wheel-image { display: block; width: 90mm; height: 90mm; max-width: none; background: transparent; }', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-matrix-cell { padding: 3mm 0 0 !important; }', $pdfStyle);
-        $this->assertStringContainsString('height: 250mm;', $pdfStyle);
-        $this->assertStringContainsString('.report-cover-name { position: static; margin: 5mm 0 0;', $pdfStyle);
-        $this->assertStringContainsString('bottom: 3mm;', $pdfStyle);
-        $this->assertStringContainsString('.report-cover h1 { margin: 1mm 0; font-size: 25pt; }', $pdfStyle);
-        $this->assertStringContainsString('.report-page.report-cover h2 { font-size: 13pt; line-height: 1.25; }', $pdfStyle);
-        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal,', $pdfStyle);
-        $this->assertStringContainsString('.report-cover .aspect-section--cover .aspect-position-glyph { font-family: DejaVu Sans, sans-serif; }', $pdfStyle);
-        $this->assertStringContainsString('padding: 0; border: 0; background: transparent;', $pdfStyle);
-        $this->assertStringContainsString('.report-document .report-cover * { background-color: #fffdf9 !important; }', $pdfStyle);
-        $this->assertStringContainsString('.report-document .report-cover .aspect-section--cover .aspect-matrix-table td.aspect-diagonal { background-color: #eef1f2 !important; }', $pdfStyle);
-        $this->assertStringContainsString('text-indent: 1.5em;', $pdfStyle);
-        $this->assertStringContainsString('margin: 0 auto 1.25rem;', $pdfStyle);
-        $this->assertStringContainsString('width: 128mm;', $pdfStyle);
-        $this->assertStringContainsString('background: #fffdf9 !important;', $pdfStyle);
-        $this->assertStringContainsString('data-background-color="#fffdf9"', $cover);
-        $this->assertStringContainsString("@include('components.aspect-matrix'", $cover);
-        $this->assertStringContainsString('[\'variant\' => \'cover\', \'showPositions\' => true, \'pdf\' => $pdf]', $cover);
-        $this->assertLessThan(
-            strpos($cover, 'report-cover-matrix-cell'),
-            strpos($cover, 'report-cover-wheel-cell'),
-            'The cover matrix must appear below the wheel.',
-        );
+        foreach ([false, true] as $pdf) {
+            $html = $this->reportHtml($pdf);
+            $document = new \DOMDocument;
+            @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+            $xpath = new \DOMXPath($document);
+            $cover = $xpath->query('//*[@data-cover-region="page"]')->item(0);
+            $data = $xpath->query('//*[@data-cover-region="chart-data"]')->item(0);
+            $this->assertStringContainsString('Carta natal de', $cover->textContent);
+            $this->assertStringContainsString('Informe I', $cover->textContent);
+            $this->assertStringNotContainsString('Matriz de aspectos', $cover->textContent);
+            $this->assertStringNotContainsString('Elementos y su balance', $cover->textContent);
+            $this->assertStringContainsString('Matriz de aspectos', $data->textContent);
+            $this->assertStringContainsString('Elementos y su balance', $data->textContent);
+            $this->assertStringContainsString('20 %', $data->textContent);
+            $this->assertStringNotContainsString('Balance incompleto', $data->textContent);
+            $this->assertSame(1, $xpath->query('.//*[@data-cover-region="wheel"]', $cover)->length);
+            $this->assertSame(0, $xpath->query('.//*[@data-cover-region="wheel"]', $data)->length);
+        }
+        $this->assertStringContainsString('Balance incompleto: hay posiciones disponibles para 0 de los 10 planetas.', $this->reportHtml(true, snapshot: []));
     }
 
-    public function test_pdf_cover_renders_the_wheel_and_full_matrix_on_one_page(): void
+    public function test_pdf_cover_maximizes_wheel_and_keeps_matrix_and_elements_on_page_two_without_overlap(): void
     {
-        $template = file_get_contents(resource_path('views/reports/phase-one/template.blade.php'));
-        $style = substr($template, strpos($template, '<style>'), strpos($template, '</style>') + 8 - strpos($template, '<style>'));
-        $pdfStyle = Blade::render($style, ['pdf' => true]);
-        $snapshot = [];
-        foreach (['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'true_node', 'mean_apogee', 'ascendant', 'midheaven'] as $point) {
-            $snapshot[$point] = ['longitude' => 185];
+        foreach (['Persona de prueba', 'Persona de prueba con un nombre compuesto y dos apellidos suficientemente largos para ocupar varias líneas'] as $name) {
+            $html = view('layouts.app', ['pdf' => true])->render();
+            $html = str_replace('</body>', $this->reportHtml(true, $name).'</body>', $html);
+            $dompdf = new Dompdf;
+            $dompdf->getOptions()->setDefaultMediaType('print');
+            $dompdf->setPaper('a4', 'portrait');
+            $dompdf->loadHtml($html);
+            $regions = [];
+            $contentPages = [];
+            $dompdf->setCallbacks([['event' => 'end_frame', 'f' => static function ($frame, $canvas) use (&$regions, &$contentPages): void {
+                $node = $frame->get_node();
+                if ($node instanceof \DOMText && trim($node->textContent) !== '') {
+                    $contentPages[$canvas->get_page_number()] = true;
+                }
+                if ($node instanceof \DOMElement && $node->hasAttribute('data-cover-region')) {
+                    $regions[$node->getAttribute('data-cover-region')] = [
+                        'page' => $canvas->get_page_number(),
+                        'box' => $frame->get_border_box(),
+                    ];
+                }
+            }]]);
+            $dompdf->render();
+
+            foreach (['page', 'heading', 'wheel', 'metadata'] as $region) {
+                $this->assertSame(1, $regions[$region]['page'], $region);
+            }
+            foreach (['chart-data', 'matrix', 'elements'] as $region) {
+                $this->assertSame(2, $regions[$region]['page'], $region);
+                [$x, $y, $width, $height] = $regions[$region]['box'];
+                $this->assertGreaterThanOrEqual(51, $y);
+                $this->assertLessThanOrEqual($dompdf->getCanvas()->get_height() - 51, $y + $height);
+                $this->assertGreaterThanOrEqual(51, $x);
+                $this->assertLessThanOrEqual($dompdf->getCanvas()->get_width() - 51, $x + $width);
+            }
+            $this->assertLessThanOrEqual($regions['wheel']['box'][1], $regions['heading']['box'][1] + $regions['heading']['box'][3]);
+            $this->assertLessThanOrEqual($regions['metadata']['box'][1], $regions['wheel']['box'][1] + $regions['wheel']['box'][3]);
+            $this->assertEqualsWithDelta(194 * 72 / 25.4, $regions['wheel']['box'][2], .1);
+            $this->assertEqualsWithDelta($regions['wheel']['box'][2], $regions['wheel']['box'][3], .1);
+            $this->assertLessThanOrEqual($regions['elements']['box'][1], $regions['matrix']['box'][1] + $regions['matrix']['box'][3]);
+            $this->assertSame(4, $dompdf->getCanvas()->get_page_count());
+            $this->assertSame([1, 2, 3, 4], array_keys($contentPages));
+            $this->assertStringStartsWith('%PDF-', $dompdf->output());
         }
-        $matrixData = app(AspectMatrixBuilder::class)->build($snapshot);
-        $matrixHtml = view('components.aspect-matrix', $matrixData + ['variant' => 'cover', 'showPositions' => true, 'pdf' => true])->render();
-        $this->assertStringNotContainsString('Aspectos entre los puntos calculados', $matrixHtml);
-        $this->assertStringNotContainsString('>Punto</span>', $matrixHtml);
-        $wheel = 'data:image/jpeg;base64,'.base64_encode(file_get_contents(__DIR__.'/../Fixtures/wheel.jpg'));
-        $coverHtml = '<div class="report-document"><section class="report-page report-cover">'
-            .'<div><div class="report-brand">ASTROLOGÍA SARANA VEDA</div><div style="margin-top: 3rem;"><span class="report-kicker">Dossier personal</span></div><h1>Carta natal de<br>Persona de prueba</h1><h2>Primer informe de la fase 1<br>Sol · Luna · Ascendente · Descendente</h2>'
-            .'<div class="report-cover-visuals"><div class="report-cover-wheel-cell"><div class="report-cover-wheel"><div class="report-cover-wheel-container"><img class="report-cover-wheel-image" src="'.$wheel.'"></div></div></div>'
-            .'<div class="report-cover-matrix-cell">'.$matrixHtml.'</div></div><div class="report-cover-name">Identidad y voluntad<br>Necesidades emocionales<br>Ritmo propio y vínculos</div></div>'
-            .'<div class="report-cover-meta">28/09/1986 · 21:00 · Sevilla, España<br>Zodiaco tropical · Casas Placidus</div></section></div>';
-        $html = view('layouts.app', ['pdf' => true])->render();
-        $html = str_replace('</body>', $pdfStyle.$coverHtml.'</body>', $html);
+    }
 
-        $dompdf = new Dompdf;
-        $dompdf->setPaper('a4', 'portrait');
-        $dompdf->loadHtml($html);
-        $dompdf->render();
+    private function reportHtml(bool $pdf, string $name = 'Persona de prueba', ?array $snapshot = null): string
+    {
+        if ($snapshot === null) {
+            $snapshot = [];
+            foreach (['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'true_node', 'mean_apogee', 'ascendant', 'midheaven'] as $index => $point) {
+                $snapshot[$point] = ['longitude' => ($index * 30 + 29.99)];
+            }
+        }
+        $chart = new Chart(['snapshot' => $snapshot, 'configuration' => ['houses' => 'placidus']]);
+        $chart->setRelation('birthData', (new BirthData)->setRelation('place', new Place(['latitude' => 40.4])));
+        $report = [
+            'name' => $name, 'complete' => true, 'index' => [], 'doors' => [], 'opposites' => [],
+            'sections' => ['opposites' => ['title' => 'Los opuestos complementarios']],
+            'technical' => ['birth_date' => '01/01/2000', 'birth_time' => '12:00', 'place' => 'Madrid, España', 'zodiac' => 'tropical', 'houses' => 'Placidus'],
+        ];
+        $wheelImage = 'data:image/jpeg;base64,'.base64_encode(file_get_contents(__DIR__.'/../Fixtures/wheel.jpg'));
 
-        $this->assertSame(1, $dompdf->getCanvas()->get_page_count());
-        $this->assertStringStartsWith('%PDF-', $dompdf->output());
+        return view('reports.phase-one.template', compact('chart', 'report', 'pdf', 'wheelImage'))->render();
     }
 }

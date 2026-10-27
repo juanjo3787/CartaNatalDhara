@@ -43,10 +43,9 @@ final class ReportPdfRefreshTest extends TestCase
             $this->assertEqualsWithDelta(0, $regions['page']['y'], 0.5);
             $this->assertEqualsWithDelta(595.28, $regions['page']['width'], 0.5);
             $this->assertEqualsWithDelta(841.89, $regions['page']['height'], 1);
-            $this->assertEqualsWithDelta(138 * 72 / 25.4, $regions['wheel']['width'], 0.5);
-            $this->assertGreaterThan(190 * 72 / 25.4, $regions['matrix']['y']);
+            $this->assertEqualsWithDelta(194 * 72 / 25.4, $regions['wheel']['width'], 0.5);
             $previousBottom = 0;
-            foreach (['heading', 'wheel', 'matrix', 'metadata'] as $key) {
+            foreach (['heading', 'wheel', 'metadata'] as $key) {
                 $region = $regions[$key];
                 $this->assertSame(1, $region['page'], $key);
                 $this->assertGreaterThan(0, $region['height'], $key);
@@ -54,7 +53,16 @@ final class ReportPdfRefreshTest extends TestCase
                 $previousBottom = $region['y'] + $region['height'];
                 $this->assertLessThan(841.89, $previousBottom, $key);
             }
-            $this->assertSame(3, $context['index_pages']['sol']);
+            $previousBottom = 51;
+            foreach (['matrix', 'elements'] as $key) {
+                $region = $regions[$key];
+                $this->assertSame(2, $region['page'], $key);
+                $this->assertGreaterThan(0, $region['height'], $key);
+                $this->assertGreaterThanOrEqual($previousBottom, $region['y'], 'Solapamiento en '.$key);
+                $previousBottom = $region['y'] + $region['height'];
+                $this->assertLessThan(790.87, $previousBottom, $key);
+            }
+            $this->assertSame(4, $context['index_pages']['sol']);
             $this->assertSame([], $context['blank_pages']);
 
             return true;
@@ -84,7 +92,7 @@ final class ReportPdfRefreshTest extends TestCase
                 $this->assertSame(max($previousPages) + 1, $context['index_pages'][$chapter]);
             }
             $this->assertSame([], $context['blank_pages']);
-            $this->assertSame(3, $context['index_pages']['sol']);
+            $this->assertSame(4, $context['index_pages']['sol']);
 
             return true;
         })->once();
@@ -136,7 +144,7 @@ final class ReportPdfRefreshTest extends TestCase
             $this->assertSame(InteriorMapMaster::CHAPTERS, array_keys($context['index_pages']));
             $this->assertSame([], $context['blank_pages']);
             $this->assertEqualsCanonicalizing(range(1, $context['pages']), $context['content_pages']);
-            $this->assertSame(3, $context['index_pages']['sol']);
+            $this->assertSame(4, $context['index_pages']['sol']);
             $starts = array_values($context['index_pages']);
             $sorted = $starts;
             sort($sorted);
