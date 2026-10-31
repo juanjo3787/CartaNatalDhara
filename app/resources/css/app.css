@@ -68,3 +68,13 @@
     .aspect-matrix-layout { grid-template-columns: minmax(0, 1fr); }
     .aspect-matrix-table th, .aspect-matrix-table td { width: 30px; min-width: 30px; }
 }
+
+@media print {
+    .aspect-matrix-table,
+    .aspect-matrix-table th,
+    .aspect-matrix-table td,
+    .aspect-matrix-table .aspect-glyph,
+    .aspect-position-glyph {
+        font-family: "DejaVu Sans", "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif;
+    }
+}
