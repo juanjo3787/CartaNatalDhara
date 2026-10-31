@@ -150,6 +150,49 @@ class PdfHeadingStylesTest extends TestCase
         }
     }
 
+    public function test_pdf_matrix_headers_and_diagonal_use_a_font_that_supports_every_point_glyph(): void
+    {
+        $html = view('layouts.app', ['pdf' => true])->render();
+        $html = str_replace('</body>', $this->reportHtml(true).'</body>', $html);
+        $dompdf = new Dompdf;
+        $dompdf->getOptions()->setDefaultMediaType('print');
+        $dompdf->setPaper('a4', 'portrait');
+        $dompdf->loadHtml($html);
+        $glyphs = [];
+        $dompdf->setCallbacks([['event' => 'end_frame', 'f' => static function ($frame, $canvas) use (&$glyphs): void {
+            $node = $frame->get_node();
+            if (! $node instanceof \DOMText || trim($node->textContent) === '') {
+                return;
+            }
+            $cell = $node->parentNode;
+            while ($cell instanceof \DOMElement && ! in_array($cell->tagName, ['th', 'td'], true)) {
+                $cell = $cell->parentNode;
+            }
+            if (! $cell instanceof \DOMElement || (! $cell->hasAttribute('scope') && $cell->getAttribute('class') !== 'aspect-diagonal')) {
+                return;
+            }
+            $table = $cell->parentNode;
+            while ($table instanceof \DOMElement && $table->tagName !== 'table') {
+                $table = $table->parentNode;
+            }
+            if (! $table instanceof \DOMElement || ! $table->hasAttribute('data-aspect-matrix')) {
+                return;
+            }
+            $font = $frame->get_style()->font_family;
+            foreach (mb_str_split(trim($node->textContent)) as $glyph) {
+                $glyphs[] = ['glyph' => $glyph, 'font' => $font, 'supported' => $canvas->font_supports_char($font, $glyph)];
+            }
+        }]]);
+        $dompdf->render();
+
+        $this->assertCount(51, $glyphs);
+        foreach ($glyphs as $glyph) {
+            $this->assertStringContainsString('DejaVuSans', $glyph['font'], $glyph['glyph']);
+            $this->assertTrue($glyph['supported'], 'La fuente no admite el glifo '.$glyph['glyph']);
+        }
+        $this->assertStringStartsWith('%PDF-', $dompdf->output());
+    }
+
     private function reportHtml(bool $pdf, string $name = 'Persona de prueba', ?array $snapshot = null): string
     {
         if ($snapshot === null) {

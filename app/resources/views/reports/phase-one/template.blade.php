@@ -151,7 +151,7 @@
     .report-chart-data .aspect-position dd { width: 52%; text-align: right; font-size: 6.5pt; }
     .report-chart-data .aspect-position-glyph { width: 4mm; }
     .report-chart-data .aspect-matrix-table th,
-    .report-chart-data .aspect-matrix-table td { height: 4.5mm; font: 7pt DejaVu Sans, sans-serif; }
+    .report-chart-data .aspect-matrix-table td { height: 4.5mm; font-family: "DejaVu Sans", sans-serif; font-size: 7pt; font-weight: normal; }
     .report-chart-data .aspect-glyph { font-size: 7pt; }
     .report-element-balance { margin-top: 12mm; }
     .report-pdf-only { display: block; }

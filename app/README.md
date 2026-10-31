@@ -249,6 +249,13 @@ entre la lista de palabras clave y el siguiente titulo en la misma pagina.
 **Version de modelo: 110. Version editorial PDF: 28.** Los textos y trabajos de
 versiones anteriores no se mezclan con este modelo: requieren regeneracion.
 `reports:refresh-pdfs` solo recrea PDF de contenidos completos del modelo actual.
+Los encabezados y la diagonal de la matriz usan `font-family: "DejaVu Sans"`
+de forma explicita: la abreviatura `font` con el nombre sin comillas hace que
+Dompdf seleccione Helvetica y sustituya los simbolos planetarios por interrogaciones.
+Tras desplegar cambios de formato, ejecutar
+`php artisan reports:refresh-pdfs --all --dry-run` para comprobar los informes
+y `php artisan reports:refresh-pdfs --all` para actualizar los PDF sin IA,
+conservando una copia de cada PDF anterior.
 El nombre de descarga sigue siendo `Informe I - Nombre de la carta natal.pdf`.
 
 ## Configuracion y despliegue
