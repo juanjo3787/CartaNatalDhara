@@ -55,7 +55,7 @@
     .report-chart-data .aspect-section--cover h2 { margin: 0 0 1rem; }
     .report-chart-data .aspect-matrix-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
     .report-chart-data .aspect-matrix-scroll { overflow: visible; }
-    .report-chart-data .aspect-matrix-table { width: 100%; min-width: 0; margin: 0; border-collapse: collapse; font-size: .75rem; }
+    .report-chart-data .aspect-matrix-table { width: 100%; min-width: 0; margin: 0; border-collapse: collapse; border-radius: 0; overflow: visible; font-size: .75rem; }
     .report-chart-data .aspect-matrix-table th,
     .report-chart-data .aspect-matrix-table td { height: 5mm; padding: 0; border: .25pt solid #c9c7c1; text-align: center; }
     .report-chart-data .aspect-matrix-table td.aspect-empty { border: 0; }
